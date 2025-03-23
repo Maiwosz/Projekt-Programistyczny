@@ -180,13 +180,96 @@ Musisz być dodany jako współpracownik repozytorium.
 
 **Zapomniałem stworzyć nową gałąź**  
 ```sh
-git checkout -b nowa-nazwa-galezi
-git add . && git commit -m "Naprawa"
-git push origin nowa-nazwa-galezi
+ git checkout -b nowa-nazwa-galezi
+ git add . && git commit -m "Naprawa"
+ git push origin nowa-nazwa-galezi
 ```
 
 **Konflikty przy mergowaniu**  
 Ręcznie popraw pliki i wykonaj:
 ```sh
-git add .
-git commit -m "Rozwiązano konflikty"
+ git add .
+ git commit -m "Rozwiązano konflikty"
+```
+
+**Twoja wersja repozytorium na komputerze nie jest aktualna**  
+1. Pobierz najnowsze zmiany:
+   ```sh
+   git pull origin main
+   ```
+2. Jeśli masz lokalne zmiany, które powodują konflikt, wykonaj:
+   ```sh
+   git stash
+   git pull origin main
+   git stash pop
+   ```
+3. Jeśli problem nadal występuje, sprawdź aktualny stan repozytorium:
+   ```sh
+   git status
+   ```
+
+**MongoDB nie uruchamia się**  
+1. Sprawdź, czy MongoDB działa:
+   ```sh
+   mongod --version
+   ```
+2. Jeśli nie działa, uruchom go ręcznie:
+   ```sh
+   mongod --dbpath /ścieżka/do/bazy
+   ```
+3. Sprawdź, czy port 27017 jest zajęty:
+   ```sh
+   netstat -ano | findstr :27017
+   ```
+   Jeśli tak, zamknij proces używający portu i spróbuj ponownie.
+
+**Błąd `npm install` - brak dostępu do plików**  
+1. Uruchom terminal jako administrator.
+2. Spróbuj ponownie:
+   ```sh
+   npm install
+   ```
+3. Jeśli nadal występuje problem, spróbuj:
+   ```sh
+   npm cache clean --force
+   ```
+
+**Błąd `npm start` - moduł nie znaleziony**  
+1. Upewnij się, że wszystkie zależności są zainstalowane:
+   ```sh
+   npm install
+   ```
+2. Sprawdź, czy masz poprawną wersję Node.js:
+   ```sh
+   node -v
+   ```
+3. Uruchom ponownie terminal i spróbuj jeszcze raz:
+   ```sh
+   npm start
+   ```
+
+**Serwer działa, ale strona się nie ładuje**  
+1. Sprawdź, czy backend działa:
+   ```sh
+   curl http://localhost:3000
+   ```
+2. Jeśli nie działa, sprawdź logi serwera:
+   ```sh
+   node server.js
+   ```
+3. Jeśli frontend się nie ładuje, sprawdź czy serwer frontendowy działa:
+   ```sh
+   npm run dev
+   ```
+
+**Błąd `fatal: Not a git repository`**  
+1. Sprawdź, czy jesteś w katalogu projektu:
+   ```sh
+   pwd
+   ```
+2. Jeśli nie, przejdź do katalogu projektu i spróbuj ponownie.
+3. Jeśli repozytorium jest uszkodzone, spróbuj je ponownie sklonować:
+   ```sh
+   git clone https://github.com/Maiwosz/Projekt-Programistyczny.git
+   ```
+
