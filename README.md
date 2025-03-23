@@ -48,25 +48,23 @@
 ## Struktura projektu
 
 ```
-Projekt Programistyczny
-+¦¦ README.md          # Instrukcja instalacji i użycia
-+¦¦ start.bat          # Skrypt uruchamiający serwer backendowy
-+¦¦ stop.bat           # Skrypt zatrzymujący serwer backendowy
--
-+¦¦ Backend            # Katalog backendu (Node.js)
--   +¦¦ .env           # Konfiguracja środowiskowa (port, klucze, DB)
--   +¦¦ package.json   # Konfiguracja projektu Node.js
--   +¦¦ server.js      # Główny plik serwera API
--   +¦¦ node_modules   # Zainstalowane zależności NPM
--
-L¦¦ Web-Frontend       # Katalog frontendu (strona WWW)
-    +¦¦ index.html     # Główna strona aplikacji
-    +¦¦ login.html     # Strona logowania
-    +¦¦ register.html  # Strona rejestracji
-    +¦¦ scripts        # Skrypty JavaScript
-    -   +¦¦ auth.js    # Logika uwierzytelniania
-    +¦¦ styles         # Arkusze styli CSS
-    -   +¦¦ styles.css # Globalne style aplikacji
+.
+├── README.md               # Instrukcja instalacji i użycia
+├── start.bat               # Skrypt uruchamiający serwer backendowy
+├── stop.bat                # Skrypt zatrzymujący serwer backendowy
+├── Backend/                # Katalog backendu (Node.js)
+│   ├── .env                # Konfiguracja środowiskowa
+│   ├── package.json        # Konfiguracja projektu Node.js
+│   ├── server.js           # Główny plik serwera API
+│   └── node_modules/       # Zainstalowane zależności NPM
+└── Web-Frontend/           # Katalog frontendu (strona WWW)
+    ├── index.html          # Główna strona aplikacji
+    ├── login.html          # Strona logowania
+    ├── register.html       # Strona rejestracji
+    ├── scripts/            # Katalog skryptów JS
+    │   └── auth.js         # Logika uwierzytelniania
+    └── styles/             # Katalog stylów CSS
+        └── styles.css      # Globalne style aplikacji
 ```
 
 ---
