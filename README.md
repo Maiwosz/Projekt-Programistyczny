@@ -166,7 +166,7 @@ git checkout -b twoja-nazwa-galezi
 
 ## Używanie graficznych interfejsów (GUI)
 
-Możesz użyć narzędzi GUI:
+Do Gita zamiast powłok tekstowych można też użyć narzędzi GUI takich jak:
 - [Git Extensions](https://gitextensions.github.io/)
 - [GitHub Desktop](https://desktop.github.com/)
 - [Sourcetree](https://www.sourcetreeapp.com/)
