@@ -41,7 +41,7 @@
    cd Projekt-Programistyczny
    ```
 
-? **Wszystkie operacje musz¹ byæ wykonywane w folderze projektu!**
+?? **Wszystkie operacje musz¹ byæ wykonywane w folderze projektu!**
 
 ---
 
@@ -49,35 +49,35 @@
 
 ```
 Projekt Programistyczny
--   README.md           # Instrukcja instalacji i u¿ycia
--   start.bat           # Skrypt uruchamiaj¹cy serwer backendowy
--   stop.bat            # Skrypt zatrzymuj¹cy serwer backendowy
++¦¦ README.md          # Instrukcja instalacji i u¿ycia
++¦¦ start.bat          # Skrypt uruchamiaj¹cy serwer backendowy
++¦¦ stop.bat           # Skrypt zatrzymuj¹cy serwer backendowy
 -
-+¦¦ Backend             # Katalog backendu (Node.js)
--   -   .env            # Konfiguracja œrodowiskowa (port, klucze, DB)
--   -   package.json    # Konfiguracja projektu Node.js
--   -   server.js       # G³ówny plik serwera API
--   L¦¦ node_modules    # Zainstalowane zale¿noœci NPM
++¦¦ Backend            # Katalog backendu (Node.js)
+-   +¦¦ .env           # Konfiguracja œrodowiskowa (port, klucze, DB)
+-   +¦¦ package.json   # Konfiguracja projektu Node.js
+-   +¦¦ server.js      # G³ówny plik serwera API
+-   +¦¦ node_modules   # Zainstalowane zale¿noœci NPM
 -
-L¦¦ Web-Frontend        # Katalog frontendu (strona WWW)
-    -   index.html      # G³ówna strona aplikacji
-    -   login.html      # Strona logowania
-    -   register.html   # Strona rejestracji
-    +¦¦ scripts         # Skrypty JavaScript
-    -   L¦¦ auth.js     # Logika uwierzytelniania
-    L¦¦ styles          # Arkusze styli CSS
-        L¦¦ styles.css  # Globalne style aplikacji
+L¦¦ Web-Frontend       # Katalog frontendu (strona WWW)
+    +¦¦ index.html     # G³ówna strona aplikacji
+    +¦¦ login.html     # Strona logowania
+    +¦¦ register.html  # Strona rejestracji
+    +¦¦ scripts        # Skrypty JavaScript
+    -   +¦¦ auth.js    # Logika uwierzytelniania
+    +¦¦ styles         # Arkusze styli CSS
+    -   +¦¦ styles.css # Globalne style aplikacji
 ```
 
 ---
 
 ## ?? Wymagania
 
-?? **MongoDB Community Server** (wersja: 6.0, 7.0 lub 8.0)
-   - Pobierz: [MongoDB Community](https://www.mongodb.com/try/download/community)
+? **MongoDB Community Server** (wersja: 6.0, 7.0 lub 8.0)  
+?? Pobierz: [MongoDB Community](https://www.mongodb.com/try/download/community)
 
-?? **Node.js** (minimalna wersja: 14.x lub nowsza)
-   - Pobierz: [Node.js](https://nodejs.org/)
+? **Node.js** (minimalna wersja: 14.x lub nowsza)  
+?? Pobierz: [Node.js](https://nodejs.org/)
 
 ---
 
@@ -116,7 +116,7 @@ L¦¦ Web-Frontend        # Katalog frontendu (strona WWW)
 
 ## ?? Jak wprowadzaæ zmiany?
 
-? **Zawsze pracuj na nowej ga³êzi!**
+?? **Zawsze pracuj na nowej ga³êzi!**
 
 ```sh
 git checkout -b twoja-nazwa-galezi
@@ -143,7 +143,7 @@ git checkout -b twoja-nazwa-galezi
 
 ---
 
-## ? Jak prosiæ o zatwierdzenie zmian?
+## ?? Jak prosiæ o zatwierdzenie zmian?
 
 1. WejdŸ na GitHub › zak³adka **"Pull Requests"**.
 2. Kliknij **"New Pull Request"**.
@@ -175,20 +175,20 @@ Mo¿esz u¿yæ narzêdzi GUI:
 
 ---
 
-## ?? Najczêstsze problemy
+## ? Najczêstsze problemy
 
-**Permission denied przy `git push`**
-- Musisz byæ dodany jako wspó³pracownik repozytorium.
+**Permission denied przy `git push`**  
+? Musisz byæ dodany jako wspó³pracownik repozytorium.
 
-**Zapomnia³em stworzyæ now¹ ga³¹Ÿ**
+**Zapomnia³em stworzyæ now¹ ga³¹Ÿ**  
 ```sh
 git checkout -b nowa-nazwa-galezi
 git add . && git commit -m "Naprawa"
 git push origin nowa-nazwa-galezi
 ```
 
-**Konflikty przy mergowaniu**
-- Rêcznie popraw pliki i wykonaj:
+**Konflikty przy mergowaniu**  
+? Rêcznie popraw pliki i wykonaj:
 ```sh
 git add .
 git commit -m "Rozwi¹zano konflikty"
