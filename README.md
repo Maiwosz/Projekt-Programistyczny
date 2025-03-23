@@ -195,12 +195,12 @@ Ręcznie popraw pliki i wykonaj:
 **Twoja wersja repozytorium na komputerze nie jest aktualna**  
 1. Pobierz najnowsze zmiany:
    ```sh
-   git pull origin main
+   git pull origin master
    ```
 2. Jeśli masz lokalne zmiany, które powodują konflikt, wykonaj:
    ```sh
    git stash
-   git pull origin main
+   git pull origin master
    git stash pop
    ```
 3. Jeśli problem nadal występuje, sprawdź aktualny stan repozytorium:
