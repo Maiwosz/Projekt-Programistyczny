@@ -1,6 +1,6 @@
 # Instrukcja
 
-**UWAGA! Wszystkie zmiany wymagają zatwierdzenia przez prowadzącego.**
+**UWAGA! Wszystkie zmiany wymagają zatwierdzenia przez właściciela repozytorium.**
 
 ---
 
