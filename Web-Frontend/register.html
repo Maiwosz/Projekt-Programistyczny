@@ -1,0 +1,21 @@
+<!-- register.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rejestracja</title>
+	<link rel="stylesheet" href="/styles/styles.css">
+    <!-- Ten sam skrypt co w innych plikach -->
+    <script src="/scripts/auth.js"></script>
+</head>
+<body>
+    <h1>Rejestracja</h1>
+    <!-- Formularz rejestracji -->
+    <form id="registerForm" action="/register">
+        <!-- Podobne pola jak przy logowaniu -->
+        <input name="username" type="text" placeholder="Nazwa użytkownika" required>
+        <input name="password" type="password" placeholder="Hasło" required>
+        <button type="submit">Zarejestruj</button>
+    </form>
+    <a href="/">Powrót</a>
+</body>
+</html>

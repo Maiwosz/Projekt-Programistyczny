@@ -1,0 +1,28 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Tytuł strony głównej -->
+    <title>Strona Główna</title>
+	<link rel="stylesheet" href="/styles/styles.css">
+    <!-- Podpięcie skryptu odpowiedzialnego za autentykację -->
+    <script src="/scripts/auth.js"></script>
+</head>
+<body>
+    <!-- Sekcja widoczna TYLKO po zalogowaniu -->
+    <div class="logged-in" style="display: none;">
+        <!-- Dynamicznie wstawiana nazwa użytkownika -->
+        <h1>Witaj, <span id="username"></span>!</h1>
+        <!-- Przycisk wywołujący funkcję wylogowania -->
+        <button onclick="logout()">Wyloguj</button>
+    </div>
+    
+    <!-- Sekcja widoczna TYLKO dla niezalogowanych -->
+    <div class="logged-out">
+        <h1>Witaj gościu!</h1>
+        <!-- Linki do logowania i rejestracji -->
+        <a href="/login.html">Zaloguj się</a> | 
+        <a href="/register.html">Zarejestruj</a>
+    </div>
+</body>
+</html>

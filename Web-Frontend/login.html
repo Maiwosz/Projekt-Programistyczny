@@ -1,0 +1,23 @@
+<!-- login.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logowanie</title>
+	<link rel="stylesheet" href="/styles/styles.css">
+    <!-- Wspólny skrypt autentykacji -->
+    <script src="/scripts/auth.js"></script>
+</head>
+<body>
+    <h1>Logowanie</h1>
+    <!-- Formularz logowania z id do identyfikacji -->
+    <form id="loginForm" action="/login">
+        <!-- Pole nazwy użytkownika -->
+        <input name="username" type="text" placeholder="Nazwa użytkownika" required>
+        <!-- Pole hasła -->
+        <input name="password" type="password" placeholder="Hasło" required>
+        <button type="submit">Zaloguj</button>
+    </form>
+    <!-- Powrót do strony głównej -->
+    <a href="/">Powrót</a>
+</body>
+</html>

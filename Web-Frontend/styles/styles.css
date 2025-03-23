@@ -1,0 +1,77 @@
+/* Minimalistyczny styl dla całej strony */
+body {
+font-family: Arial, sans-serif;
+max-width: 800px;
+margin: 0 auto;
+padding: 20px;
+background-color: #f8f9fa;
+line-height: 1.6;
+}
+
+h1 {
+color: #2c3e50;
+text-align: center;
+margin-bottom: 30px;
+}
+
+/* Style formularzy */
+form {
+background: white;
+padding: 25px;
+border-radius: 10px;
+box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+margin: 20px auto;
+max-width: 400px;
+}
+
+input {
+width: 100%;
+padding: 12px;
+margin-bottom: 15px;
+border: 1px solid #ddd;
+border-radius: 6px;
+box-sizing: border-box;
+font-size: 16px;
+}
+
+button {
+width: 100%;
+padding: 12px;
+background-color: #3498db;
+color: white;
+border: none;
+border-radius: 6px;
+cursor: pointer;
+font-size: 16px;
+transition: background-color 0.3s;
+}
+
+button:hover {
+background-color: #2980b9;
+}
+
+/* Style linków */
+a {
+color: #3498db;
+text-decoration: none;
+display: inline-block;
+margin-top: 15px;
+}
+
+a:hover {
+text-decoration: underline;
+}
+
+/* Sekcje widoczności */
+.logged-in, .logged-out {
+text-align: center;
+padding: 30px;
+background: white;
+border-radius: 10px;
+box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#username {
+color: #e74c3c;
+font-weight: bold;
+}
