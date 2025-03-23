@@ -1,94 +1,94 @@
 # Instrukcja
 
-**UWAGA! Wszystkie zmiany wymagaj¹ zatwierdzenia przez prowadz¹cego.**
+**UWAGA! Wszystkie zmiany wymagajÄ… zatwierdzenia przez prowadzÄ…cego.**
 
 ---
 
-## ?? Spis Treœci
-1. [Jak pobraæ projekt?](#jak-pobraæ-projekt)
+## Spis TreÅ›ci
+1. [Jak pobraÄ‡ projekt?](#jak-pobraÄ‡-projekt)
 2. [Struktura projektu](#struktura-projektu)
 3. [Wymagania](#wymagania)
-4. [Jak zainstalowaæ MongoDB i Node.js?](#jak-zainstalowaæ-mongodb-i-nodejs)
-5. [Jak uruchomiæ projekt?](#jak-uruchomiæ-projekt)
-6. [Jak wprowadzaæ zmiany?](#jak-wprowadzaæ-zmiany)
-7. [Jak prosiæ o zatwierdzenie zmian?](#jak-prosiæ-o-zatwierdzenie-zmian)
-8. [Jak sprawdzaæ czyjeœ zmiany?](#jak-sprawdzaæ-czyjeœ-zmiany)
-9. [U¿ywanie graficznych interfejsów (GUI)](#u¿ywanie-graficznych-interfejsów-gui)
-10. [Najczêstsze problemy](#najczêstsze-problemy)
+4. [Jak zainstalowaÄ‡ MongoDB i Node.js?](#jak-zainstalowaÄ‡-mongodb-i-nodejs)
+5. [Jak uruchomiÄ‡ projekt?](#jak-uruchomiÄ‡-projekt)
+6. [Jak wprowadzaÄ‡ zmiany?](#jak-wprowadzaÄ‡-zmiany)
+7. [Jak prosiÄ‡ o zatwierdzenie zmian?](#jak-prosiÄ‡-o-zatwierdzenie-zmian)
+8. [Jak sprawdzaÄ‡ czyjeÅ› zmiany?](#jak-sprawdzaÄ‡-czyjeÅ›-zmiany)
+9. [UÅ¼ywanie graficznych interfejsÃ³w (GUI)](#uÅ¼ywanie-graficznych-interfejsÃ³w-gui)
+10. [NajczÄ™stsze problemy](#najczÄ™stsze-problemy)
 
 ---
 
-## ?? Jak pobraæ projekt?
+## Jak pobraÄ‡ projekt?
 
-### Krok 1: Pobierz projekt na swój komputer
+### Krok 1: Pobierz projekt na swÃ³j komputer
 
-1. Otwórz folder, gdzie chcesz zapisaæ projekt (np. `Projekt Programistyczny`).
-2. Kliknij prawym przyciskiem myszy w pustym miejscu i wybierz **"Otwórz w Terminalu"**.
-   - Jeœli nie masz Gita, pobierz go tutaj: [Git SCM](https://git-scm.com/downloads)
-   - Mo¿esz u¿yæ tak¿e **Git Bash**, **PowerShella** lub innej pow³oki.
-3. Wpisz poni¿sz¹ komendê i naciœnij `Enter`:
+1. OtwÃ³rz folder, gdzie chcesz zapisaÄ‡ projekt (np. `Projekt Programistyczny`).
+2. Kliknij prawym przyciskiem myszy w pustym miejscu i wybierz **"OtwÃ³rz w Terminalu"**.
+   - JeÅ›li nie masz Gita, pobierz go tutaj: [Git SCM](https://git-scm.com/downloads)
+   - MoÅ¼esz uÅ¼yÄ‡ takÅ¼e **Git Bash**, **PowerShella** lub innej powÅ‚oki.
+3. Wpisz poniÅ¼szÄ… komendÄ™ i naciÅ›nij `Enter`:
 
    ```sh
    git clone https://github.com/Maiwosz/Projekt-Programistyczny.git
    ```
 
-### Krok 2: WejdŸ do folderu projektu
+### Krok 2: WejdÅº do folderu projektu
 
-1. W folderze projektu kliknij prawym przyciskiem myszy i wybierz **"Otwórz w Terminalu"**.
+1. W folderze projektu kliknij prawym przyciskiem myszy i wybierz **"OtwÃ³rz w Terminalu"**.
 2. Alternatywnie, w terminalu wpisz:
 
    ```sh
    cd Projekt-Programistyczny
    ```
 
-?? **Wszystkie operacje musz¹ byæ wykonywane w folderze projektu!**
+**Wszystkie operacje muszÄ… byÄ‡ wykonywane w folderze projektu!**
 
 ---
 
-## ?? Struktura projektu
+## Struktura projektu
 
 ```
 Projekt Programistyczny
-+¦¦ README.md          # Instrukcja instalacji i u¿ycia
-+¦¦ start.bat          # Skrypt uruchamiaj¹cy serwer backendowy
-+¦¦ stop.bat           # Skrypt zatrzymuj¹cy serwer backendowy
++Â¦Â¦ README.md          # Instrukcja instalacji i uÅ¼ycia
++Â¦Â¦ start.bat          # Skrypt uruchamiajÄ…cy serwer backendowy
++Â¦Â¦ stop.bat           # Skrypt zatrzymujÄ…cy serwer backendowy
 -
-+¦¦ Backend            # Katalog backendu (Node.js)
--   +¦¦ .env           # Konfiguracja œrodowiskowa (port, klucze, DB)
--   +¦¦ package.json   # Konfiguracja projektu Node.js
--   +¦¦ server.js      # G³ówny plik serwera API
--   +¦¦ node_modules   # Zainstalowane zale¿noœci NPM
++Â¦Â¦ Backend            # Katalog backendu (Node.js)
+-   +Â¦Â¦ .env           # Konfiguracja Å›rodowiskowa (port, klucze, DB)
+-   +Â¦Â¦ package.json   # Konfiguracja projektu Node.js
+-   +Â¦Â¦ server.js      # GÅ‚Ã³wny plik serwera API
+-   +Â¦Â¦ node_modules   # Zainstalowane zaleÅ¼noÅ›ci NPM
 -
-L¦¦ Web-Frontend       # Katalog frontendu (strona WWW)
-    +¦¦ index.html     # G³ówna strona aplikacji
-    +¦¦ login.html     # Strona logowania
-    +¦¦ register.html  # Strona rejestracji
-    +¦¦ scripts        # Skrypty JavaScript
-    -   +¦¦ auth.js    # Logika uwierzytelniania
-    +¦¦ styles         # Arkusze styli CSS
-    -   +¦¦ styles.css # Globalne style aplikacji
+LÂ¦Â¦ Web-Frontend       # Katalog frontendu (strona WWW)
+    +Â¦Â¦ index.html     # GÅ‚Ã³wna strona aplikacji
+    +Â¦Â¦ login.html     # Strona logowania
+    +Â¦Â¦ register.html  # Strona rejestracji
+    +Â¦Â¦ scripts        # Skrypty JavaScript
+    -   +Â¦Â¦ auth.js    # Logika uwierzytelniania
+    +Â¦Â¦ styles         # Arkusze styli CSS
+    -   +Â¦Â¦ styles.css # Globalne style aplikacji
 ```
 
 ---
 
-## ?? Wymagania
+## Wymagania
 
-? **MongoDB Community Server** (wersja: 6.0, 7.0 lub 8.0)  
-?? Pobierz: [MongoDB Community](https://www.mongodb.com/try/download/community)
+**MongoDB Community Server** (wersja: 6.0, 7.0 lub 8.0)  
+Pobierz: [MongoDB Community](https://www.mongodb.com/try/download/community)
 
-? **Node.js** (minimalna wersja: 14.x lub nowsza)  
-?? Pobierz: [Node.js](https://nodejs.org/)
+**Node.js** (minimalna wersja: 14.x lub nowsza)  
+Pobierz: [Node.js](https://nodejs.org/)
 
 ---
 
-## ?? Jak zainstalowaæ MongoDB i Node.js?
+## Jak zainstalowaÄ‡ MongoDB i Node.js?
 
 ### Instalacja MongoDB
 
 1. Pobierz MongoDB z [oficjalnej strony](https://www.mongodb.com/try/download/community).
-2. Uruchom instalator i wybierz opcjê **"Complete"**.
-3. Zaznacz **"Install MongoDB Compass"**, jeœli chcesz GUI do zarz¹dzania baz¹ danych.
-4. Po instalacji sprawdŸ wersjê:
+2. Uruchom instalator i wybierz opcjÄ™ **"Complete"**.
+3. Zaznacz **"Install MongoDB Compass"**, jeÅ›li chcesz GUI do zarzÄ…dzania bazÄ… danych.
+4. Po instalacji sprawdÅº wersjÄ™:
 
    ```sh
    mongod --version
@@ -97,8 +97,8 @@ L¦¦ Web-Frontend       # Katalog frontendu (strona WWW)
 ### Instalacja Node.js
 
 1. Pobierz Node.js z [oficjalnej strony](https://nodejs.org/).
-2. Wybierz opcjê **"Add to PATH"** podczas instalacji.
-3. Po instalacji sprawdŸ wersjê:
+2. Wybierz opcjÄ™ **"Add to PATH"** podczas instalacji.
+3. Po instalacji sprawdÅº wersjÄ™:
 
    ```sh
    node -v
@@ -106,23 +106,23 @@ L¦¦ Web-Frontend       # Katalog frontendu (strona WWW)
 
 ---
 
-## ?? Jak uruchomiæ projekt?
+## Jak uruchomiÄ‡ projekt?
 
-1. W g³ównym folderze uruchom **`start.bat`**.
-2. Skrypt sprawdzi wymagania i uruchomi stronê.
-3. Aby zakoñczyæ pracê, u¿yj **`stop.bat`**, który wy³¹czy serwer.
+1. W gÅ‚Ã³wnym folderze uruchom **`start.bat`**.
+2. Skrypt sprawdzi wymagania i uruchomi stronÄ™.
+3. Aby zakoÅ„czyÄ‡ pracÄ™, uÅ¼yj **`stop.bat`**, ktÃ³ry wyÅ‚Ä…czy serwer.
 
 ---
 
-## ?? Jak wprowadzaæ zmiany?
+## Jak wprowadzaÄ‡ zmiany?
 
-?? **Zawsze pracuj na nowej ga³êzi!**
+**Zawsze pracuj na nowej gaÅ‚Ä™zi!**
 
 ```sh
 git checkout -b twoja-nazwa-galezi
 ```
 
-1. WprowadŸ zmiany w kodzie.
+1. WprowadÅº zmiany w kodzie.
 2. Dodaj zmienione pliki:
 
    ```sh
@@ -135,7 +135,7 @@ git checkout -b twoja-nazwa-galezi
    git commit -m "Opis zmian"
    ```
 
-4. Wyœlij zmiany na GitHub:
+4. WyÅ›lij zmiany na GitHub:
 
    ```sh
    git push origin twoja-nazwa-galezi
@@ -143,44 +143,44 @@ git checkout -b twoja-nazwa-galezi
 
 ---
 
-## ?? Jak prosiæ o zatwierdzenie zmian?
+## Jak prosiÄ‡ o zatwierdzenie zmian?
 
-1. WejdŸ na GitHub › zak³adka **"Pull Requests"**.
+1. WejdÅº na GitHub â€º zakÅ‚adka **"Pull Requests"**.
 2. Kliknij **"New Pull Request"**.
 3. Wybierz:
    - `base`: `master`
    - `compare`: `twoja-nazwa-galezi`
 4. Kliknij **"Create Pull Request"** i opisz zmiany.
-5. Czekaj na recenzjê prowadz¹cego.
+5. Czekaj na recenzjÄ™ prowadzÄ…cego.
 
 ---
 
-## ?? Jak sprawdzaæ czyjeœ zmiany?
+## Jak sprawdzaÄ‡ czyjeÅ› zmiany?
 
-1. Otwórz **Pull Request** w zak³adce **"Pull Requests"**.
-2. Kliknij **"Files changed"**, aby zobaczyæ modyfikacje.
-3. Jeœli wszystko jest OK:
-   - **Review** › **Approve** › **Submit Review**
-4. Jeœli wymagane s¹ poprawki:
-   - **Review** › **Request Changes** › Opisz problem › **Submit Review**
+1. OtwÃ³rz **Pull Request** w zakÅ‚adce **"Pull Requests"**.
+2. Kliknij **"Files changed"**, aby zobaczyÄ‡ modyfikacje.
+3. JeÅ›li wszystko jest OK:
+   - **Review** â€º **Approve** â€º **Submit Review**
+4. JeÅ›li wymagane sÄ… poprawki:
+   - **Review** â€º **Request Changes** â€º Opisz problem â€º **Submit Review**
 
 ---
 
-## ?? U¿ywanie graficznych interfejsów (GUI)
+## UÅ¼ywanie graficznych interfejsÃ³w (GUI)
 
-Mo¿esz u¿yæ narzêdzi GUI:
+MoÅ¼esz uÅ¼yÄ‡ narzÄ™dzi GUI:
 - [Git Extensions](https://gitextensions.github.io/)
 - [GitHub Desktop](https://desktop.github.com/)
 - [Sourcetree](https://www.sourcetreeapp.com/)
 
 ---
 
-## ? Najczêstsze problemy
+## NajczÄ™stsze problemy
 
 **Permission denied przy `git push`**  
-? Musisz byæ dodany jako wspó³pracownik repozytorium.
+Musisz byÄ‡ dodany jako wspÃ³Å‚pracownik repozytorium.
 
-**Zapomnia³em stworzyæ now¹ ga³¹Ÿ**  
+**ZapomniaÅ‚em stworzyÄ‡ nowÄ… gaÅ‚Ä…Åº**  
 ```sh
 git checkout -b nowa-nazwa-galezi
 git add . && git commit -m "Naprawa"
@@ -188,7 +188,7 @@ git push origin nowa-nazwa-galezi
 ```
 
 **Konflikty przy mergowaniu**  
-? Rêcznie popraw pliki i wykonaj:
+RÄ™cznie popraw pliki i wykonaj:
 ```sh
 git add .
-git commit -m "Rozwi¹zano konflikty"
+git commit -m "RozwiÄ…zano konflikty"
