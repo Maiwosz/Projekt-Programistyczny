@@ -1,0 +1,206 @@
+/* 
+----------------------------------------------------------
+Global stuff 
+----------------------------------------------------------
+*/
+
+body {
+font-family: Arial, sans-serif;
+margin: 0 auto;
+padding: 20px;
+background-color: #f8f9fa;
+line-height: 1.6;
+}
+
+/* 
+----------------------------------------------------------
+Navigation bar stuff 
+----------------------------------------------------------
+*/
+
+.navbar {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	/* background: blue; */
+}
+
+.nav-center {
+	width: 90vw;
+	max-width: 960px;
+	/* background: red; */
+}
+
+.nav-header {
+	height: 6rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.nav-logo {
+	display: flex;
+	align-items: center;
+}
+
+.nav-header img {
+	width: 100px;
+}
+
+.nav-button {
+	padding: 0.15rem 0.75rem;
+}
+
+.nav-links {
+	display: flex;
+	flex-direction: column;
+	height: 0;
+	overflow: hidden;
+}
+
+.show-links {
+	height: 300px; /* hardcoded value - height of the .nav-links block, 
+					adjust this value when adding or removing new elements from navigation bar*/
+}
+
+.nav-link {
+	display: block;
+	text-align: center;
+	text-transform: capitalize;
+	color: #0f0000;
+	letter-spacing: 1px;
+	padding: 1rem 0;
+	border-top: 1px solid #0f0000;
+	/* transition: */
+}
+
+.nav-link:hover {
+	color: #0aaaaa;
+}
+
+/* do stuff below if browser screen bigger than 700px */
+@media screen and (min-width:700px) {
+	.nav-button {
+		display: none;
+	}
+	
+	.navbar {
+		height: 6rem;
+	}
+	
+	.nav-center {
+		display: flex;
+		align-items: center;
+	}
+	
+	.nav-header {
+		height; auto;
+		margin-right: 2px;
+	}
+	
+	.nav-links {
+		height: auto;
+		margin-left: 12rem;
+		flex-direction: row;
+		align-items: center;
+		width: 100%;
+	}
+	
+	.nav-link {
+		padding: 0;
+		border-top: none;
+		margin-left: auto;
+		font-size: 1rem;
+	}
+}
+
+/* 
+----------------------------------------------------------
+Main stuff - sort and gallery
+----------------------------------------------------------
+*/
+
+.content-main {
+	background: gray;
+	width: 90vw;
+	max-width: 960px;
+	margin: 0 auto;
+	padding-top: 1rem;
+	min-height: calc(100vw - 10rem);
+}
+
+.content-view {
+	display: grid;
+	gap: 2rem 1rem;
+	grid-template-columns: 100px 1fr;
+	/* border: 2px solid black; */
+}
+
+.sort-opt {
+	display: flex;
+	flex-direction: column;
+	padding-bottom: 2rem;
+	max-width: 960px;
+	margin-left: 1.5rem;
+	/* border: 2px solid green; */
+}
+
+.sort-opt h3 {
+	margin-bottom: 0.5rem;
+	font-weight: 600;
+}
+
+.sort-list {
+	display: grid;
+	grid-template-columns: 1fr;
+	/* border: 2px solid blue; */
+}
+
+.sort-list a {
+	text-transform: capitalize;
+	display: block;
+	color: #0f0000;
+}
+
+.sort-list a:hover {
+	color: #0aaaaa;
+}
+
+.gallery {
+	display: grid;
+	gap: 1rem 0.5rem;
+	padding-bottom: 1rem;
+	padding-top: 1rem;
+}
+
+.gallery-link {
+	display: block;
+}
+
+.gallery-img {
+	height: 12rem;
+	border-radius: 0.25rem;
+	margin-bottom: 1rem;
+}
+
+
+/* number of gallery columns depending on the screen width*/
+ /* if browser screen bigger than 800px  */
+@media screen and (min-width: 800px) {
+	.gallery {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+ /* if browser screen bigger than 1100px  */
+@media screen and (min-width: 1100px) {
+	.gallery {
+		grid-template-columns: 1fr 1fr 1fr;
+	}
+}
+
+
+
+
+
+
