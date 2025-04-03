@@ -94,7 +94,7 @@ Navigation bar stuff
 	}
 	
 	.nav-header {
-		height; auto;
+		height: auto;
 		margin-right: 2px;
 	}
 	
@@ -178,7 +178,7 @@ Main stuff - sort and gallery
 }
 
 .gallery-img {
-	height: 12rem;
+	height: 10rem;
 	border-radius: 0.25rem;
 	margin-bottom: 1rem;
 }
