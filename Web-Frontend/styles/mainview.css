@@ -156,13 +156,13 @@ Main stuff - sort and gallery
 	/* border: 2px solid blue; */
 }
 
-.sort-list a {
+.sort-list p {
 	text-transform: capitalize;
 	display: block;
 	color: #0f0000;
 }
 
-.sort-list a:hover {
+.sort-list p:hover {
 	color: #0aaaaa;
 }
 
