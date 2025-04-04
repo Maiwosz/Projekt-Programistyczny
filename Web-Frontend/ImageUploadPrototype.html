@@ -1,0 +1,50 @@
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Galeria</title>
+    <link rel="stylesheet" href="/styles/styles.css">
+    <script src="/scripts/auth.js"></script>
+    <script>
+	document.addEventListener('DOMContentLoaded', async () => {
+		const token = localStorage.getItem('token');
+		if (!token) return;
+
+		try {
+			const response = await fetch('/api/images', {
+				headers: { 'Authorization': `Bearer ${token}` }
+			});
+			
+			const images = await response.json();
+			const gallery = document.getElementById('galleryContainer');
+			
+			gallery.innerHTML = images.map(image => `
+				<div class="image-item">
+					<img src="${image.path}" alt="Zdjęcie użytkownika">
+					<p>${new Date(image.createdAt).toLocaleDateString()}</p>
+				</div>
+			`).join('');
+		} catch (error) {
+			console.error('Error:', error);
+			alert('Nie udało się załadować galerii');
+		}
+	});
+	</script>
+</head>
+<body>
+    <div class="logged-in">
+        <h1>Twoja Galeria</h1>
+        <nav>
+            <a href="/">Strona główna</a> | 
+            <button onclick="logout()">Wyloguj</button>
+        </nav>
+        
+        <!-- Tutaj zostanie wstawiona galeria -->
+        <div id="galleryContainer"></div>
+    </div>
+
+    <div class="logged-out">
+        <p>Musisz być zalogowany aby zobaczyć galerię</p>
+        <a href="/login.html">Zaloguj się</a>
+    </div>
+</body>
+</html>
