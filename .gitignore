@@ -1,6 +1,9 @@
 # Ignorowanie katalogu node_modules (instalowane zależności)
 node_modules/
 
+# Ignorowanie katalogu uploads ze zdjęciami
+uploads/
+
 # Ignorowanie logów i plików tymczasowych
 *.log
 npm-debug.log*
