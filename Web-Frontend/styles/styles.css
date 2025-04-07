@@ -8,10 +8,18 @@ background-color: #f8f9fa;
 line-height: 1.6;
 }
 
+.editBody {
+    max-width: 100%;
+}
+
 h1 {
 color: #2c3e50;
 text-align: center;
 margin-bottom: 30px;
+}
+
+.h1Edit {
+    margin-top: 0;
 }
 
 /* Style formularzy */
@@ -50,6 +58,16 @@ button:hover {
 background-color: #2980b9;
 }
 
+.buttonEditPage {
+    width: 200px
+}
+
+.buttonZmien {
+    padding: 5px;
+    width: 80px;
+    height: 26px;
+}
+
 /* Style linków */
 a {
 color: #3498db;
@@ -74,4 +92,54 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 #username {
 color: #e74c3c;
 font-weight: bold;
+}
+
+.editContainerButtons {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.editContainerButtons2 {
+    width: 135%;
+    display: flex;
+    justify-content: space-between;
+    margin: 70px;
+}
+
+.editContainerPackImage {
+    width: 450px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /*background-color: #e74c3c;*/
+}
+
+.editContainerPackDate {
+    width: 500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /*background-color: #e74c3c;*/
+}
+
+.editContainerData {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    margin-bottom: 10px;
+}
+
+.imgBorder {
+    width: 200px;
+    height: 200px;
+    margin-bottom: 40px;
+}
+
+.spanEdit {
+    width: 375px;
 }
