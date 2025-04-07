@@ -1,9 +1,21 @@
 @echo off
-REM start.bat - Uruchamia ca³e œrodowisko
+
 chcp 1250 >nul
 title Uruchamianie aplikacji
 color 0A
 
+:: SprawdŸ uprawnienia administratora
+NET SESSION >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo [UWAGA] Wymagane s¹ uprawnienia administratora!
+    echo Automatyczna próba ponownego uruchomienia z uprawnieniami...
+    
+    :: Uruchom ponownie z podniesionymi uprawnieniami via PowerShell
+    PowerShell -Command "Start-Process -Verb RunAs -FilePath '%~dpnx0'" 
+    exit /b
+)
+
+REM start.bat - Uruchamia ca³e œrodowisko
 setlocal enabledelayedexpansion
 
 REM 1. Lista mo¿liwych œcie¿ek instalacji MongoDB
@@ -46,7 +58,13 @@ if %found% == 0 (
     exit /b
 )
 
-REM 3. Weryfikacja dzia³ania MongoDB
+REM 3. Utwórz folder danych MongoDB jeœli nie istnieje
+if not exist "C:\data\db\" (
+    echo Tworzê folder C:\data\db...
+    mkdir "C:\data\db"
+)
+
+REM 4. Weryfikacja dzia³ania MongoDB
 echo Znaleziono MongoDB w: %MONGODB_PATH%
 tasklist /FI "IMAGENAME eq mongod.exe" | find /I /N "mongod.exe">nul
 if %errorlevel% equ 0 (
@@ -58,9 +76,10 @@ if %errorlevel% equ 0 (
     ) else (
         start "MongoDB" /MIN cmd /c "%MONGODB_PATH% --dbpath=C:\data\db"
     )
+    timeout /t 5 /nobreak >nul
 )
-timeout /t 5 /nobreak >nul
-REM 2. SprawdŸ czy Node.js jest zainstalowany
+
+REM 5. SprawdŸ czy Node.js jest zainstalowany
 where node >nul 2>&1
 if %errorlevel% neq 0 (
     echo [ERROR] Node.js nie jest zainstalowany!
@@ -69,29 +88,17 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-REM 3. Utwórz folder danych MongoDB jeœli nie istnieje
-if not exist "C:\data\db\" (
-    echo Tworzê folder C:\data\db...
-    mkdir "C:\data\db"
-)
-
-REM 4. Uruchom MongoDB w nowym oknie
-start "MongoDB" /MIN cmd /c "mongod --dbpath=C:\data\db"
-timeout /t 5 /nobreak >nul
-
-REM 5. PrzejdŸ do folderu backend i zainstaluj zale¿noœci
+REM 6. PrzejdŸ do folderu backend i zainstaluj zale¿noœci, jeœli s¹ niekompletne
 cd /d %~dp0Backend
-if not exist "node_modules\" (
-    echo Instalujê zale¿noœci Node.js...
-    npm install
-)
+echo Instalowanie zale¿noœci
+start /wait "Instalowanie zale¿noœci" cmd /c "npm install"
 
-REM 6. Uruchom serwer Node.js
+REM 7. Uruchom serwer Node.js
 echo Uruchamiam serwer aplikacji...
 start "Server Node.js" cmd /c "node server.js"
 timeout /t 2 /nobreak >nul
 
-REM 7. Otwórz przegl¹darkê
+REM 8. Otwórz przegl¹darkê
 start "" "http://localhost:3000"
 
 echo [SUKCES] Aplikacja powinna byæ dostêpna pod adresem http://localhost:3000
