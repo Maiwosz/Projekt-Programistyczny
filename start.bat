@@ -1,105 +1,172 @@
 @echo off
-
-chcp 1250 >nul
-title Uruchamianie aplikacji
-color 0A
+chcp 1250 > nul
+setlocal enabledelayedexpansion
+set "SCRIPT_NAME=%~nx0"
+set "SCRIPT_PATH=%~dp0"
+set "ERROR_FLAG=0"
 
 :: SprawdŸ uprawnienia administratora
-NET SESSION >nul 2>&1
-IF %ERRORLEVEL% NEQ 0 (
+fltmc >nul 2>&1 || (
     echo [UWAGA] Wymagane s¹ uprawnienia administratora!
-    echo Automatyczna próba ponownego uruchomienia z uprawnieniami...
+    echo Automatyczna próba ponownego uruchomienia z elevacj¹...
     
-    :: Uruchom ponownie z podniesionymi uprawnieniami via PowerShell
-    PowerShell -Command "Start-Process -Verb RunAs -FilePath '%~dpnx0'" 
+    PowerShell -Command "Start-Process -Verb RunAs -FilePath 'cmd' -ArgumentList '/c', 'cd', '/d', '%SCRIPT_PATH%', '&&', 'call', '%SCRIPT_NAME%'" || (
+        call :ERROR "Nie uda³o siê uruchomiæ z uprawnieniami administratora!"
+        exit /b 1
+    )
     exit /b
 )
 
-REM start.bat - Uruchamia ca³e œrodowisko
-setlocal enabledelayedexpansion
+:: =============================================
+:: G£ÓWNA LOGIKA SKRYPTU
+:: =============================================
 
-REM 1. Lista mo¿liwych œcie¿ek instalacji MongoDB
+echo -------------------------------
+echo Wyszukiwanie MongoDB w systemie...
+echo -------------------------------
+
 set "mongod_paths[0]=C:\Program Files\MongoDB\Server\8.0\bin\mongod.exe"
 set "mongod_paths[1]=C:\Program Files\MongoDB\Server\7.0\bin\mongod.exe"
 set "mongod_paths[2]=C:\Program Files\MongoDB\Server\6.0\bin\mongod.exe"
 set "mongod_paths[3]=C:\mongodb\bin\mongod.exe"
+set "found=0"
 
-REM 2. Szukaj MongoDB w œcie¿kach systemowych i alternatywnych
-set found=0
-echo Szukam MongoDB w systemie...
-
-REM Najpierw sprawdŸ œcie¿ki zdefiniowane rêcznie
 for /L %%i in (0,1,3) do (
     if exist "!mongod_paths[%%i]!" (
-        set "MONGODB_PATH=!mongod_paths[%%i]!"
-        set found=1
-        goto :mongod_found
+        set "mongo_path=!mongod_paths[%%i]!"
+        set "found=1"
+        goto :MONGO_FOUND
     )
 )
 
-REM Jeœli nie znaleziono - sprawdŸ w PATH
-where mongod >nul 2>&1
-if %errorlevel% == 0 (
-    set "MONGODB_PATH=mongod"
-    set found=1
+where mongod >nul 2>&1 && (
+    set "mongo_path=mongod"
+    set "found=1"
 )
 
-:mongod_found
+:MONGO_FOUND
 if %found% == 0 (
-    echo [ERROR] Nie znaleziono MongoDB!
-    echo Mo¿liwe przyczyny:
-    echo 1. MongoDB nie jest zainstalowane
-    echo 2. Œcie¿ka instalacji nie jest w PATH
-    echo 3. Wersja MongoDB jest inna ni¿ 6.0/7.0/8.0
-    echo.
+    call :ERROR "Nie znaleziono MongoDB!"
+    echo Zainstaluj MongoDB i spróbuj ponownie
     echo Pobierz instalator: https://www.mongodb.com/try/download/community
-    echo LUB zmieñ rêczne œcie¿ki w skrypcie start.bat
-    pause
-    exit /b
+    goto :END
 )
 
-REM 3. Utwórz folder danych MongoDB jeœli nie istnieje
+echo --------------------------------------
+echo Znaleziono MongoDB w: %mongo_path%
+echo --------------------------------------
+
 if not exist "C:\data\db\" (
     echo Tworzê folder C:\data\db...
-    mkdir "C:\data\db"
-)
-
-REM 4. Weryfikacja dzia³ania MongoDB
-echo Znaleziono MongoDB w: %MONGODB_PATH%
-tasklist /FI "IMAGENAME eq mongod.exe" | find /I /N "mongod.exe">nul
-if %errorlevel% equ 0 (
-    echo MongoDB jest ju¿ uruchomione
-) else (
-    echo Uruchamiam MongoDB...
-    if "%MONGODB_PATH%" == "mongod" (
-        start "MongoDB" /MIN cmd /c "mongod --dbpath=C:\data\db"
-    ) else (
-        start "MongoDB" /MIN cmd /c "%MONGODB_PATH% --dbpath=C:\data\db"
+    mkdir "C:\data\db" 2>nul || (
+        call :ERROR "Nie mo¿na utworzyæ folderu danych!"
+        echo SprawdŸ uprawnienia do dysku C:\
+        goto :END
     )
-    timeout /t 5 /nobreak >nul
 )
 
-REM 5. SprawdŸ czy Node.js jest zainstalowany
-where node >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Node.js nie jest zainstalowany!
+tasklist | find /i "mongod.exe" >nul
+if %errorlevel% == 0 (
+    echo MongoDB jest ju¿ uruchomione!
+    goto :START_NODE
+)
+
+echo Uruchamiam MongoDB...
+start "MongoDB" /MIN cmd /c ""%mongo_path%" --dbpath=C:\data\db" || (
+    call :ERROR "Nie uda³o siê uruchomiæ MongoDB!"
+    goto :END
+)
+
+echo Czekam na inicjalizacjê serwera (maksymalnie 15 sekund)...
+set "counter=0"
+:MONGO_STATUS_CHECK
+timeout /t 1 /nobreak >nul
+tasklist | find /i "mongod.exe" >nul
+if %errorlevel% == 0 (
+    echo Status MongoDB: URUCHOMIONE (potwierdzono po %counter% sekundach)
+    goto :START_NODE
+)
+set /a "counter+=1"
+if %counter% leq 15 (
+    echo Czekam na MongoDB... (%counter%/15)
+    goto :MONGO_STATUS_CHECK
+)
+
+call :ERROR "MongoDB nie uruchomi³o siê w ci¹gu 15 sekund!"
+echo SprawdŸ konfiguracjê MongoDB i porty sieciowe
+goto :END
+
+:START_NODE
+echo -------------------------------
+echo Weryfikacja Node.js...
+echo -------------------------------
+
+where node >nul 2>&1 || (
+    call :ERROR "Node.js nie jest zainstalowany!"
     echo Pobierz instalator: https://nodejs.org/
-    pause
-    exit /b
+    goto :END
 )
 
-REM 6. PrzejdŸ do folderu backend i zainstaluj zale¿noœci, jeœli s¹ niekompletne
-cd /d %~dp0Backend
-echo Instalowanie zale¿noœci
-start /wait "Instalowanie zale¿noœci" cmd /c "npm install"
+echo Znaleziono Node.js w systemie
+echo -------------------------------
 
-REM 7. Uruchom serwer Node.js
-echo Uruchamiam serwer aplikacji...
-start "Server Node.js" cmd /c "node server.js"
-timeout /t 2 /nobreak >nul
+echo Przechodzê do folderu Backend...
+cd /d "%SCRIPT_PATH%Backend" 2>nul || (
+    call :ERROR "Nie znaleziono folderu Backend!"
+    echo Utwórz folder Backend w lokalizacji: "%SCRIPT_PATH%"
+    goto :END
+)
 
-REM 8. Otwórz przegl¹darkê
-start "" "http://localhost:3000"
+echo Instalujê zale¿noœci npm...
+call npm install
+call :CHECK_ERROR "B³¹d podczas instalacji zale¿noœci npm!"
 
-echo [SUKCES] Aplikacja powinna byæ dostêpna pod adresem http://localhost:3000
+:: SprawdŸ, czy serwer jest ju¿ uruchomiony na porcie 3000
+
+
+echo Uruchamiam serwer Node.js...
+start "Serwer Node.js" cmd /k "node server.js" || (
+    call :ERROR "Nie uda³o siê uruchomiæ serwera Node.js!"
+    goto :END
+)
+
+echo Oczekiwanie na inicjalizacjê serwera...
+ping -n 6 127.0.0.1 >nul
+
+echo Sprawdzanie statusu serwera...
+tasklist | find /i "node.exe" >nul || (
+    call :ERROR "Serwer Node.js nie zosta³ uruchomiony!"
+    goto :END
+)
+
+echo Otwieram przegl¹darkê...
+start "" "http://localhost:3000" || (
+    echo [OSTRZE¯ENIE] Nie uda³o siê otworzyæ przegl¹darki
+    echo Mo¿esz rêcznie otworzyæ adres: http://localhost:3000
+)
+
+:END
+echo -------------------------------
+if %ERROR_FLAG% == 0 (
+    echo [SUKCES] Aplikacja powinna byæ dostêpna pod adresem http://localhost:3000
+) else (
+    echo [NIEPOWODZENIE] Wyst¹pi³y b³êdy podczas uruchamiania
+)
+echo -------------------------------
 pause
+exit /b %ERROR_FLAG%
+
+
+:: Funkcja do wyœwietlania komunikatów b³êdów
+:ERROR
+echo [B£¥D] %~1
+echo.
+set "ERROR_FLAG=1"
+goto :END
+
+:: Funkcja sprawdzaj¹ca kod b³êdu
+:CHECK_ERROR
+if %ERRORLEVEL% neq 0 (
+    call :ERROR "%~1"
+    exit /b %ERRORLEVEL%
+)
