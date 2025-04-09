@@ -7,8 +7,8 @@ Global stuff
 body {
 font-family: Arial, sans-serif;
 margin: 0 auto;
-padding: 20px;
-background-color: #f8f9fa;
+padding-top: 20px;
+background-color: #e1e2e3;
 line-height: 1.6;
 }
 
@@ -22,13 +22,13 @@ Navigation bar stuff
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	/* background: blue; */
+	background: #f8f9fa;
 }
 
 .nav-center {
 	width: 90vw;
-	max-width: 960px;
-	/* background: red; */
+	max-width: 1080px;
+	background: rgb(152, 152, 152);
 }
 
 .nav-header {
@@ -41,6 +41,7 @@ Navigation bar stuff
 .nav-logo {
 	display: flex;
 	align-items: center;
+	margin-left: 2.5rem;
 }
 
 .nav-header img {
@@ -49,6 +50,7 @@ Navigation bar stuff
 
 .nav-button {
 	padding: 0.15rem 0.75rem;
+	margin-right: 1rem;
 }
 
 .nav-links {
@@ -56,6 +58,7 @@ Navigation bar stuff
 	flex-direction: column;
 	height: 0;
 	overflow: hidden;
+	margin-right: 2rem;
 }
 
 .show-links {
@@ -71,7 +74,6 @@ Navigation bar stuff
 	letter-spacing: 1px;
 	padding: 1rem 0;
 	border-top: 1px solid #0f0000;
-	/* transition: */
 }
 
 .nav-link:hover {
@@ -123,7 +125,7 @@ Main stuff - sort and gallery
 .content-main {
 	background: gray;
 	width: 90vw;
-	max-width: 960px;
+	max-width: 1080px;
 	margin: 0 auto;
 	padding-top: 1rem;
 	min-height: calc(100vw - 10rem);
@@ -132,16 +134,17 @@ Main stuff - sort and gallery
 .content-view {
 	display: grid;
 	gap: 2rem 1rem;
-	grid-template-columns: 100px 1fr;
+	grid-template-columns: 160px 1fr;
 	/* border: 2px solid black; */
 }
 
 .sort-opt {
+	background: rgb(148, 148, 148);
+	align-items: center;
 	display: flex;
 	flex-direction: column;
 	padding-bottom: 2rem;
-	max-width: 960px;
-	margin-left: 1.5rem;
+	margin-left: 1rem;
 	/* border: 2px solid green; */
 }
 
@@ -151,8 +154,9 @@ Main stuff - sort and gallery
 }
 
 .sort-list {
-	display: grid;
-	grid-template-columns: 1fr;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 	/* border: 2px solid blue; */
 }
 
@@ -160,6 +164,9 @@ Main stuff - sort and gallery
 	text-transform: capitalize;
 	display: block;
 	color: #0f0000;
+	overflow-wrap: break-word;
+	word-break: normal;
+	max-width: 128px;
 }
 
 .sort-list p:hover {
@@ -170,7 +177,7 @@ Main stuff - sort and gallery
 	display: grid;
 	gap: 1rem 0.5rem;
 	padding-bottom: 1rem;
-	padding-top: 1rem;
+	grid-auto-rows: min-content;
 }
 
 .gallery-link {
@@ -179,7 +186,8 @@ Main stuff - sort and gallery
 
 .gallery-img {
 	height: 10rem;
-	border-radius: 0.25rem;
+	max-width: 15rem;
+	border-radius: 0.5rem;
 	margin-bottom: 1rem;
 }
 
@@ -193,7 +201,7 @@ Main stuff - sort and gallery
 }
 
  /* if browser screen bigger than 1100px  */
-@media screen and (min-width: 1100px) {
+@media screen and (min-width: 1080px) {
 	.gallery {
 		grid-template-columns: 1fr 1fr 1fr;
 	}
