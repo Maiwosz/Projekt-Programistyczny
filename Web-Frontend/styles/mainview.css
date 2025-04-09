@@ -4,13 +4,15 @@ Global stuff
 ----------------------------------------------------------
 */
 
+/*----------------------------------------------------------*/
 body {
-font-family: Arial, sans-serif;
-margin: 0 auto;
-padding-top: 20px;
-background-color: #e1e2e3;
-line-height: 1.6;
+	font-family: Arial, sans-serif;
+	margin: 0 auto;
+	padding-top: 20px;
+	background-color: #e1e2e3;
+	line-height: 1.6;
 }
+/*----------------------------------------------------------*/
 
 /* 
 ----------------------------------------------------------
@@ -18,6 +20,7 @@ Navigation bar stuff
 ----------------------------------------------------------
 */
 
+/*Style for entire navigation bar*/
 .navbar {
 	display: flex;
 	justify-content: center;
@@ -25,47 +28,65 @@ Navigation bar stuff
 	background: #f8f9fa;
 }
 
+/*Style for main part of navigation bar*/
 .nav-center {
 	width: 90vw;
 	max-width: 1080px;
 	background: rgb(152, 152, 152);
 }
 
+/*Style for part containing logo*/
 .nav-header {
-	height: 6rem;
+	height: 9rem;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 }
 
+/*Style for logo*/
 .nav-logo {
 	display: flex;
 	align-items: center;
-	margin-left: 2.5rem;
+	margin-left: 1.5rem;
 }
 
+/*Style for image in header (logo)*/
 .nav-header img {
-	width: 100px;
+	width: 128px;
 }
 
+/*Style for button that appears when screen below 700px*/
 .nav-button {
-	padding: 0.15rem 0.75rem;
-	margin-right: 1rem;
+	padding: 0.10rem 1rem;
+	margin-right: 1.5rem;
+	border-width: 5px;
+	border-color: #0f0000;
 }
 
+/*Style for text in the button*/
+.nav-button i {
+	font-size:x-large;
+}
+
+/*Layout for navigation bar elements ("Dodaj", "Profil", etc.)*/
 .nav-links {
 	display: flex;
 	flex-direction: column;
 	height: 0;
 	overflow: hidden;
 	margin-right: 2rem;
+    transition: 0.25s;
 }
 
+/*Style used for menu when screen below 700px*/
 .show-links {
 	height: 300px; /* hardcoded value - height of the .nav-links block, 
 					adjust this value when adding or removing new elements from navigation bar*/
+    transition: 0.25s;
 }
 
+/*Styles for text in navigation bar elements ("Dodaj", "Profil", etc.)*/
+/*----------------------------------------------------------*/
 .nav-link {
 	display: block;
 	text-align: center;
@@ -78,16 +99,16 @@ Navigation bar stuff
 
 .nav-link:hover {
 	color: #0aaaaa;
+    transition: 0.05s;
+	cursor: pointer;
 }
+/*----------------------------------------------------------*/
 
 /* do stuff below if browser screen bigger than 700px */
+/*----------------------------------------------------------*/
 @media screen and (min-width:700px) {
 	.nav-button {
 		display: none;
-	}
-	
-	.navbar {
-		height: 6rem;
 	}
 	
 	.nav-center {
@@ -96,8 +117,7 @@ Navigation bar stuff
 	}
 	
 	.nav-header {
-		height: auto;
-		margin-right: 2px;
+		height: 9rem;
 	}
 	
 	.nav-links {
@@ -106,6 +126,7 @@ Navigation bar stuff
 		flex-direction: row;
 		align-items: center;
 		width: 100%;
+		transition: 0.25s;
 	}
 	
 	.nav-link {
@@ -115,6 +136,7 @@ Navigation bar stuff
 		font-size: 1rem;
 	}
 }
+/*----------------------------------------------------------*/
 
 /* 
 ----------------------------------------------------------
@@ -122,12 +144,14 @@ Main stuff - sort and gallery
 ----------------------------------------------------------
 */
 
+/*Styles for section under navigation bar*/
+/*----------------------------------------------------------*/
 .content-main {
 	background: gray;
 	width: 90vw;
 	max-width: 1080px;
 	margin: 0 auto;
-	padding-top: 1rem;
+	padding-top: 3rem;
 	min-height: calc(100vw - 10rem);
 }
 
@@ -137,7 +161,10 @@ Main stuff - sort and gallery
 	grid-template-columns: 160px 1fr;
 	/* border: 2px solid black; */
 }
+/*----------------------------------------------------------*/
 
+/* Styles for divs on the left that contain sort options and folders */
+/*----------------------------------------------------------*/
 .sort-opt {
 	background: rgb(148, 148, 148);
 	align-items: center;
@@ -148,11 +175,13 @@ Main stuff - sort and gallery
 	/* border: 2px solid green; */
 }
 
+/*Style for headers ("Sort" and "Folders")*/
 .sort-opt h3 {
 	margin-bottom: 0.5rem;
 	font-weight: 600;
 }
 
+/*Styles for sort options and folders under headers*/
 .sort-list {
 	display: flex;
 	flex-direction: column;
@@ -160,6 +189,7 @@ Main stuff - sort and gallery
 	/* border: 2px solid blue; */
 }
 
+/*Style text for above*/
 .sort-list p {
 	text-transform: capitalize;
 	display: block;
@@ -171,8 +201,14 @@ Main stuff - sort and gallery
 
 .sort-list p:hover {
 	color: #0aaaaa;
+    transition: 0.05s;
+	cursor: pointer;
 }
+/*----------------------------------------------------------*/
 
+/*Styles for gallery and its images*/
+/*----------------------------------------------------------*/
+/* Layout of the gallery */
 .gallery {
 	display: grid;
 	gap: 1rem 0.5rem;
@@ -180,35 +216,115 @@ Main stuff - sort and gallery
 	grid-auto-rows: min-content;
 }
 
+/*Probably unnecessary*/
 .gallery-link {
 	display: block;
 }
 
+/* Image properties */
 .gallery-img {
 	height: 10rem;
-	max-width: 15rem;
+	width: 15rem;
 	border-radius: 0.5rem;
 	margin-bottom: 1rem;
+	margin-left: 1rem;
+    transition: 0.25s;
+    cursor: pointer;
 }
 
+.gallery-img:hover {
+    opacity: 0.6;
+}
 
 /* number of gallery columns depending on the screen width*/
  /* if browser screen bigger than 800px  */
 @media screen and (min-width: 800px) {
 	.gallery {
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: 1fr 1fr; /* Images in two columns */
 	}
 }
 
  /* if browser screen bigger than 1100px  */
 @media screen and (min-width: 1080px) {
 	.gallery {
-		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-columns: 1fr 1fr 1fr; /* Images in three columns */
 	}
 }
+/*----------------------------------------------------------*/
 
+/* 
+----------------------------------------------------------
+Image view stuff - zoom on chosen image
+----------------------------------------------------------
+*/
 
+/*Style for entire image view*/
+.image-view {
+    display: none; /* Hidden by default */
+    background-color: rgba(0,0,0,0.8); /* Black backround with opacity */
+    position: fixed;
+    z-index: 1; /* Put image on top */
+    padding-top: 1rem;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
 
+/* Style for image in image view */
+.image-zoom {
+    margin: auto;
+    display: block;
+    max-width: 1080px;
+    width: 80%;
+}
 
+/* Style for picture metadata (caption for now) */
+.name {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 1080px;
+    text-align: center;
+    color: #e1e2e3;
+    padding: 10px 0;
+    height: 200px;
+	font-size: x-large;
+}
+
+/* Close button */
+.close-button {
+    position: absolute;
+    top: 1rem;
+    right: 2rem;
+    color: #f8f9fa;
+    font-size: 64px;
+    transition: 0.25s;
+}
+  
+.close-button:hover, .close-button:focus {
+    color: gray;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+/* Animation for zoom */
+.image-zoom {
+    animation-name: zoomin;
+    animation-duration: 0.25s;
+}
+  
+@keyframes zoomin {
+    from {transform:scale(0)}
+    to {transform:scale(1)}
+}
+
+/* 100% image width for screen below 700px */
+@media only screen and (max-width: 700px){
+    .image-zoom {
+      width: 100%;
+    }
+}
 
 
