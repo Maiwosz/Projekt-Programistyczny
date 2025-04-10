@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prześlij Zdjęcie</title>
+    <link rel="stylesheet" href="/styles/styles.css">
+    <script src="/scripts/auth.js"></script>
+</head>
+<body>
+    <div class="logged-in" style="display: none;">
+        <div class="split left">
+            <div class="centered">
+                <h1>Wybrane Zdjęcia</h1>
+                <div class="preview-area"></div>
+            </div>
+          </div>
+          
+          <div class="split right">
+            <div class="centered">
+                <h2>Prześlij zdjęcie</h2>
+                <form id="uploadForm" enctype="multipart/form-data" action="/api/photos">
+                    <input type="file" onchange="previewInnit(this)" multiple>
+                    <button type="submit" id="submitButton">Zapisz</button>
+                </form>
+                
+                
+            <a href="/" style="display: block; margin-top: 20px;">Powrót</a>
+            <div class="fileInfo">
+                <form id="fileName">
+                    <input type="text">
+                    <button type="submit" id="fileDataSubmit">Zatwierdź zmiany</button>
+                </form>
+            </div>
+            </div>
+          </div>
+        
+    </div>
+    <div class="logged-out">
+        <p>Zaloguj się aby uzyskać dostęp</p>
+        <a href="/login.html">Zaloguj</a>
+    </div>
+    <script>
+        //TODO: placeholder dla plikow bez podgladu, edycja danych o zdjeciu, zapis nazwy pliku
+        let currentFiles = [];
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				
+				if (currentFiles.length === 0) {
+                    alert('Nie wybrano żadnych zdjęć!');
+                    return;
+                }
+
+                const formData = new FormData();
+                currentFiles.forEach(file => {
+                formData.append('photo', file); 
+                 });
+				try {
+					const response = await fetch('/api/photos', {
+						method: 'POST',
+						headers: { 'Authorization': `Bearer ${token}` },
+						body: formData
+					});
+					
+					if (response.ok) {
+                        clearPreview()
+					} else {
+						alert('Błąd przesyłania zdjęcia');
+					}
+				} catch (error) {
+					alert('Problem z połączeniem');
+				}
+			});
+
+        });
+        function previewInnit(elem) {
+            
+            currentFiles = Array.from(elem.files);
+            previewUpload()
+
+        }
+        function deleteSelectedImage(index,elem)
+        {
+            const fileInfo = document.querySelector('.file-info');
+            //narazie usuwa, powinno robic wiecej
+            currentFiles.splice(index,1)
+            previewUpload()
+
+        }
+        function previewUpload()
+        {
+            const previewArea = document.querySelector('.preview-area');
+            previewArea.innerHTML = ''; // Wyczyść poprzedni podgląd
+            
+            let images = "";
+            currentFiles.forEach((image, index) => {
+                const fileName = image.name
+                images += `<div class="image">
+                    <img src="${URL.createObjectURL(image)}" alt="image">
+                    <p class="filename">${fileName}</p>
+                    <span onclick="deleteSelectedImage(${index})">&times;</span>
+                  </div>`;
+             })
+            previewArea.innerHTML = images;
+        }
+        function clearPreview()
+        {
+            const previewArea = document.querySelector('.preview-area');
+            previewArea.innerHTML = '';
+            currentFiles.splice(0, currentFiles.length);
+            uploadForm.reset()
+        }
+    </script>
+</body>
+</html>

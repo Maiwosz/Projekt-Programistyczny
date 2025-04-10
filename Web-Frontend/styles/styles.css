@@ -14,6 +14,11 @@ text-align: center;
 margin-bottom: 30px;
 }
 
+h2 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+    }
 /* Style formularzy */
 form {
 background: white;
@@ -75,3 +80,73 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 color: #e74c3c;
 font-weight: bold;
 }
+
+.split {
+    height: 100%;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    overflow-x: hidden;
+    padding-top: 20px;
+  }
+  
+  .left {
+    left: 0;
+    width: 70%;
+    background-color: white;
+  }
+  
+  .right {
+    right: 0;
+    width: 30%;
+    background-color: white;
+  }
+
+  .preview-area{ 
+    gap: 10px;
+    display: grid;
+    align-items: center;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.preview-area img{
+    width: 100%;
+}
+.preview-area p {
+    white-space: nowrap; 
+    width: 100%; 
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    text-align: center;
+}
+.file-info{ 
+    text-align: center;
+    font-size: 14px;
+    
+
+}
+.image {
+    position: relative;
+    display: inline-block;
+    margin: 10px;
+    max-width: 100%; /* Szerokość dopasowana do kontenera */
+    max-height: 100%; /* Stała wysokość zdjęcia */
+    object-fit: contain; /* Obrazek wypełni kontener, zachowując proporcje */
+    border-radius: 5px; /* Zaokrąglenie rogów */
+   
+}
+
+
+.image span {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 50%;
+    font-size: 20px;
+    padding: 0 6px;
+    cursor: pointer;
+    z-index: 10;
+   
+}
+  
