@@ -10,19 +10,55 @@
         <h1>Galeria Zdjęć</h1>
         <form id="uploadForm" enctype="multipart/form-data" action="/api/photos">
             <input type="file" name="photo" accept="image/*" required>
+
+            <select id="folderSelect">
+                <option value="">-- Wybierz folder (opcjonalnie) --</option>
+            </select>
+
             <button type="submit">Prześlij</button>
         </form>
+
         <div id="gallery"></div>
         <a href="/">Powrót</a>
     </div>
+
     <div class="logged-out">
         <p>Zaloguj się aby uzyskać dostęp</p>
         <a href="/login.html">Zaloguj</a>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
-            if (!token) return;
+            const loggedIn = document.querySelector('.logged-in');
+            const loggedOut = document.querySelector('.logged-out');
+
+            if (!token) {
+                loggedOut.style.display = 'block';
+                return;
+            } else {
+                loggedIn.style.display = 'block';
+                loggedOut.style.display = 'none';
+            }
+
+            const folderSelect = document.getElementById('folderSelect');
+
+            const loadFolders = async () => {
+                try {
+                    const res = await fetch('/api/folders', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const folders = await res.json();
+                    folders.forEach(folder => {
+                        const option = document.createElement('option');
+                        option.value = folder._id;
+                        option.textContent = folder.name;
+                        folderSelect.appendChild(option);
+                    });
+                } catch (err) {
+                    console.error('Błąd ładowania folderów:', err);
+                }
+            };
 
             const loadGallery = async () => {
                 try {
@@ -31,38 +67,57 @@
                     });
                     const photos = await response.json();
                     document.getElementById('gallery').innerHTML = photos.map(photo => `
-						<div class="photo">
-							<img src="/uploads/${photo.path}" alt="User photo" style="max-width: 300px;">
-							<p>${new Date(photo.createdAt).toLocaleDateString()}</p>
-						</div>
-					`).join('');
+                        <div class="photo">
+                            <img src="/uploads/${photo.path}" alt="User photo" style="max-width: 300px;">
+                            <p>${new Date(photo.createdAt).toLocaleDateString()}</p>
+                        </div>
+                    `).join('');
                 } catch (error) {
                     console.error('Błąd ładowania galerii:', error);
                 }
             };
 
             document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-				e.preventDefault();
-				e.stopImmediatePropagation();
-				
-				const formData = new FormData(e.target);
-				try {
-					const response = await fetch('/api/photos', {
-						method: 'POST',
-						headers: { 'Authorization': `Bearer ${token}` },
-						body: formData
-					});
-					
-					if (response.ok) {
-						await loadGallery();
-					} else {
-						alert('Błąd przesyłania zdjęcia');
-					}
-				} catch (error) {
-					alert('Problem z połączeniem');
-				}
-			});
+                e.preventDefault();
+                e.stopImmediatePropagation();
 
+                const formData = new FormData(e.target);
+                try {
+                    const response = await fetch('/api/photos', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        const photo = await response.json();
+                        const selectedFolderId = folderSelect.value;
+
+                        if (selectedFolderId) {
+                            // Add photo to the selected folder
+                            await fetch('/api/folders/add-photo', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    folderId: selectedFolderId,
+                                    photoId: photo._id
+                                })
+                            });
+                        }
+
+                        await loadGallery();
+                    } else {
+                        alert('Błąd przesyłania zdjęcia');
+                    }
+                } catch (error) {
+                    alert('Problem z połączeniem');
+                }
+            });
+
+            await loadFolders();
             await loadGallery();
         });
     </script>

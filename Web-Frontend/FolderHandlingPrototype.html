@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Foldery</title>
+    <link rel="stylesheet" href="/styles/styles.css"> <!-- External CSS -->
+</head>
+
+<body>
+    <div class="logged-in" style="display: block;">
+        <h1>Twoje Foldery</h1>
+
+        <!-- Folder Creation Form -->
+        <form id="createForm">
+            <input type="text" id="newFolderName" placeholder="Nowy folder" required>
+            <button type="submit">Utwórz folder</button>
+        </form>
+
+        <!-- Folder List -->
+        <div id="folderList" class="folder-list"></div>
+
+        <a href="/">Powrót</a>
+    </div>
+
+    <div class="logged-out" style="display: none;">
+        <p>Zaloguj się aby uzyskać dostęp</p>
+        <a href="/login.html">Zaloguj</a>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const API = '/api/folders';
+
+        const loadFolders = async () => {
+            const res = await fetch(API, { headers: { Authorization: `Bearer ${token}` } });
+            const folders = await res.json();
+            const container = document.getElementById('folderList');
+            container.innerHTML = '';
+
+            folders.forEach(folder => {
+                const div = document.createElement('div');
+                div.className = 'folder-item';
+
+                const renameInput = document.createElement('input');
+                renameInput.value = folder.name;
+
+                const renameBtn = document.createElement('button');
+                renameBtn.textContent = 'Zmień nazwę';
+                renameBtn.classList.add('folder-btn');
+                renameBtn.onclick = async () => {
+                    const folderId = folder._id;  // Get the folder ID
+                    const newName = renameInput.value.trim();  // Get the new folder name
+
+                    try {
+                        const res = await fetch(`/api/folders/${folderId}`, {  // PUT request to the correct endpoint
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ newName })  // Send new folder name in the request body
+                        });
+
+                        if (res.ok) {
+                            loadFolders();  // Reload the folders after renaming
+                        } else {
+                            alert('Błąd zmiany nazwy folderu');
+                        }
+                    } catch (err) {
+                        console.error('Error renaming folder:', err);
+                        alert('Błąd zmiany nazwy folderu');
+                    }
+                };
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Usuń';
+                deleteBtn.classList.add('folder-btn');
+                deleteBtn.onclick = async () => {
+                    await fetch(`${API}/${folder._id}`, {
+                        method: 'DELETE',
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    loadFolders();
+                };
+
+                div.append(renameInput, renameBtn, deleteBtn);
+                container.appendChild(div);
+            });
+        };
+
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('newFolderName').value.trim();
+            if (!name) return;
+
+            await fetch(API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ name })
+            });
+
+            document.getElementById('newFolderName').value = '';
+            loadFolders();
+        });
+
+        loadFolders();
+    </script>
+</body>
+
+</html>

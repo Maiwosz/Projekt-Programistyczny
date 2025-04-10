@@ -21,6 +21,8 @@ app.use((req, res, next) => {
 // Routy
 app.use('/api', require('./routes/authRoutes'));
 app.use('/api/photos', require('./routes/photoUploadRoutes'));
+app.use('/api/folders', require('./routes/folderRoutes'));
+
 
 // Obsługa plików statycznych
 app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
