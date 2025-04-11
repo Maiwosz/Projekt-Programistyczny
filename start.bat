@@ -153,7 +153,7 @@ if %ERROR_FLAG% == 0 (
     echo [NIEPOWODZENIE] Wyst¹pi³y b³êdy podczas uruchamiania
 )
 echo -------------------------------
-pause
+timeout /t 5 /nobreak >nul
 exit /b %ERROR_FLAG%
 
 

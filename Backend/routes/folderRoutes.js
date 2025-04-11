@@ -6,18 +6,16 @@ const {
     getFolders,
     renameFolder,
     deleteFolder,
-    addPhotoToFolder,
-    removePhotoFromFolder
+    getFolderContents
 } = require('../controllers/folderController');
 
 router.use(authMiddleware);
 
-router.post('/', authMiddleware, createFolder);
-router.get('/', authMiddleware, getFolders);
-router.put('/:id', authMiddleware, renameFolder);
-router.delete('/:id', authMiddleware, deleteFolder);
-
-router.post('/add-photo', addPhotoToFolder);
-router.post('/remove-photo', removePhotoFromFolder);
+router.post('/', createFolder);
+router.get('/', getFolders);
+router.put('/:id', renameFolder);
+router.delete('/:id', deleteFolder);
+router.get('/:id/contents', getFolderContents);
+router.get('/contents', getFolderContents);
 
 module.exports = router;
