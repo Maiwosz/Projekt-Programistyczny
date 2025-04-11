@@ -1,0 +1,84 @@
+<!-- login.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Main view</title>
+	<link rel="stylesheet" href="./styles/mainview.css">
+</head>
+<body>
+	<!-- navigation bar -->
+    <nav class="navbar">
+		<div class="nav-center">
+			<!-- header -->
+			<div class="nav-header">
+				<p href="index.html" class="nav-logo">
+					<img src="./assets/logo.png" alt="navigation bar logo">
+				</p>
+				<button type="button" class="nav-button"> 
+					<i> &#8801 </i>
+				</button>
+			</div>
+			<!-- links -->
+			<div class="nav-links">
+				<p class="nav-link">
+					dodaj
+				</p>
+				<p class="nav-link">
+					profil
+				</p>
+				<p class="nav-link">
+					wyloguj
+				</p>
+			</div>
+		</div>
+	</nav>
+	<!-- end of navigation bar -->
+	<!-- main -->
+	<main class="content-main"> 
+		<section class="content-view">
+			<!--sort options-->
+			<div class="sort-opt">
+				<h3>Sort</h3>
+				<div class="sort-list">
+					<p class="sort-link"> data </p>
+					<p class="sort-link"> nazwa </p>
+					<p class="sort-link"> inne </p>
+				</div>
+				<br>
+				<h3>Folders</h3>
+				<div class="sort-list">
+					<p class="sort-link"> Folder 1 </p>
+					<p class="sort-link"> Folder 2 </p>
+					<p class="sort-link"> Folder 3 </p>
+				</div>
+			</div>
+			<!--end of sort options-->
+			<!--gallery-->
+			<div class="gallery">
+				<img src="./assets/gallery/beach.jpg" alt="example image" class="gallery-img">
+				<img src="./assets/gallery/purple-flower.jpg" alt="example image" class="gallery-img">
+				<img src="./assets/gallery/pier.jpg" alt="example image" class="gallery-img">
+				<img src="./assets/logo.png" alt="example image" class="gallery-img">
+				<img src="./assets/gallery/railroad.jpg" alt="example image" class="gallery-img">
+				<img src="./assets/gallery/grass.jpg" alt="example image" class="gallery-img">
+				<img src="./assets/gallery/field.jpg" alt="example image" class="gallery-img">
+				<img src="./assets/gallery/mountain-2.jpg" alt="example image" class="gallery-img">	
+				<img src="./assets/gallery/mountain.jpg" alt="example image" class="gallery-img">
+				<img src="./assets/gallery/road.jpg" alt="example image" class="gallery-img">
+			</div>
+			<!--end of gallery-->
+		</section>
+		<!--Image View-->
+		<div id="image-view-id" class="image-view">
+			<span class="close-button">&times;</span>
+			<img id="image-zoom-id" class="image-zoom">
+			<div id="name-id" class="name"></div>
+		</div>
+		<!--End of Image View-->
+	</main>
+	<!-- end of main -->
+	
+    <!-- java script here -->
+	<script	src="./scripts/mainview.js"> </script>
+</body>
+</html>
