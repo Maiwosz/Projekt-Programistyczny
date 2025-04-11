@@ -9,9 +9,43 @@ body {
 	font-family: Arial, sans-serif;
 	margin: 0 auto;
 	padding-top: 20px;
-	background-color: #e1e2e3;
+	background-color: #f8f9fa;
 	line-height: 1.6;
 }
+
+h3 {
+	color: #2c3e50;
+	text-align: center;
+	margin-bottom: 30px;
+}
+
+button {
+	/*padding: 12px;*/
+	background-color: #3498db;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	height: 32px;
+	/*font-size: 16px;*/
+	transition: background-color 0.25s;
+}
+
+button:hover {
+	background-color: #2980b9;
+}
+
+a {
+	color: #3498db;
+	text-decoration: none;
+	display: inline-block;
+	margin-top: 15px;
+}
+	
+a:hover {
+	text-decoration: underline;
+}
+
 /*----------------------------------------------------------*/
 
 /* 
@@ -25,14 +59,14 @@ Navigation bar stuff
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	background: #f8f9fa;
+	background: #e1e2e3;
 }
 
 /*Style for main part of navigation bar*/
 .nav-center {
 	width: 90vw;
 	max-width: 1080px;
-	background: rgb(152, 152, 152);
+	/* background: rgb(152, 152, 152); */
 }
 
 /*Style for part containing logo*/
@@ -55,12 +89,13 @@ Navigation bar stuff
 	width: 128px;
 }
 
-/*Style for button that appears when screen below 700px*/
+/*Style for button that appears when screen below 800px*/
 .nav-button {
 	padding: 0.10rem 1rem;
 	margin-right: 1.5rem;
-	border-width: 5px;
-	border-color: #0f0000;
+	width: 10rem;
+	/*border-width: 5px;
+	border-color: #0f0000;*/
 }
 
 /*Style for text in the button*/
@@ -78,9 +113,9 @@ Navigation bar stuff
     transition: 0.25s;
 }
 
-/*Style used for menu when screen below 700px*/
+/*Style used for menu when screen below 800px*/
 .show-links {
-	height: 300px; /* hardcoded value - height of the .nav-links block, 
+	height: 160px; /* hardcoded value - height of the .nav-links block, 
 					adjust this value when adding or removing new elements from navigation bar*/
     transition: 0.25s;
 }
@@ -91,22 +126,23 @@ Navigation bar stuff
 	display: block;
 	text-align: center;
 	text-transform: capitalize;
-	color: #0f0000;
+	/* color: #0f0000; */
 	letter-spacing: 1px;
-	padding: 1rem 0;
-	border-top: 1px solid #0f0000;
+	/* padding: 1rem 0; */
+	margin-bottom: 1rem;
+	/* border-top: 1px solid black; */
 }
-
+/* 
 .nav-link:hover {
 	color: #0aaaaa;
     transition: 0.05s;
 	cursor: pointer;
-}
+} */
 /*----------------------------------------------------------*/
 
-/* do stuff below if browser screen bigger than 700px */
+/* do stuff below if browser screen bigger than 800px */
 /*----------------------------------------------------------*/
-@media screen and (min-width:700px) {
+@media screen and (min-width:800px) {
 	.nav-button {
 		display: none;
 	}
@@ -122,7 +158,7 @@ Navigation bar stuff
 	
 	.nav-links {
 		height: auto;
-		margin-left: 12rem;
+		margin-left: rem;
 		flex-direction: row;
 		align-items: center;
 		width: 100%;
@@ -130,10 +166,12 @@ Navigation bar stuff
 	}
 	
 	.nav-link {
-		padding: 0;
-		border-top: none;
+		padding: 0.10rem 1rem;
+		/* border-top: none; */
 		margin-left: auto;
-		font-size: 1rem;
+		/* font-size: 1rem; */
+		width: 128px;
+		margin-top: 1rem;
 	}
 }
 /*----------------------------------------------------------*/
@@ -147,7 +185,7 @@ Main stuff - sort and gallery
 /*Styles for section under navigation bar*/
 /*----------------------------------------------------------*/
 .content-main {
-	background: gray;
+	/* background: gray; */
 	width: 90vw;
 	max-width: 1080px;
 	margin: 0 auto;
@@ -166,7 +204,7 @@ Main stuff - sort and gallery
 /* Styles for divs on the left that contain sort options and folders */
 /*----------------------------------------------------------*/
 .sort-opt {
-	background: rgb(148, 148, 148);
+	background: #e1e2e3;
 	align-items: center;
 	display: flex;
 	flex-direction: column;
@@ -203,6 +241,16 @@ Main stuff - sort and gallery
 	color: #0aaaaa;
     transition: 0.05s;
 	cursor: pointer;
+}
+
+.sort-list button {
+	text-transform: capitalize;
+	display: block;
+	overflow-wrap: break-word;
+	word-break: normal;
+	width: 128px;
+	/* max-width: 128px; */
+	margin-bottom: 1rem;
 }
 /*----------------------------------------------------------*/
 
@@ -320,7 +368,7 @@ Image view stuff - zoom on chosen image
     to {transform:scale(1)}
 }
 
-/* 100% image width for screen below 700px */
+/* 100% image width for screen below 800px */
 @media only screen and (max-width: 700px){
     .image-zoom {
       width: 100%;
