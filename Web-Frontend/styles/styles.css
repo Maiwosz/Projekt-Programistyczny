@@ -118,11 +118,17 @@ font-weight: bold;
     text-overflow: ellipsis; 
     text-align: center;
 }
-.file-info{ 
+.edit-area{ 
     text-align: center;
     font-size: 14px;
-    
-
+}
+.edit-area .dropdown-menu{
+    display: flex;
+    width: 250px; 
+    border: 2px solid #58a8fe; 
+    padding: 10px; background: #fff; 
+    z-index: 1000;
+    align-items: center;
 }
 .image {
     position: relative;
@@ -136,17 +142,23 @@ font-weight: bold;
 }
 
 
-.image span {
+.image .remove {
     position: absolute;
     top: 5px;
     right: 10px;
     background-color: rgba(0, 0, 0, 0.5);
     color: white;
-    border-radius: 50%;
-    font-size: 20px;
-    padding: 0 6px;
+    border-radius: 50%; /* Zapewnia okrągły kształt */
+    width: 30px; /* Stała szerokość */
+    height: 30px; /* Stała wysokość */
+    font-size: 18px; /* Dostosuj rozmiar ikony */
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Centruje tekst (x) w środku */
     cursor: pointer;
     z-index: 10;
-   
 }
-  
+.image.selected {
+    border: 3px solid #007bff;
+}
+

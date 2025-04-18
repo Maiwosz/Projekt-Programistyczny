@@ -24,11 +24,8 @@
                 
                 
             <a href="/" style="display: block; margin-top: 20px;">Powrót</a>
-            <div class="fileInfo">
-                <form id="fileName">
-                    <input type="text">
-                    <button type="submit" id="fileDataSubmit">Zatwierdź zmiany</button>
-                </form>
+            <div class="edit-area">
+                
             </div>
             </div>
           </div>
@@ -41,6 +38,7 @@
     <script>
         //TODO: placeholder dla plikow bez podgladu, edycja danych o zdjeciu, zapis nazwy pliku
         let currentFiles = [];
+        let selectedElements = 0;
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
             if (!token) return;
@@ -54,10 +52,11 @@
                     return;
                 }
 
-                const formData = new FormData();
-                currentFiles.forEach(file => {
-                formData.append('photo', file); 
-                 });
+                
+                for(const file of currentFiles)
+                {
+                    const formData = new FormData();
+                    formData.append("photo",file);
 				try {
 					const response = await fetch('/api/photos', {
 						method: 'POST',
@@ -66,15 +65,17 @@
 					});
 					
 					if (response.ok) {
-                        clearPreview()
+                        
 					} else {
 						alert('Błąd przesyłania zdjęcia');
 					}
 				} catch (error) {
 					alert('Problem z połączeniem');
 				}
+            }
+                clearPreview()
 			});
-
+            clearPreview()
         });
         function previewInnit(elem) {
             
@@ -82,10 +83,14 @@
             previewUpload()
 
         }
-        function deleteSelectedImage(index,elem)
+        function deleteSelectedImage(index,event)
         {
-            const fileInfo = document.querySelector('.file-info');
-            //narazie usuwa, powinno robic wiecej
+            event.stopImmediatePropagation()
+            if(currentFiles[index].classList.contains('selected'))
+            {
+                currentFiles[index].classList.remove('selected')
+                selectedElements -= 1;
+            }
             currentFiles.splice(index,1)
             previewUpload()
 
@@ -99,20 +104,118 @@
             currentFiles.forEach((image, index) => {
                 const fileName = image.name
                 images += `<div class="image">
-                    <img src="${URL.createObjectURL(image)}" alt="image">
-                    <p class="filename">${fileName}</p>
-                    <span onclick="deleteSelectedImage(${index})">&times;</span>
+                    <img src="${URL.createObjectURL(image)}" alt="image" onclick="showEditArea(${index},this)">
+                    <p class="dicsplayfilename">${fileName}</p>
+                    <span class="remove" onclick="deleteSelectedImage(${index},event)">&times;</span>
                   </div>`;
              })
             previewArea.innerHTML = images;
         }
-        function clearPreview()
+        function clearPreview()//resetuje uploadForm po uploadzie
         {
             const previewArea = document.querySelector('.preview-area');
             previewArea.innerHTML = '';
             currentFiles.splice(0, currentFiles.length);
-            uploadForm.reset()
+            selectedElements = 0;
+            uploadForm.reset();
         }
+        function showEditArea(index,element)
+        {
+            const editArea = document.querySelector('.edit-area');
+            const container = element.closest('.image');
+            let selectedFile = element
+            let selectedIndex = index
+            if(container.classList.contains('selected'))
+            {
+                container.classList.remove('selected');
+                selectedElements -= 1;
+                if(selectedElements==1)
+                {
+                    const onlySelectedElement = document.querySelector('.image.selected');
+                    selectedIndex = Array.from(document.querySelectorAll('.image')).indexOf(onlySelectedElement);
+                    selectedFile = currentFiles[selectedIndex];                             
+                }
+                if(selectedElements==0)
+                editArea.innerHTML='';
+            }
+            else{
+            container.classList.add('selected');
+            selectedElements+=1;
+            
+            if(selectedElements>1)
+            {
+                editArea.innerHTML = `<form id="fileData">
+                    <label for="folders">Wybierz folder docelowy z listy</label>
+                    <div class="dropdown">
+                    <button type="button" onclick="toggleDropdown()">Wybierz foldery ▼</button>
+                    <div class="dropdown-menu" id="dropdown-content">
+                        <label><input type="checkbox" name="folders" value="folder1"> Folder1</label><br>
+                        <label><input type="checkbox" name="folders" value="folder2"> Folder2</label><br>
+                        <label><input type="checkbox" name="folders" value="folder3"> Folder3</label><br>
+                        <label><input type="checkbox" name="folders" value="folder4"> Folder4</label>
+                    </div>
+                    </div>
+                    <label for="tags">Wpisz tagi, nowy tag oddzielaj przecinkiem</label>
+                    <input type="text" id="tags">
+                    <button type="submit" id="fileDataSubmit">Zatwierdź zmiany</button>
+                </form>`;
+            }
+           
+        }
+        if(selectedElements==1){
+            let name = currentFiles[selectedIndex].name;
+            editArea.innerHTML = `<form id="fileData">
+                    <label for="userFileName">Wpisz nazwę pliku</label>
+                    <input type="text" id="userFileName" value="${name}">
+                    <div class="dropdown">
+                    <button type="button" onclick="toggleDropdown()">Wybierz foldery ▼</button>
+                    <div class="dropdown-menu" id="dropdown-content">
+                        <label><input type="checkbox" name="folders" value="folder1"> Folder1</label><br>
+                        <label><input type="checkbox" name="folders" value="folder2"> Folder2</label><br>
+                        <label><input type="checkbox" name="folders" value="folder3"> Folder3</label><br>
+                        <label><input type="checkbox" name="folders" value="folder4"> Folder4</label>
+                    </div>
+                    </div>
+                    <label for="tags">Wpisz tagi, nowy tag oddzielaj przecinkiem</label>
+                    <input type="text" id="tags">
+                    <button type="submit" id="fileDataSubmit" onclick="saveNameChange(${selectedIndex}); return false;">Zatwierdź zmiany</button>
+                </form>`;
+                //foldery to placeholder, zostanie zmienione gdy zostanie zintegrowany front do dodawania folderow
+            }
+           
+        }
+        function clearSelection()
+        {
+            document.querySelectorAll('.image').forEach(el => el.classList.remove('selected'));
+            selectedElements=0;
+        
+        }
+        function toggleDropdown() {
+            const dropdown = document.getElementById("dropdown-content");
+            dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+        }
+
+        document.addEventListener("click", function (e) {
+            const button = document.querySelector(".dropdown button");
+            const dropdown = document.getElementById("dropdown-content");
+            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = "none";
+            }
+        });
+
+        document.getElementById("fileData").addEventListener("submit", function (e) {e.preventDefault()});
+        function saveNameChange(index)
+        {
+            const newName = document.getElementById("userFileName").value
+            const originalFile = currentFiles[index];
+            const newFile = new File([originalFile], newName, {
+            type: originalFile.type,
+            lastModified: originalFile.lastModified
+            });
+            currentFiles[index] = newFile;
+            previewUpload()
+        }
+
     </script>
 </body>
 </html>
