@@ -42,7 +42,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const token = localStorage.getItem('token');
             if (!token) return;
-
+            clearPreview();
             document.getElementById('uploadForm').addEventListener('submit', async (e) => {
 				e.preventDefault();
 				e.stopImmediatePropagation();
@@ -75,7 +75,6 @@
             }
                 clearPreview()
 			});
-            clearPreview()
         });
         function previewInnit(elem) {
             
@@ -85,14 +84,19 @@
         }
         function deleteSelectedImage(index,event)
         {
-            event.stopImmediatePropagation()
-            if(currentFiles[index].classList.contains('selected'))
-            {
-                currentFiles[index].classList.remove('selected')
-                selectedElements -= 1;
-            }
-            currentFiles.splice(index,1)
-            previewUpload()
+            event.stopImmediatePropagation();
+    
+            const imageElements = document.querySelectorAll('.image');
+            const imageElement = imageElements[index];
+
+            clearSelection()
+
+            currentFiles.splice(index, 1);
+            const input = document.querySelector('input[type="file"]');
+            const dataTransfer = new DataTransfer();
+            currentFiles.forEach(file => dataTransfer.items.add(file));
+            input.files = dataTransfer.files;
+            previewUpload();
 
         }
         function previewUpload()
@@ -105,19 +109,21 @@
                 const fileName = image.name
                 images += `<div class="image">
                     <img src="${URL.createObjectURL(image)}" alt="image" onclick="showEditArea(${index},this)">
-                    <p class="dicsplayfilename">${fileName}</p>
+                    <p class="displayfilename">${fileName}</p>
                     <span class="remove" onclick="deleteSelectedImage(${index},event)">&times;</span>
                   </div>`;
              })
             previewArea.innerHTML = images;
+            const editArea = document.querySelector('.edit-area');
+            if(selectedElements==0)
+                editArea.innerHTML='';
         }
-        function clearPreview()//resetuje uploadForm po uploadzie
+        function clearPreview()
         {
-            const previewArea = document.querySelector('.preview-area');
-            previewArea.innerHTML = '';
             currentFiles.splice(0, currentFiles.length);
             selectedElements = 0;
             uploadForm.reset();
+            previewUpload();
         }
         function showEditArea(index,element)
         {
@@ -213,7 +219,10 @@
             lastModified: originalFile.lastModified
             });
             currentFiles[index] = newFile;
-            previewUpload()
+            const imageElements = document.querySelectorAll(".image");
+            const thisImage = imageElements[index];
+            const nameParagraph = thisImage.querySelector(".displayfilename");
+            nameParagraph.textContent = newName;
         }
 
     </script>
