@@ -20,8 +20,8 @@
 			</div>
 			<!-- links -->
 			<div class="nav-links">
-				<button class="nav-link">
-					dodaj
+				<button onclick="location.href='./UploadPage.html'" class="nav-link"> 
+					dodaj	<!-- connected UploadPage here -->
 				</button>
 				<button class="nav-link">
 					profil
@@ -72,7 +72,11 @@
 		<div id="image-view-id" class="image-view">
 			<span class="close-button">&times;</span>
 			<img id="image-zoom-id" class="image-zoom">
-			<div id="name-id" class="name"></div>
+			<button class="button, mtbut"> &#8681 View File Data &#8681 </button>
+			<div class="metadata">
+				<div id="name-id"></div>
+				<div id="data-id"></div>
+			</div>
 		</div>
 		<!--End of Image View-->
 	</main>

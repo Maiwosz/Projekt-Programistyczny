@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prześlij Zdjęcie</title>
+    <link rel="stylesheet" href="/styles/styles.css">
+    <script src="/scripts/auth.js"></script>
+</head>
+<body>
+    <div class="logged-in" style="display: none;">
+        <div class="split left">
+            <div class="centered">
+                <h1>Wybrane Zdjęcia</h1>
+                <div class="preview-area"></div>
+            </div>
+          </div>
+          
+          <div class="split right">
+            <div class="centered">
+                <h2>Prześlij zdjęcie</h2>
+                <form id="uploadForm" enctype="multipart/form-data" action="/api/photos">
+                    <input type="file" onchange="previewInnit(this)" multiple>
+                    <button type="submit" id="submitButton">Zapisz</button>
+                </form>
+                
+                
+            <a href="/" style="display: block; margin-top: 20px;">Powrót</a>
+            <div class="edit-area">
+                
+            </div>
+            </div>
+          </div>
+        
+    </div>
+    <div class="logged-out">
+        <p>Zaloguj się aby uzyskać dostęp</p>
+        <a href="/login.html">Zaloguj</a>
+    </div>
+    <script>
+        //TODO: placeholder dla plikow bez podgladu, edycja danych o zdjeciu, zapis nazwy pliku
+        let currentFiles = [];
+        let selectedElements = 0;
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				
+				if (currentFiles.length === 0) {
+                    alert('Nie wybrano żadnych zdjęć!');
+                    return;
+                }
+
+                
+                for(const file of currentFiles)
+                {
+                    const formData = new FormData();
+                    formData.append("photo",file);
+				try {
+					const response = await fetch('/api/photos', {
+						method: 'POST',
+						headers: { 'Authorization': `Bearer ${token}` },
+						body: formData
+					});
+					
+					if (response.ok) {
+                        
+					} else {
+						alert('Błąd przesyłania zdjęcia');
+					}
+				} catch (error) {
+					alert('Problem z połączeniem');
+				}
+            }
+                clearPreview()
+			});
+            clearPreview()
+        });
+        function previewInnit(elem) {
+            
+            currentFiles = Array.from(elem.files);
+            previewUpload()
+
+        }
+        function deleteSelectedImage(index,event)
+        {
+            event.stopImmediatePropagation()
+            if(currentFiles[index].classList.contains('selected'))
+            {
+                currentFiles[index].classList.remove('selected')
+                selectedElements -= 1;
+            }
+            currentFiles.splice(index,1)
+            previewUpload()
+
+        }
+        function previewUpload()
+        {
+            const previewArea = document.querySelector('.preview-area');
+            previewArea.innerHTML = ''; // Wyczyść poprzedni podgląd
+            
+            let images = "";
+            currentFiles.forEach((image, index) => {
+                const fileName = image.name
+                images += `<div class="image">
+                    <img src="${URL.createObjectURL(image)}" alt="image" onclick="showEditArea(${index},this)">
+                    <p class="dicsplayfilename">${fileName}</p>
+                    <span class="remove" onclick="deleteSelectedImage(${index},event)">&times;</span>
+                  </div>`;
+             })
+            previewArea.innerHTML = images;
+        }
+        function clearPreview()//resetuje uploadForm po uploadzie
+        {
+            const previewArea = document.querySelector('.preview-area');
+            previewArea.innerHTML = '';
+            currentFiles.splice(0, currentFiles.length);
+            selectedElements = 0;
+            uploadForm.reset();
+        }
+        function showEditArea(index,element)
+        {
+            const editArea = document.querySelector('.edit-area');
+            const container = element.closest('.image');
+            let selectedFile = element
+            let selectedIndex = index
+            if(container.classList.contains('selected'))
+            {
+                container.classList.remove('selected');
+                selectedElements -= 1;
+                if(selectedElements==1)
+                {
+                    const onlySelectedElement = document.querySelector('.image.selected');
+                    selectedIndex = Array.from(document.querySelectorAll('.image')).indexOf(onlySelectedElement);
+                    selectedFile = currentFiles[selectedIndex];                             
+                }
+                if(selectedElements==0)
+                editArea.innerHTML='';
+            }
+            else{
+            container.classList.add('selected');
+            selectedElements+=1;
+            
+            if(selectedElements>1)
+            {
+                editArea.innerHTML = `<form id="fileData">
+                    <label for="folders">Wybierz folder docelowy z listy</label>
+                    <div class="dropdown">
+                    <button type="button" onclick="toggleDropdown()">Wybierz foldery ▼</button>
+                    <div class="dropdown-menu" id="dropdown-content">
+                        <label><input type="checkbox" name="folders" value="folder1"> Folder1</label><br>
+                        <label><input type="checkbox" name="folders" value="folder2"> Folder2</label><br>
+                        <label><input type="checkbox" name="folders" value="folder3"> Folder3</label><br>
+                        <label><input type="checkbox" name="folders" value="folder4"> Folder4</label>
+                    </div>
+                    </div>
+                    <label for="tags">Wpisz tagi, nowy tag oddzielaj przecinkiem</label>
+                    <input type="text" id="tags">
+                    <button type="submit" id="fileDataSubmit">Zatwierdź zmiany</button>
+                </form>`;
+            }
+           
+        }
+        if(selectedElements==1){
+            let name = currentFiles[selectedIndex].name;
+            editArea.innerHTML = `<form id="fileData">
+                    <label for="userFileName">Wpisz nazwę pliku</label>
+                    <input type="text" id="userFileName" value="${name}">
+                    <div class="dropdown">
+                    <button type="button" onclick="toggleDropdown()">Wybierz foldery ▼</button>
+                    <div class="dropdown-menu" id="dropdown-content">
+                        <label><input type="checkbox" name="folders" value="folder1"> Folder1</label><br>
+                        <label><input type="checkbox" name="folders" value="folder2"> Folder2</label><br>
+                        <label><input type="checkbox" name="folders" value="folder3"> Folder3</label><br>
+                        <label><input type="checkbox" name="folders" value="folder4"> Folder4</label>
+                    </div>
+                    </div>
+                    <label for="tags">Wpisz tagi, nowy tag oddzielaj przecinkiem</label>
+                    <input type="text" id="tags">
+                    <button type="submit" id="fileDataSubmit" onclick="saveNameChange(${selectedIndex}); return false;">Zatwierdź zmiany</button>
+                </form>`;
+                //foldery to placeholder, zostanie zmienione gdy zostanie zintegrowany front do dodawania folderow
+            }
+           
+        }
+        function clearSelection()
+        {
+            document.querySelectorAll('.image').forEach(el => el.classList.remove('selected'));
+            selectedElements=0;
+        
+        }
+        function toggleDropdown() {
+            const dropdown = document.getElementById("dropdown-content");
+            dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+        }
+
+        document.addEventListener("click", function (e) {
+            const button = document.querySelector(".dropdown button");
+            const dropdown = document.getElementById("dropdown-content");
+            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = "none";
+            }
+        });
+
+        document.getElementById("fileData").addEventListener("submit", function (e) {e.preventDefault()});
+        function saveNameChange(index)
+        {
+            const newName = document.getElementById("userFileName").value
+            const originalFile = currentFiles[index];
+            const newFile = new File([originalFile], newName, {
+            type: originalFile.type,
+            lastModified: originalFile.lastModified
+            });
+            currentFiles[index] = newFile;
+            previewUpload()
+        }
+
+    </script>
+</body>
+</html>

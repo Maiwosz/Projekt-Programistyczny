@@ -20,6 +20,20 @@ navButton.addEventListener("click", ()=> {
 })
 // -----------------------------------------------------
 
+// Functionalitiy for a button that shows file metadata
+// -----------------------------------------------------
+// Get the metadata section 
+const mtData = getElement(".metadata");
+// Get the button from class 
+const mtButton = getElement(".mtbut");
+
+// Add function to the navigation bar button
+mtButton.addEventListener("click", ()=> {
+	mtData.classList.toggle("show-metadata");
+})
+// -----------------------------------------------------
+
+
 // Stuff for image view
 // -----------------------------------------------------
 // Get the image view element
@@ -34,6 +48,7 @@ var imgFromView = document.getElementById("image-zoom-id");
 
 // Get the text element under image
 var imgText = document.getElementById("name-id");
+var imgData = document.getElementById("data-id");
 
 // Add function below to all images
 // i = 1 to exclude logo
@@ -41,7 +56,8 @@ for(var i = 1; i < images.length; i++) {
 	images[i].onclick = function(){
 		imgView.style.display = "block";
 		imgFromView.src = this.src;
-		imgText.innerHTML = this.alt;
+		imgText.innerHTML = "File name.";
+		imgData.innerHTML = "File data.";
 	}
 }
 
@@ -52,6 +68,7 @@ var span = document.getElementsByClassName("close-button")[0];
 span.onclick = function() {
 	imgView.style.display = "none";
 }
+
 // -----------------------------------------------------
 
 

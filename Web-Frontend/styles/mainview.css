@@ -115,7 +115,7 @@ Navigation bar stuff
 
 /*Style used for menu when screen below 800px*/
 .show-links {
-	height: 160px; /* hardcoded value - height of the .nav-links block, 
+	height: 160px; /* hardcoded value that might need change - height of the .nav-links block, 
 					adjust this value when adding or removing new elements from navigation bar*/
     transition: 0.25s;
 }
@@ -329,16 +329,32 @@ Image view stuff - zoom on chosen image
 }
 
 /* Style for picture metadata (caption for now) */
-.name {
+.metadata {
     margin: auto;
-    display: block;
+    display: grid;
+	grid-template-columns: 1fr 1fr;
     width: 80%;
     max-width: 1080px;
-    text-align: center;
-    color: #e1e2e3;
-    padding: 10px 0;
-    height: 200px;
+    height: 0;
+	font-size: 0;
+}
+
+.show-metadata {
+	height: 300px; /* hardcoded value that might need change - height of the .text under image view*/
+    text-align: left;
+    color: #0f0000;
+	background: #f8f9fa;
 	font-size: x-large;
+	border: 10px solid #3498db;
+    padding: 10px 0;
+    transition: 0.25s;
+}
+
+#name-id, #data-id {
+	margin-left: 10px;
+	margin-right: 10px;
+	text-indent: 1rem;
+	border: 3px solid black;
 }
 
 /* Close button */
@@ -361,6 +377,14 @@ Image view stuff - zoom on chosen image
 .image-zoom {
     animation-name: zoomin;
     animation-duration: 0.25s;
+}
+
+.mtbut {
+	margin-left: 20%;
+	width: 60%;
+	margin-bottom: 2rem;
+	margin-top: 2rem;
+	font-size: x-large;
 }
   
 @keyframes zoomin {
