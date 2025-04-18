@@ -20,17 +20,27 @@ app.use((req, res, next) => {
 
 // Routy
 app.use('/api', require('./routes/authRoutes'));
-app.use('/api/photos', require('./routes/photoUploadRoutes'));
+app.use('/api/files', require('./routes/fileRoutes'));
+app.use('/api/folders', require('./routes/folderRoutes'));
+
 
 // Obsługa plików statycznych
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+const uploadsPath = path.resolve(process.env.UPLOADS_DIR);
+app.use('/uploads', express.static(uploadsPath));
 
 // Serwowanie frontendu
 const frontendPath = path.join(__dirname, '../Web-Frontend');
 app.use(express.static(frontendPath));
+
+app.get('/prototype', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'prototype/fileManagementPrototype.html'));
+});
+
 app.get('*', (req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
 });
+
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serwer działa na porcie ${PORT}`));
