@@ -20,57 +20,12 @@ navButton.addEventListener("click", ()=> {
 })
 // -----------------------------------------------------
 
-// Functionalitiy for a button that shows file metadata
-// -----------------------------------------------------
-// Get the metadata section 
-const mtData = getElement(".metadata");
-// Get the button from class 
-const mtButton = getElement(".mtbut");
-
-// Add function to the navigation bar button
-mtButton.addEventListener("click", ()=> {
-	mtData.classList.toggle("show-metadata");
-})
-// -----------------------------------------------------
 
 
-// Stuff for image view
-// -----------------------------------------------------
-// Get the image view element
-var imgView = document.getElementById("image-view-id");
-
-// Get all images present on the mainview page
-// This probably needs to be changed later
-var images = document.getElementsByTagName('img'); 
-
-// Get the image (full display image) from image view element
-var imgFromView = document.getElementById("image-zoom-id");
-
-// Get the text element under image
-var imgText = document.getElementById("name-id");
-var imgData = document.getElementById("data-id");
-
-// Add function below to all images
-// i = 1 to exclude logo
-for(var i = 1; i < images.length; i++) {
-	images[i].onclick = function(){
-		imgView.style.display = "block";
-		imgFromView.src = this.src;
-		imgText.innerHTML = "File name.";
-		imgData.innerHTML = "File data.";
-	}
-}
-
-// Get "button" that closes image view
-var span = document.getElementsByClassName("close-button")[0];
-
-// Add function that will allow to close image
-span.onclick = function() {
-	imgView.style.display = "none";
-}
 
 // -----------------------------------------------------
-
+// Stuff copied from prototype
+// -----------------------------------------------------
 
 // ========== KONFIGURACJA GŁÓWNA ==========
 let currentFolder = { id: null, name: 'Główny' }; // Obiekt przechowujący aktualny folder
@@ -264,6 +219,82 @@ function navigateToIndex(index) {
 
 // ========== OPERACJE NA PLIKACH ==========
 
+function triggerFileInput(multiple) {
+    // Utwórz dynamiczny input plikowy
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = multiple; // Konfiguruj wielokrotny wybór
+    input.style.display = 'none';
+
+    // Obsłuż zmianę wybranych plików
+    input.addEventListener('change', (e) => {
+        if (multiple) {
+            handleMultipleFiles(e.target.files);
+        } else {
+            handleSingleFile(e.target.files);
+        }
+        document.body.removeChild(input); // Posprzątaj po sobie
+    });
+
+    // Symuluj kliknięcie inputu
+    document.body.appendChild(input);
+    input.click();
+}
+
+async function handleSingleFile(files) {
+    if (!files.length) return;
+
+    // Przygotuj dane formularza
+    const formData = new FormData();
+    formData.append('file', files[0]); // Dodaj pierwszy plik
+    formData.append('folder', currentFolder.id); // Dodaj ID folderu
+
+    try {
+        // Wyślij plik na serwer
+        await fetch('/api/files', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
+        loadFolderContents(); // Odśwież widok
+    } catch (error) {
+        console.error('Błąd przesyłania:', error);
+        alert('Nie udało się przesłać pliku');
+    }
+}
+
+async function handleMultipleFiles(files) {
+    if (!files.length) return;
+
+    const formData = new FormData();
+    // Dodaj wszystkie pliki do formularza
+    Array.from(files).forEach(file => formData.append('files', file));
+    formData.append('folder', currentFolder.id);
+
+    try {
+        const response = await fetch('/api/files/multiple', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
+
+        // Obsłuż błędy zwracane przez API
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Błąd przesyłania');
+        }
+
+        loadFolderContents();
+    } catch (error) {
+        console.error('Błąd przesyłania:', error);
+        alert(`Błąd: ${error.message}`);
+    }
+}
+
 async function deleteFile(fileId) {
     if (!confirm('Usunąć ten plik?')) return;
 
@@ -280,6 +311,89 @@ async function deleteFile(fileId) {
         console.error('Błąd usuwania:', error);
         alert('Nie udało się usunąć pliku');
     }
+}
+
+// ========== OPERACJE NA FOLDERACH ==========
+async function createFolder() {
+    // Pobierz i waliduj nazwę folderu z formularza
+    const name = document.getElementById('folderName').value.trim();
+    if (!name) return alert('Podaj nazwę folderu');
+
+    try {
+        // Wyślij żądanie tworzenia folderu do API
+        await fetch('/api/folders', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                name,
+                parent: currentFolder.id  // Określ folder nadrzędny
+            })
+        });
+        // Zamknij modal i odśwież widok
+        closeFolderModal();
+        loadFolderContents();
+        saveState(); // Aktualizuj zapisany stan
+    } catch (error) {
+        console.error('Błąd tworzenia:', error);
+        alert('Nie udało się utworzyć folderu');
+    }
+}
+
+async function renameFolder(folderId) {
+    // Pobierz nową nazwę od użytkownika
+    const newName = prompt('Nowa nazwa folderu:');
+    if (!newName) return;
+
+    try {
+        // Wyślij żądanie zmiany nazwy do API
+        await fetch(`/api/folders/${folderId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ newName })
+        });
+        loadFolderContents(); // Odśwież listę folderów
+    } catch (error) {
+        console.error('Błąd zmiany nazwy:', error);
+        alert('Nie udało się zmienić nazwy');
+    }
+}
+
+async function deleteFolder(folderId) {
+    // Potwierdź nieodwracalną operację usuwania
+    if (!confirm('Usunąć folder i całą jego zawartość?')) return;
+
+    try {
+        // Wyślij żądanie usunięcia z parametrem force
+        await fetch(`/api/folders/${folderId}?force=true`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        loadFolderContents(); // Odśwież widok
+    } catch (error) {
+        console.error('Błąd usuwania:', error);
+        alert('Nie udało się usunąć folderu');
+    }
+}
+
+// ========== OBSŁUGA MODALU ==========
+function showCreateFolderModal() {
+    // Pokaż modal i ustaw focus na polu nazwy
+    document.getElementById('folderModal').style.display = 'block';
+    document.getElementById('folderName').focus();
+}
+
+function closeFolderModal() {
+    // Ukryj modal i wyczyść formularz
+    document.getElementById('folderModal').style.display = 'none';
+    document.getElementById('folderName').value = '';
 }
 
 async function showFileDetails(fileId) {
@@ -302,7 +416,7 @@ async function showFileDetails(fileId) {
 
 function renderFileModal(file) {
     const modal = document.getElementById('fileModal');
-    const preview = document.getElementById('filePreviewLarge');
+    const preview = document.getElementById('filePreviewLarge'); //'filePreviewLarge'
     // Określ typ pliku dla odpowiedniego podglądu
     const isImage = file.category === 'image';
     const isVideo = file.category === 'video';
@@ -402,4 +516,3 @@ function closeFileModal() {
     document.getElementById('fileModal').style.display = 'none';
     currentFileId = null;
 }
-
