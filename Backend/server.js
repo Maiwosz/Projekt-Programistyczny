@@ -22,6 +22,7 @@ app.use((req, res, next) => {
 app.use('/api', require('./routes/authRoutes'));
 app.use('/api/files', require('./routes/fileRoutes'));
 app.use('/api/folders', require('./routes/folderRoutes'));
+app.use('/api/user', require('./routes/userRoutes'));
 
 
 // Obsługa plików statycznych
@@ -44,11 +45,3 @@ app.get('*', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serwer działa na porcie ${PORT}`));
-
-/*server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error("Port ${PORT} jest już zajęty.");
-    } else {
-      console.error("Błąd serwera:", err);
-    }
-  });*/
