@@ -3,8 +3,8 @@ const bcrypt = require('bcryptjs');
 
 exports.getCurrentUserEmail = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId).select('-email');
-        res.json(user);
+        const user = await User.findById(req.user.userId).select('email');
+        res.json({email: user.email});
     } catch (error) {
         res.status(500).json({ error: 'Blad serwera' });
     }
@@ -12,8 +12,8 @@ exports.getCurrentUserEmail = async (req, res) => {
 
 exports.getCurrentUserLogin = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId).select('-username');
-        res.json(user);
+        const user = await User.findById(req.user.userId).select('username');
+        res.json({login: user.username });
     } catch (error) {
         res.status(500).json({ error: 'Blad serwera' });
     }
@@ -21,7 +21,7 @@ exports.getCurrentUserLogin = async (req, res) => {
 
 exports.getCurrentUserProfilePicture = async (req, res) => {
     try {
-        const fileId = await User.findById(req.user.userId).select('-profilePictureId');
+        const fileId = await User.findById(req.user.userId).select('profilePictureId');
         const file = await File.findById(fileId);
         res.json(file);
     } catch (error) {
