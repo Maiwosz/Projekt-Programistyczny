@@ -92,12 +92,13 @@ async function loadFolderContents() {
     }
 }
 
-function renderItems(data) {
+function renderItems(data) {    //<---
     let html = '';
+    let html_dirs = '';
 
     // Generuj HTML dla folderów
     data.subfolders.forEach(folder => {
-        html += `
+        html_dirs += ` 
         <div class="item-card">
             <div class="item-actions">
                 <!-- Przyciski akcji z funkcjami obsługi zdarzeń -->
@@ -140,6 +141,7 @@ function renderItems(data) {
 
     // Aktualizuj zawartość strony lub pokaż komunikat o pustym folderze
     document.getElementById('itemsList').innerHTML = html || '<p class="empty-info">Brak zawartości w tym folderze</p>';
+    document.getElementById('dirsList').innerHTML = html_dirs || '<p class="empty-info">Brak folderów w tym folderze</p>';
 }
 
 function enterFolder(folderId, folderName) {
@@ -399,7 +401,7 @@ function renderFileModal(file) {
 
     // Generuj odpowiedni podgląd pliku
     if (isImage) {
-        preview.innerHTML = `<img src="/uploads/${file.path}" alt="${file.originalName}">`;
+        preview.innerHTML = `<img src="/uploads/${file.path}" alt="${file.originalName}" onclick="view_image('/uploads/${file.path}')">`;
     } else if (isVideo) {
         preview.innerHTML = `
             <video controls>
@@ -487,3 +489,29 @@ function closeFileModal() {
     document.getElementById('fileModal').style.display = 'none';
     currentFileId = null;
 }
+
+
+// ========== Podgląd obrazka ==========
+
+// -----------------------------------------------------
+
+// Get modal for image view
+var imgView = document.getElementById("image-view-id");
+
+// Get destination for image from preview
+var imgFromView = document.getElementById("image-zoom-id");
+
+// Zoom in on the image from preview
+function view_image(image_preview_src) {
+    imgView.style.display = "block";
+    imgFromView.src = image_preview_src;
+}
+
+// Close image view modal
+function close_img_view() {
+	imgView.style.display = "none";
+}
+
+// -----------------------------------------------------
+
+
