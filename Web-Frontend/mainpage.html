@@ -4,12 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prototyp Zarządzania Plikami</title>
-	<link rel="stylesheet" href="styles.css">
-    <script src="script.js"></script>
+	<link rel="stylesheet" href="./styles/mainpage.css">
 </head>
 <body>
     <div class="container">
         <!-- Główny nagłówek z przyciskami akcji -->
+        <div class="header">
+            <h1>Witaj, 'nazwa użytkownika'!</h1>
+            <div class="upload-section">
+                <button >Edytuj profil</button>
+                <button >Wyloguj</button>
+            </div>
+        </div>
         <div class="header">
             <h1>Zarządzanie plikami</h1>
             <div class="upload-section">
@@ -18,14 +24,23 @@
                 <button onclick="showCreateFolderModal()">Nowy folder</button>
             </div>
         </div>
+        <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px;">
+            <div class="breadcrumbs"> Folder: </div>
+            <div class="breadcrumbs" id="breadcrumbs">
+                
+            </div>
+        </div>
 
         <!-- Główna sekcja z zawartością -->
         <div class="section">
-            <div class="breadcrumbs" id="breadcrumbs"></div>
+            <div class="items-list" id="dirsList">
+                <!-- Tutaj będą dynamicznie wczytywane foldery -->
+            </div>
             <div class="items-list" id="itemsList">
-                <!-- Tutaj będą dynamicznie wczytywane pliki i foldery -->
+                <!-- Tutaj będą dynamicznie wczytywane pliki -->
             </div>
         </div>
+
     </div>
 
     <!-- Modal do tworzenia folderu -->
@@ -67,5 +82,13 @@
 			</div>
 		</div>
 	</div>
+
+        <!-- Podgląd obrazka -->
+		<div id="image-view-id" class="image-view">
+			<span class="close-button" onclick="close_img_view()">&times;</span>
+			<img id="image-zoom-id" class="image-zoom">
+		</div>
+    <script src="./scripts/mainpage.js"></script>
+
 </body>
 </html>

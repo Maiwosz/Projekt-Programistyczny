@@ -1,0 +1,298 @@
+/* ========== OGÓLNE STYLE ========== */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f0f2f5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* ========== SEKCJE STRONY ========== */
+.section {
+    display: grid;
+    grid-template-columns: 200px 1fr; /*<---*/
+    gap: 15px;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ========== NAGŁÓWEK ========== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.header h1 {
+    padding-bottom: 20px;
+}
+
+/* ========== PRZYCISKI I FORMULARZE ========== */
+button, .button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    white-space: nowrap;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.upload-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.upload-section button {
+    position: relative;
+    overflow: hidden;
+}
+
+.hidden-file-input {
+    position: absolute;
+    left: -9999px;
+    opacity: 0;
+}
+
+/* ========== LISTA PLIKÓW I FOLDERÓW ========== */
+.items-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.item-card {
+    border: 1px solid #d0d0d0;
+    padding: 15px;
+    border-radius: 6px;
+    position: relative;
+    transition: transform 0.2s;
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.item-actions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    gap: 5px;
+}
+
+#dirsList {
+    /* border: 4px solid #eeeeee; */
+    border-radius: 6px;
+    background-color: #fafafa;
+}
+
+/* ========== BREADCRUMBS ========== */
+.breadcrumbs {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.breadcrumb-item {
+    cursor: pointer;
+    color: #007bff;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.breadcrumb-item:hover {
+    background: #e9ecef;
+}
+
+/* ========== PREVIEW PLIKÓW ========== */
+.thumbnail {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    cursor: pointer;
+}
+
+.file-preview {
+    width: 100%;
+    height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.file-icon {
+    width: 48px;
+    height: 48px;
+    color: #6c757d;
+}
+
+.file-name {
+    word-break: break-word;
+    font-size: 0.9em;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* ========== MODAL ========== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+    min-width: 300px;
+}
+
+.modal input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* ========== MODAL FILE ========== */
+#fileModal.modal {
+    max-width: 90%;
+    width: 800px;
+}
+
+.metadata-field {
+    margin-bottom: 10px;
+}
+
+.metadata-field label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.metadata-field input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+#filePreviewLarge {
+    transition: 0.25s;
+}
+
+#filePreviewLarge:hover {
+    transition: 0.25s;
+    opacity: 0.7;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
+#filePreviewLarge img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+
+#filePreviewLarge video {
+    max-width: 100%;
+    max-height: 400px;
+}
+
+
+.empty-info {
+    margin-left: 10px;
+}
+
+
+
+/* ============= Image view ============= */
+.image-view {
+    display: none; /* Hidden by default */
+    background-color: rgba(0,0,0,0.8); /* Black backround with opacity */
+    position: fixed;
+    z-index: 1100; /* Put image on top */
+    padding-top: 1rem;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    z-index: 1111;
+}
+
+.image-zoom {
+    margin: auto;
+    display: block;
+    max-width: 1080px;
+    width: 80%;
+}
+
+/* Close button */
+.close-button {
+    position: absolute;
+    top: 1rem;
+    right: 2rem;
+    color: #f8f9fa;
+    font-size: 64px;
+    transition: 0.25s;
+}
+
+.close-button:hover, .close-button:focus {
+    color: gray;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+/* Animation for zoom */
+.image-zoom {
+    animation-name: zoomin;
+    animation-duration: 0.25s;
+}
+
+@keyframes zoomin {
+    from {transform:scale(0)}
+    to {transform:scale(1)}
+}
+
+/* 100% image width for screen below 800px */
+@media only screen and (max-width: 700px){
+    .image-zoom {
+    width: 100%;
+    }
+}
+
+
+
