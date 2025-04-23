@@ -3,21 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prototyp Zarządzania Plikami</title>
+    <title>Strona główna</title>
 	<link rel="stylesheet" href="./styles/mainpage.css">
 </head>
 <body>
+    <div class="logged-in">
     <div class="container">
         <!-- Główny nagłówek z przyciskami akcji -->
         <div class="header">
-            <h1>Witaj, 'nazwa użytkownika'!</h1>
+            <h1>Witaj, <span id="username"></span>!</h1>
             <div class="upload-section">
                 <button >Edytuj profil</button>
-                <button >Wyloguj</button>
+                <button onclick="logout()">Wyloguj</button>
             </div>
         </div>
+        <div id="layout">
+        <div id="sidebar">
+            <div class="sidebar-header">
+                <span style="margin-right:20px;">📁 Foldery</span>
+                <button onclick="showCreateFolderModal()">Nowy folder</button>
+            </div>
+            <div id="folderTree"></div>
+          </div>
+        <div class="main-content">
         <div class="header">
-            <h1>Zarządzanie plikami</h1>
+            <h2>Twoje pliki</h2>
             <div class="upload-section">
                 <button onclick="triggerFileInput(false)">Dodaj plik</button>
                 <button onclick="triggerFileInput(true)">Dodaj wiele</button>
@@ -40,7 +50,8 @@
                 <!-- Tutaj będą dynamicznie wczytywane pliki -->
             </div>
         </div>
-
+    </div>
+</div>
     </div>
 
     <!-- Modal do tworzenia folderu -->
@@ -88,7 +99,15 @@
 			<span class="close-button" onclick="close_img_view()">&times;</span>
 			<img id="image-zoom-id" class="image-zoom">
 		</div>
+    </div>
+        <div class="logged-out">
+            <h1>Witaj gościu!</h1>
+            <!-- Linki do logowania i rejestracji -->
+            <a href="/login.html">Zaloguj się</a> | 
+            <a href="/register.html">Zarejestruj</a>
+        </div>
     <script src="./scripts/mainpage.js"></script>
+    <script src="./scripts/auth.js"></script>
 
 </body>
 </html>

@@ -13,6 +13,11 @@ color: #2c3e50;
 text-align: center;
 margin-bottom: 30px;
 }
+h2 {
+color: #2c3e50;
+text-align: center;
+margin-bottom: 10px;
+}
 
 /* Style formularzy */
 form {
@@ -75,3 +80,4 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 color: #e74c3c;
 font-weight: bold;
 }
+

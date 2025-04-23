@@ -78,7 +78,11 @@ document.addEventListener('submit', async (e) => {
                 if (e.target.id === 'loginForm') {
                     const { token } = await response.json();
                     localStorage.setItem('token', token);
-                    window.location.href = '/';
+                    window.location.href = '/mainpage.html';
+                    const usernameElement = document.getElementById('username');
+                if (usernameElement) {
+                    usernameElement.textContent = userData.username;
+                }
                 } else {
                     window.location.reload();
                 }

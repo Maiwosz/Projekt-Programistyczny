@@ -10,6 +10,11 @@ body {
     margin: 0 auto;
 }
 
+#layout {
+    display: flex;
+    height: 100%;
+  }
+
 /* ========== SEKCJE STRONY ========== */
 .section {
     display: grid;
@@ -21,6 +26,11 @@ body {
     margin-bottom: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+.main-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+  }
 
 /* ========== NAGŁÓWEK ========== */
 .header {
@@ -69,6 +79,37 @@ button:hover {
     position: absolute;
     left: -9999px;
     opacity: 0;
+}
+
+/*=========== DRZEWO FOLDERÓW ============ */
+
+#sidebar {
+    width: 250px;
+    background: #f5f5f5;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+#sidebar .sidebar-header {
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+#folderTree ul {
+    list-style-type: none;
+    padding-left: 1rem;
+}
+
+#folderTree li {
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+#folderTree li:hover {
+    text-decoration: underline;
 }
 
 /* ========== LISTA PLIKÓW I FOLDERÓW ========== */
