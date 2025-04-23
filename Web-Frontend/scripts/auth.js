@@ -21,8 +21,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const userData = await response.json();
 
                 const usernameElement = document.getElementById('username');
+                const usernameElement2 = document.getElementById('username2');
                 if (usernameElement) {
                     usernameElement.textContent = userData.username;
+                }
+                if (usernameElement2) {
+                    usernameElement2.textContent = "Witaj, " + userData.username + "!";
                 }
 
                 loggedInElements.forEach(el => el.style.display = 'block');
@@ -78,7 +82,7 @@ document.addEventListener('submit', async (e) => {
                 if (e.target.id === 'loginForm') {
                     const { token } = await response.json();
                     localStorage.setItem('token', token);
-                    window.location.href = '/';
+                    window.location.href = '/mainpage.html';
                 } else {
                     window.location.reload();
                 }

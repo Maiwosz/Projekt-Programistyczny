@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edycja profilu</title>
+    <link rel="stylesheet" href="/styles/styles.css">
+    <script src="/scripts/edit.js"></script>
+    <script src="/scripts/auth.js"></script>
+</head> 
+<body class="editBody">
+    <div id="editPanel" class="changePanel">
+        <form class="formEdit" id="formEditId">
+            <label id="inputLabel" for="mainInput">Nowa wartość:</label>
+            <input type="text" id="mainInput" required><br>
+
+            <label for="password" id="passwordInput">Hasło:</label>
+            <input type="password" id="password" required><br>
+            <div class="editContainerData">
+            <button type="submit" class="buttonZmien" id="saveButton">Zapisz</button>
+            <button type="button" class="buttonZmien" onclick="closePanel()">Anuluj</button>
+            </div>
+        </form>
+    </div>
+    <div class="logged-in" style="display: none;">
+        <div class="editContainerButtons">
+            <button class="buttonEditPage" onclick="open_mainpage()">Strona Główna</button>
+            <button class="buttonEditPage" onclick="logout()">Wyloguj</button>
+        </div>
+
+        <div class="editContainerPackImage">
+            <h1 class="h1Edit">Zdjęcie Profilowe</h1>
+            <img class="imgBorder" 
+             src="https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg" 
+             alt="boo">
+            <div class="editContainerButtons">
+                <button class="buttonEditPage">Dodaj nowe</button>
+                <button class="buttonEditPage">Potwierdź</button>
+            </div>
+        </div>
+
+        <div class="editContainerRow">
+            <div class="editContainerPackDate">
+                <div class="editContainerData">
+                    <div class="divEdit">Email:</div>
+                    <span class="spanEdit" id="email"></span>
+                    <button class="buttonZmien" onclick="showPanel('email')">Zmień</button>                  
+                                    
+                </div>
+                <div class="editContainerData">
+                    <div class="divEdit">Login:</div>
+                    <span class="spanEdit" id="login"></span>
+                    <button class="buttonZmien" onclick="showPanel('login')">Zmień</button> 
+                </div>
+                <div class="editContainerButtons2">
+                    <button class="buttonEditPage" onclick="showPanel('haslo')">Zmień hasło</button>
+                    <button class="buttonEditPage">Usuń konto</button>
+                </div>
+            </div> 
+        </div>
+    </div>
+    <div class="logged-out">
+        <p>Zaloguj się aby uzyskać dostęp</p>
+        <a href="/login.html">Zaloguj</a>
+    </div>
+
+
+</body>                                             
+</html>

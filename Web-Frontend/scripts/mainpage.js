@@ -515,3 +515,7 @@ function close_img_view() {
 // -----------------------------------------------------
 
 
+function open_profile_edit() {
+    window.location.pathname = '/EditProfilePage.html';
+}
+

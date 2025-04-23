@@ -10,10 +10,10 @@
     <div class="container">
         <!-- Główny nagłówek z przyciskami akcji -->
         <div class="header">
-            <h1>Witaj, 'nazwa użytkownika'!</h1>
+            <h1 id="username2"></h1>
             <div class="upload-section">
-                <button >Edytuj profil</button>
-                <button >Wyloguj</button>
+                <button onclick="open_profile_edit()">Edytuj profil</button>
+                <button onclick="logout()">Wyloguj</button>
             </div>
         </div>
         <div class="header">
@@ -89,6 +89,7 @@
 			<img id="image-zoom-id" class="image-zoom">
 		</div>
     <script src="./scripts/mainpage.js"></script>
+    <script src="./scripts/auth.js"></script>
 
 </body>
 </html>
