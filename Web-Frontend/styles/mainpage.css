@@ -84,7 +84,7 @@ button:hover {
 /*=========== DRZEWO FOLDERÓW ============ */
 
 #sidebar {
-    width: 250px;
+    width: 128px;
     background: #f5f5f5;
     border-right: 1px solid #ddd;
     overflow-y: auto;
@@ -334,6 +334,5 @@ button:hover {
     width: 100%;
     }
 }
-
 
 

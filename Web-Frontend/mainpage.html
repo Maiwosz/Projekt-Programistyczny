@@ -17,14 +17,13 @@
                 <button onclick="logout()">Wyloguj</button>
             </div>
         </div>
-        <div id="layout">
+        <!-- <div id="layout">
         <div id="sidebar">
             <div class="sidebar-header">
                 <span style="margin-right:20px;">📁 Foldery</span>
-                <button onclick="showCreateFolderModal()">Nowy folder</button>
             </div>
             <div id="folderTree"></div>
-          </div>
+        </div> -->
         <div class="main-content">
         <div class="header">
             <h2>Twoje pliki</h2>
@@ -35,7 +34,7 @@
             </div>
         </div>
         <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px;">
-            <div class="breadcrumbs"> Folder: </div>
+            <div class="breadcrumbs"> Ścieżka: </div>
             <div class="breadcrumbs" id="breadcrumbs">
                 
             </div>
@@ -64,35 +63,35 @@
         </div>
     </div>
 	
-	<!-- Modal do podglądu pliku i metadanych -->
-	<div id="fileModal" class="modal" style="max-width: 800px;">
-		<div id="modalContent">
-			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-				<!-- Lewa kolumna - podgląd -->
-				<div>
-					<div id="filePreviewLarge" style="max-height: 400px; overflow: auto;"></div>
-					<div id="fileInfo" style="margin-top: 15px;">
-						<p><strong>Nazwa:</strong> <span id="fileName"></span></p>
-						<p><strong>Typ:</strong> <span id="fileType"></span></p>
-						<p><strong>Rozmiar:</strong> <span id="fileSize"></span></p>
-						<p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
-					</div>
-				</div>
-				
-				<!-- Prawa kolumna - metadane -->
-				<div>
-					<h3 style="margin-top: 0;">Metadane</h3>
-					<form id="metadataForm" onsubmit="saveMetadata(event)">
-						<div id="metadataFields" style="max-height: 400px; overflow: auto;"></div>
-						<div style="margin-top: 15px; display: flex; gap: 10px;">
-							<button type="submit">Zapisz zmiany</button>
-							<button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
+        <!-- Modal do podglądu pliku i metadanych -->
+        <div id="fileModal" class="modal" style="max-width: 800px;">
+            <div id="modalContent">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <!-- Lewa kolumna - podgląd -->
+                    <div>
+                        <div id="filePreviewLarge" style="max-height: 400px; overflow: auto;"></div>
+                        <div id="fileInfo" style="margin-top: 15px;">
+                            <p><strong>Nazwa:</strong> <span id="fileName"></span></p>
+                            <p><strong>Typ:</strong> <span id="fileType"></span></p>
+                            <p><strong>Rozmiar:</strong> <span id="fileSize"></span></p>
+                            <p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Prawa kolumna - metadane -->
+                    <div>
+                        <h3 style="margin-top: 0;">Metadane</h3>
+                        <form id="metadataForm" onsubmit="saveMetadata(event)">
+                            <div id="metadataFields" style="max-height: 400px; overflow: auto;"></div>
+                            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                <button type="submit">Zapisz zmiany</button>
+                                <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Podgląd obrazka -->
 		<div id="image-view-id" class="image-view">
