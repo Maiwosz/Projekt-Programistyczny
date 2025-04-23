@@ -83,6 +83,13 @@ document.addEventListener('submit', async (e) => {
                     const { token } = await response.json();
                     localStorage.setItem('token', token);
                     window.location.href = '/mainpage.html';
+<<<<<<< HEAD
+=======
+                    const usernameElement = document.getElementById('username');
+                if (usernameElement) {
+                    usernameElement.textContent = userData.username;
+                }
+>>>>>>> f80ccd0e89d9d005eb78248c84bb0f666e2bdfe9
                 } else {
                     window.location.reload();
                 }
