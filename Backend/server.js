@@ -22,6 +22,7 @@ app.use((req, res, next) => {
 app.use('/api', require('./routes/authRoutes'));
 app.use('/api/files', require('./routes/fileRoutes'));
 app.use('/api/folders', require('./routes/folderRoutes'));
+app.use('/api/user', require('./routes/userRoutes'));
 
 
 // Obsługa plików statycznych

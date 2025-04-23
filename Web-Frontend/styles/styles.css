@@ -28,6 +28,10 @@ margin-bottom: 10px;
     margin-top: 0;
 }
 
+.h1Edit {
+    margin-top: 0;
+}
+
 /* Style formularzy */
 form {
 background: white;
