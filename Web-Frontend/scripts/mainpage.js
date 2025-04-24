@@ -2,6 +2,7 @@
 let currentFolder = { id: null, name: 'Główny' }; // Obiekt przechowujący aktualny folder
 let folderStack = []; // Historia nawigacji przechowująca całe obiekty folderów
 let currentFileId = null;
+const innerFolders = new Map(); // Obiekt przechowujący wewnętrzne foldery, folderów wyświetlanych w drzewie
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
         currentFolder = current;
         folderStack = stack;
     }
-
     // Załaduj zawartość folderu i zaktualizuj okruszki
     loadFolderContents();
     updateBreadcrumbs();
@@ -95,6 +95,7 @@ async function loadFolderContents() {
 function renderItems(data) {    //<---
     let html = '';
     let html_dirs = '';
+    let currentInnerFolders = [];
 
     // Generuj HTML dla folderów
     data.subfolders.forEach(folder => {
@@ -116,7 +117,12 @@ function renderItems(data) {    //<---
                 </div>
             </div>
         </div>`;
+        folder.id = folder._id;
+        folder.name.replace(/'/g, "\\'");
+        currentInnerFolders.push(folder);
     });
+
+    innerFolders.set(currentFolder.id,currentInnerFolders);
 
     // Generuj HTML dla plików
     data.files.forEach(file => {
@@ -142,6 +148,7 @@ function renderItems(data) {    //<---
     // Aktualizuj zawartość strony lub pokaż komunikat o pustym folderze
     document.getElementById('itemsList').innerHTML = html || '<p class="empty-info">Brak zawartości w tym folderze</p>';
     document.getElementById('dirsList').innerHTML = html_dirs || '<p class="empty-info">Brak folderów w tym folderze</p>';
+    updateTree();
 }
 
 function enterFolder(folderId, folderName) {
@@ -154,6 +161,7 @@ function enterFolder(folderId, folderName) {
     // Odśwież elementy interfejsu
     updateBreadcrumbs();
     loadFolderContents();
+    updateTree();
 }
 
 // ========== BREADCRUMBS ==========
@@ -187,6 +195,7 @@ function navigateToIndex(index) {
     // Odśwież widok i zapisz stan
     loadFolderContents();
     updateBreadcrumbs();
+    updateTree();
     saveState();
 }
 
@@ -308,6 +317,7 @@ async function createFolder() {
         // Zamknij modal i odśwież widok
         closeFolderModal();
         loadFolderContents();
+        updateTree();
         saveState(); // Aktualizuj zapisany stan
     } catch (error) {
         console.error('Błąd tworzenia:', error);
@@ -331,6 +341,7 @@ async function renameFolder(folderId) {
             body: JSON.stringify({ newName })
         });
         loadFolderContents(); // Odśwież listę folderów
+        updateTree();
     } catch (error) {
         console.error('Błąd zmiany nazwy:', error);
         alert('Nie udało się zmienić nazwy');
@@ -350,6 +361,7 @@ async function deleteFolder(folderId) {
             }
         });
         loadFolderContents(); // Odśwież widok
+        updateTree();
     } catch (error) {
         console.error('Błąd usuwania:', error);
         alert('Nie udało się usunąć folderu');
@@ -519,3 +531,82 @@ function open_profile_edit() {
     window.location.pathname = '/EditProfilePage.html';
 }
 
+// ========== DRZEWO FOLDERÓW ==========
+
+function renderTree(parentFolder = null, depth = 0) {
+    const folders = innerFolders.get(parentFolder) || [];
+    const container = document.createElement("div");
+    if(parentFolder===null)
+    {
+        const isActive = null === currentFolder.id;
+        const inCurrentPath = true;//Folder Główny jest folderem nadrzędnym każdego folderu
+
+        const folderDiv = document.createElement("div");
+        folderDiv.className = "folder" + (isActive ? " active" : "");
+        folderDiv.textContent = 'Główny';
+        folderDiv.style.marginLeft = `${depth * 20}px`;
+        folderDiv.onclick = () => {navigateToIndex(0);}
+        container.appendChild(folderDiv);
+    }
+
+    for (const folder of folders) {
+        const isActive = folder.id === currentFolder.id;
+        const inCurrentPath = folderStack.some(f => f.id === folder.id);
+
+        const folderDiv = document.createElement("div");
+        folderDiv.className = "folder" + (isActive ? " active" : "");
+        folderDiv.textContent = folder.name;
+        folderDiv.style.marginLeft = `${(depth+1) * 20}px`;
+
+        folderDiv.onclick = () => {
+            const indexInStack = folderStack.findIndex(f => f.id === folder.id);
+
+            if (indexInStack !== -1) {
+                navigateToIndex(indexInStack); // nadrzędny
+            } else {
+                const path = buildPathTo(folder.id); // budujemy poprawną ścieżkę
+                const fullPath = [{ id: null, name: "Główny" }, ...path];
+                if (fullPath.length) {
+                    folderStack = fullPath.slice(0, -1); // wszystko poza ostatnim (bo ten będzie current)
+                    currentFolder = fullPath[fullPath.length - 1];
+                    updateBreadcrumbs();
+                    loadFolderContents();
+                    updateTree();
+                } else {
+                    console.warn('Nie znaleziono ścieżki do folderu:', folder);
+                }
+            }
+        };
+
+        container.appendChild(folderDiv);
+
+        // rozwijamy tylko ścieżkę do aktywnego folderu
+        if (inCurrentPath || isActive) {
+            container.appendChild(renderTree(folder.id, depth + 1));
+        }
+    }
+
+    return container;
+}
+
+function buildPathTo(targetId, currentId = null, path = []) {
+    const children = innerFolders.get(currentId) || [];
+    for (const child of children) {
+        const newPath = [...path, child];
+        if (child.id === targetId) {
+            console.log("nowa ścieżka: ", newPath);
+            return newPath;    
+        }
+        const result = buildPathTo(targetId, child.id, newPath);
+        if (result.length) return result;
+    }
+    return [];
+}
+
+function updateTree() {
+    const treeContainer = document.getElementById("folderTree");
+    treeContainer.innerHTML = '';
+    treeContainer.appendChild(renderTree());
+}
+
+// -----------------------------------------------------

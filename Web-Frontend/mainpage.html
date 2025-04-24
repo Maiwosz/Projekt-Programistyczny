@@ -17,13 +17,18 @@
                 <button onclick="logout()">Wyloguj</button>
             </div>
         </div>
-        <!-- <div id="layout">
+        <!-- Główna sekcja strony -->
+        <div id="layout">
+        <!-- Sidebar z drzewem folderów -->
         <div id="sidebar">
             <div class="sidebar-header">
-                <span style="margin-right:20px;">📁 Foldery</span>
+                <span style="margin-right:15px;"> Foldery</span>
+                <button onclick="showCreateFolderModal()">Nowy folder</button>
             </div>
-            <div id="folderTree"></div>
-        </div> -->
+            <div id="folderTree">
+                <!-- Tutaj będzie dynamicznie wczytywane drzewo folderów -->
+            </div>
+        </div>
         <div class="main-content">
         <div class="header">
             <h2>Twoje pliki</h2>
