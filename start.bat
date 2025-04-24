@@ -117,15 +117,15 @@ cd /d "%SCRIPT_PATH%Backend" 2>nul || (
     goto :END
 )
 
+set "NODE_LOG=%CD%\node_errors.log"
+echo Logi b³êdów Node.js bêd¹ zapisywane w: %NODE_LOG%
+
 echo Instalujê zale¿noœci npm...
 call npm install
 call :CHECK_ERROR "B³¹d podczas instalacji zale¿noœci npm!"
 
-:: SprawdŸ, czy serwer jest ju¿ uruchomiony na porcie 3000
-
-
 echo Uruchamiam serwer Node.js...
-start "Serwer Node.js" cmd /k "node server.js" || (
+start "Serwer Node.js" cmd /c "node server.js > "%NODE_LOG%" 2>&1" || (
     call :ERROR "Nie uda³o siê uruchomiæ serwera Node.js!"
     goto :END
 )
@@ -135,9 +135,11 @@ ping -n 6 127.0.0.1 >nul
 
 echo Sprawdzanie statusu serwera...
 tasklist | find /i "node.exe" >nul || (
-    call :ERROR "Serwer Node.js nie zosta³ uruchomiony!"
+    call :ERROR "Serwer Node.js nie zosta³ uruchomiony! SprawdŸ plik logu: %NODE_LOG%"
     goto :END
 )
+
+
 
 echo Otwieram przegl¹darkê...
 start "" "http://localhost:3000" || (
