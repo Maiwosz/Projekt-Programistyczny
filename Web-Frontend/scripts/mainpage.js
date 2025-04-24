@@ -2,7 +2,7 @@
 let currentFolder = { id: null, name: 'Główny' }; // Obiekt przechowujący aktualny folder
 let folderStack = []; // Historia nawigacji przechowująca całe obiekty folderów
 let currentFileId = null;
-const innerFolders = new Map(); // Obiekt przechowujący wewnętrzne foldery, folderów wyświetlanych w drzewie
+let innerFolders = new Map(); // Obiekt przechowujący wewnętrzne foldery, folderów wyświetlanych w drzewie
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,9 +10,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedState = localStorage.getItem('folderState');
     if (savedState) {
         // Przywróć poprzedni stan nawigacji
-        const { current, stack } = JSON.parse(savedState);
+        const { current, stack, folderChildren } = JSON.parse(savedState);
         currentFolder = current;
         folderStack = stack;
+        innerFolders = new Map(folderChildren);
+        console.log("Folder state: ", folderChildren);
     }
     // Załaduj zawartość folderu i zaktualizuj okruszki
     loadFolderContents();
@@ -58,7 +60,8 @@ function saveState() {
     // Przygotuj obiekt z aktualnym stanem nawigacji
     const state = {
         current: currentFolder,  // Bieżący folder
-        stack: folderStack       // Historia folderów
+        stack: folderStack,       // Historia folderów
+        folderChildren: Array.from(innerFolders.entries())
     };
 
     // Zapisz stan jako ciąg JSON w localStorage
