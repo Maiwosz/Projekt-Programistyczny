@@ -22,7 +22,7 @@ exports.getCurrentUserLogin = async (req, res) => {
 exports.getCurrentUserProfilePicture = async (req, res) => {
     try {
         const fileId = await User.findById(req.user.userId).select('profilePictureId');
-        const file = await File.findById(fileId);
+        const file = await File.findById(fileId).select(path);
         res.json(file);
     } catch (error) {
         res.status(500).json({ error: 'Blad serwera' });
@@ -112,8 +112,7 @@ exports.updateCurrentUserPassword = async (req, res) => {
             return res.status(400).json({ error: 'Nieprawidłowe stare hasło' });
         }
 
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedPassword;
+        user.password = newPassword;
         await user.save();
 
         res.json({ message: 'Hasło zostało zaktualizowane' });
