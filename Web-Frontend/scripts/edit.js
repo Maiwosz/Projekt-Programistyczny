@@ -41,6 +41,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
+    const loadPicture = async () => {
+        try {
+            const response = await fetch('/api/user/profile-picture', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const pictureRes = await response.json();
+            const picturePlacement = document.getElementById("picture");
+            //picturePlacement. = pictureRes.picture;
+            console.log(pictureRes);
+            if(pictureRes.path == null ) {
+                //picturePlacement.textContent = "Brak picture";
+                picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg"
+            } else {
+                picturePlacement.src = pictureRes.path;
+            }
+
+        } catch (error) {
+            console.error('Błąd pobierania zdjecia profilowego:', error);
+        }
+    };
+
+    await loadPicture();
     await loadLogin();
     await loadEmail();
 });
