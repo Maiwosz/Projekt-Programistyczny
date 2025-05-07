@@ -244,11 +244,43 @@ button:hover {
     border-radius: 4px;
 }
 
-/* ========== MODAL FILE ========== */
+/* Divide modal to two columns when screen width > 900px */
+.modalContentDivide {
+    display: grid;
+    grid-template-columns: 1fr 1fr; 
+    gap: 20px;
+}
+
+/* File modal width when screen width > 900px */
 #fileModal.modal {
     max-width: 90%;
     width: 800px;
 }
+
+#metadataFields {
+    max-height: 400px; 
+    overflow: auto;
+}
+
+/* Present modal in one column when screen width < 900px */
+@media only screen and (max-width: 900px) {
+    .modalContentDivide {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    #fileModal.modal {
+        width: 400px;
+    }
+
+    #metadataFields {
+        max-height: 200px;
+        overflow: auto;
+    }
+}
+
+/* ========== MODAL FILE ========== */
 
 .metadata-field {
     margin-bottom: 10px;
@@ -268,12 +300,15 @@ button:hover {
 }
 
 #filePreviewLarge {
+    max-height: 400px; 
+    overflow: auto;
     transition: 0.25s;
 }
 
 #filePreviewLarge:hover {
     transition: 0.25s;
-    opacity: 0.7;
+    /* opacity: 0.7; */
+    scale: 1.07 1.07;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     cursor: pointer;
 }
@@ -295,7 +330,6 @@ button:hover {
 }
 
 
-
 /* ============= Image view ============= */
 .image-view {
     display: none; /* Hidden by default */
@@ -315,16 +349,17 @@ button:hover {
     margin: auto;
     display: block;
     max-width: 1080px;
-    width: 80%;
+    width: 100%;
 }
 
 /* Close button */
 .close-button {
     position: absolute;
     top: 1rem;
-    right: 2rem;
+    right: 3rem;
     color: #f8f9fa;
     font-size: 64px;
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
     transition: 0.25s;
 }
 
@@ -343,13 +378,6 @@ button:hover {
 @keyframes zoomin {
     from {transform:scale(0)}
     to {transform:scale(1)}
-}
-
-/* 100% image width for screen below 800px */
-@media only screen and (max-width: 700px){
-    .image-zoom {
-    width: 100%;
-    }
 }
 
 

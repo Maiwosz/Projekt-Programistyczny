@@ -510,20 +510,23 @@ function closeFileModal() {
 
 // -----------------------------------------------------
 
-// Get modal for image view
-var imgView = document.getElementById("image-view-id");
-
-// Get destination for image from preview
-var imgFromView = document.getElementById("image-zoom-id");
-
 // Zoom in on the image from preview
 function view_image(image_preview_src) {
+    // Get modal for image view
+    var imgView = document.getElementById("image-view-id");
+    
+    // Get destination for image from preview
+    var imgFromView = document.getElementById("image-zoom-id");
+
     imgView.style.display = "block";
     imgFromView.src = image_preview_src;
 }
 
 // Close image view modal
 function close_img_view() {
+    // Get modal for image view
+    var imgView = document.getElementById("image-view-id");
+
 	imgView.style.display = "none";
 }
 

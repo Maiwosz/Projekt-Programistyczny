@@ -23,7 +23,6 @@
         <div id="sidebar">
             <div class="sidebar-header">
                 <span style="margin-right:15px;"> Foldery</span>
-                <button onclick="showCreateFolderModal()">Nowy folder</button>
             </div>
             <div id="folderTree">
                 <!-- Tutaj będzie dynamicznie wczytywane drzewo folderów -->
@@ -71,10 +70,10 @@
         <!-- Modal do podglądu pliku i metadanych -->
         <div id="fileModal" class="modal" style="max-width: 800px;">
             <div id="modalContent">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <form class="modalContentDivide">
                     <!-- Lewa kolumna - podgląd -->
                     <div>
-                        <div id="filePreviewLarge" style="max-height: 400px; overflow: auto;"></div>
+                        <div id="filePreviewLarge"></div>
                         <div id="fileInfo" style="margin-top: 15px;">
                             <p><strong>Nazwa:</strong> <span id="fileName"></span></p>
                             <p><strong>Typ:</strong> <span id="fileType"></span></p>
@@ -87,14 +86,14 @@
                     <div>
                         <h3 style="margin-top: 0;">Metadane</h3>
                         <form id="metadataForm" onsubmit="saveMetadata(event)">
-                            <div id="metadataFields" style="max-height: 400px; overflow: auto;"></div>
+                            <div id="metadataFields"></div>
                             <div style="margin-top: 15px; display: flex; gap: 10px;">
                                 <button type="submit">Zapisz zmiany</button>
                                 <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
                             </div>
                         </form>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -104,12 +103,6 @@
 			<img id="image-zoom-id" class="image-zoom">
 		</div>
     </div>
-        <div class="logged-out">
-            <h1>Witaj gościu!</h1>
-            <!-- Linki do logowania i rejestracji -->
-            <a href="/login.html">Zaloguj się</a> | 
-            <a href="/register.html">Zarejestruj</a>
-        </div>
     <script src="./scripts/mainpage.js"></script>
     <script src="./scripts/auth.js"></script>
 
