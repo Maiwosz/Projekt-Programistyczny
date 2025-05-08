@@ -40,6 +40,7 @@ app.use((req, res, next) => {
     next();
 });
 
+<<<<<<< HEAD
 // Sprawdzanie istnienia plików routów przed ich załadowaniem
 const routes = [
     { path: '/api', file: './routes/authRoutes' },
@@ -75,6 +76,18 @@ if (!fs.existsSync(uploadsPath)) {
         console.error('✗ Nie można utworzyć katalogu uploads:', error);
     }
 }
+=======
+// Routy
+app.use('/api', require('./routes/authRoutes'));
+app.use('/api/files', require('./routes/fileRoutes'));
+app.use('/api/folders', require('./routes/folderRoutes'));
+app.use('/api/user', require('./routes/userRoutes'));
+app.use('/api/tags', require('./routes/tagRoutes'));
+
+fdgskdfgskl;
+// Obsługa plików statycznych
+const uploadsPath = path.resolve(process.env.UPLOADS_DIR);
+>>>>>>> 6450c3a (Szkielet tagów działa, dodawanie metody (nawet pustej) do kontrolera wywala serwer bez komunikatu błędu)
 app.use('/uploads', express.static(uploadsPath));
 
 // Sprawdzanie katalogu frontend

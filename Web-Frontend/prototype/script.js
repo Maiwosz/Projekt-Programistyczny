@@ -2,6 +2,7 @@
 let currentFolder = { id: null, name: 'Główny' }; // Obiekt przechowujący aktualny folder
 let folderStack = []; // Historia nawigacji przechowująca całe obiekty folderów
 let currentFileId = null;
+let userTags = [];
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Załaduj zawartość folderu i zaktualizuj okruszki
     loadFolderContents();
     updateBreadcrumbs();
+    loadUserTags();
 });
 
 // ========== FUNKCJE POMOCNICZE ==========
@@ -486,4 +488,104 @@ function closeFileModal() {
     // Ukryj modal i zresetuj ID pliku
     document.getElementById('fileModal').style.display = 'none';
     currentFileId = null;
+}
+
+
+
+// ================== TAGS ======================
+
+async function loadUserTags() {
+    try {
+        const response = await fetch('/api/tags', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!response.ok) throw new Error('Błąd pobierania tagów');
+
+        userTags = await response.json();
+        renderTagsList();
+    } catch (error) {
+        console.error('Błąd:', error);
+        alert('Nie udało się załadować tagów');
+    }
+}
+
+
+// Function to render the tags list in the main page
+function renderTagsList() {
+    const tagsList = document.getElementById('tagsList');
+    tagsList.innerHTML = '';
+
+    if (userTags.length === 0) {
+        tagsList.innerHTML = '<li>Brak dostępnych tagów</li>';
+        return;
+    }
+
+    userTags.forEach(tag => {
+        const li = document.createElement('li');
+        li.className = 'tag-item';
+        li.innerHTML = `
+            <span>${tag.name}</span>
+            <button onclick="deleteTag('${tag._id}')">Usuń</button>
+        `;
+        tagsList.appendChild(li);
+    });
+}
+
+// Function to create a new tag
+async function createTag() {
+    const tagNameInput = document.getElementById('newTagName');
+    const tagName = tagNameInput.value.trim();
+
+    if (!tagName) {
+        alert('Nazwa tagu jest wymagana');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/tags', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ name: tagName })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Błąd tworzenia tagu');
+        }
+
+        const newTag = await response.json();
+        userTags.push(newTag);
+        renderTagsList();
+        tagNameInput.value = '';
+    } catch (error) {
+        console.error('Błąd:', error);
+        alert(error.message);
+    }
+}
+
+// Function to delete a tag
+async function deleteTag(tagId) {
+    if (!confirm('Czy na pewno chcesz usunąć ten tag?')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/tags/${tagId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!response.ok) throw new Error('Błąd usuwania tagu');
+
+        // Remove tag from the list
+        userTags = userTags.filter(tag => tag._id !== tagId);
+        renderTagsList();
+    } catch (error) {
+        console.error('Błąd:', error);
+        alert('Nie udało się usunąć tagu');
+    }
 }
