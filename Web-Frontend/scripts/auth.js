@@ -98,6 +98,34 @@ document.addEventListener('submit', async (e) => {
     }
 });
 
+// Funkcja obsługująca odpowiedź z Google Sign-In
+async function handleGoogleSignIn(response) {
+    try {
+        const { credential } = response;
+        
+        // Wysyłamy token ID do naszego API
+        const apiResponse = await fetch('/api/auth/google', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ token: credential })
+        });
+        
+        if (apiResponse.ok) {
+            const { token } = await apiResponse.json();
+            localStorage.setItem('token', token);
+            window.location.href = '/mainpage.html';
+        } else {
+            const error = await apiResponse.json();
+            alert(error.error || 'Wystąpił błąd podczas logowania przez Google');
+        }
+    } catch (error) {
+        console.error('Google Sign-In error:', error);
+        alert('Problem z logowaniem przez Google');
+    }
+}
+
 function logout() {
     localStorage.removeItem('token');
     window.location.href = '/';

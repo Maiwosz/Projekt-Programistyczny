@@ -3,9 +3,11 @@
 <html>
 <head>
     <title>Logowanie</title>
-	<link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/styles.css">
     <!-- Wspólny skrypt autentykacji -->
     <script src="/scripts/auth.js"></script>
+    <!-- Dodanie Google Sign-In API -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
     <h1>Logowanie</h1>
@@ -17,6 +19,25 @@
         <input name="password" type="password" placeholder="Hasło" required>
         <button type="submit">Zaloguj</button>
     </form>
+    
+    <!-- Przycisk logowania przez Google -->
+    <div class="google-login-container">
+        <p>lub</p>
+        <div id="g_id_onload"
+             data-client_id="409697200173-003cd5hk14iqmlip5irspoqk5j5vjebv.apps.googleusercontent.com"
+             data-callback="handleGoogleSignIn"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin"
+             data-type="standard"
+             data-size="large"
+             data-theme="outline"
+             data-text="sign_in_with"
+             data-shape="rectangular"
+             data-logo_alignment="center">
+        </div>
+    </div>
+    
     <!-- Powrót do strony głównej -->
     <a href="/">Powrót</a>
 </body>
