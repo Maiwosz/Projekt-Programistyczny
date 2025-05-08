@@ -99,30 +99,48 @@ document.addEventListener('submit', async (e) => {
 });
 
 // Funkcja obsługująca odpowiedź z Google Sign-In
-async function handleGoogleSignIn(response) {
+function handleGoogleSignIn(response) {
     try {
-        const { credential } = response;
+        console.log("Google Sign-In zakończony pomyślnie", response);
+        
+        if (!response || !response.credential) {
+            console.error("Brak poświadczenia w odpowiedzi Google:", response);
+            alert("Nieprawidłowa odpowiedź z Google. Brak poświadczenia.");
+            return;
+        }
+        
+        const credential = response.credential;
+        console.log("Poświadczenie Google otrzymane:", credential.substring(0, 20) + "...");
         
         // Wysyłamy token ID do naszego API
-        const apiResponse = await fetch('/api/auth/google', {
+        fetch('/api/auth/google', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ token: credential })
-        });
-        
-        if (apiResponse.ok) {
-            const { token } = await apiResponse.json();
-            localStorage.setItem('token', token);
+        })
+        .then(response => {
+            console.log("Status odpowiedzi API:", response.status);
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || 'Problem z autoryzacją Google');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Logowanie Google zakończone sukcesem:", data);
+            localStorage.setItem('token', data.token);
             window.location.href = '/mainpage.html';
-        } else {
-            const error = await apiResponse.json();
-            alert(error.error || 'Wystąpił błąd podczas logowania przez Google');
-        }
+        })
+        .catch(error => {
+            console.error('Google Sign-In error:', error);
+            alert('Problem z logowaniem przez Google: ' + error.message);
+        });
     } catch (error) {
         console.error('Google Sign-In error:', error);
-        alert('Problem z logowaniem przez Google');
+        alert('Problem z logowaniem przez Google: ' + error.message);
     }
 }
 

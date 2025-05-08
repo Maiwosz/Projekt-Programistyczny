@@ -24,6 +24,7 @@ app.use('/api/auth', require('./routes/googleAuthRoutes'));
 app.use('/api/files', require('./routes/fileRoutes'));
 app.use('/api/folders', require('./routes/folderRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
+app.use('/api/config', require('./routes/configRoutes')); // Nowy endpoint konfiguracyjny
 
 
 // Obsługa plików statycznych

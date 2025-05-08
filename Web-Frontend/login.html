@@ -1,4 +1,3 @@
-<!-- login.html -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -7,38 +6,142 @@
     <!-- Wspólny skrypt autentykacji -->
     <script src="/scripts/auth.js"></script>
     <!-- Dodanie Google Sign-In API -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async></script>
+    <!-- Skrypt inicjalizujący Google Sign-In po pobraniu konfiguracji -->
+    <script>
+        // Funkcja inicjalizująca Google Sign-In po pobraniu Client ID
+        async function initGoogleSignIn() {
+            try {
+                // Pobierz konfigurację z API
+                const response = await fetch('/api/config/client-config');
+                const config = await response.json();
+                
+                // Sprawdź czy mamy Client ID
+                if (!config.googleClientId) {
+                    console.error('Brak Google Client ID w konfiguracji');
+                    document.getElementById('google-signin-container').innerHTML = 
+                        '<p>Logowanie przez Google jest obecnie niedostępne.</p>';
+                    return;
+                }
+                
+                // Skonfiguruj przycisk Google Sign-In
+                const googleSignInContainer = document.getElementById('google-signin-container');
+                googleSignInContainer.innerHTML = `
+                    <div id="g_id_onload"
+                         data-client_id="${config.googleClientId}"
+                         data-callback="handleGoogleSignIn"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-size="large"
+                         data-theme="outline"
+                         data-text="sign_in_with"
+                         data-shape="rectangular"
+                         data-logo_alignment="center">
+                    </div>
+                `;
+                
+                // Renderuj przycisk Google po załadowaniu API
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                    window.google.accounts.id.initialize({
+                        client_id: config.googleClientId,
+                        callback: handleGoogleSignIn
+                    });
+                    
+                    // Renderuj przycisk
+                    window.google.accounts.id.renderButton(
+                        document.getElementById('g_id_signin'), 
+                        { theme: 'outline', size: 'large' }
+                    );
+                } else {
+                    // Jeśli API Google nie jest jeszcze dostępne, dodaj nasłuchiwacz
+                    window.addEventListener('load', function() {
+                        if (window.google && window.google.accounts && window.google.accounts.id) {
+                            window.google.accounts.id.initialize({
+                                client_id: config.googleClientId,
+                                callback: handleGoogleSignIn
+                            });
+                            window.google.accounts.id.renderButton(
+                                document.getElementById('g_id_signin'), 
+                                { theme: 'outline', size: 'large' }
+                            );
+                        } else {
+                            console.error('Google API nie zostało poprawnie załadowane');
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Błąd podczas pobierania konfiguracji:', error);
+                document.getElementById('google-signin-container').innerHTML = 
+                    '<p>Wystąpił błąd podczas konfiguracji logowania przez Google.</p>';
+            }
+        }
+        
+        // Funkcja pomocnicza do debugowania
+        function checkGoogleApiStatus() {
+            console.log("Sprawdzanie statusu Google API:");
+            console.log("window.google istnieje:", !!window.google);
+            if (window.google) {
+                console.log("window.google.accounts istnieje:", !!window.google.accounts);
+                if (window.google.accounts) {
+                    console.log("window.google.accounts.id istnieje:", !!window.google.accounts.id);
+                }
+            }
+        }
+
+        // Wywołaj funkcję inicjalizującą po załadowaniu zawartości DOM
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sprawdź status API Google
+            checkGoogleApiStatus();
+            
+            // Inicjalizuj Google Sign-In
+            initGoogleSignIn();
+            
+            // Sprawdź ponownie po pełnym załadowaniu strony
+            window.addEventListener('load', function() {
+                console.log("Strona w pełni załadowana, sprawdzanie ponownie:");
+                checkGoogleApiStatus();
+                
+                // Jeśli przycisk nie został poprawnie zainicjalizowany, spróbuj ponownie
+                if (document.getElementById('g_id_signin').children.length === 0) {
+                    console.log("Ponowna próba inicjalizacji przycisku Google");
+                    initGoogleSignIn();
+                }
+            });
+        });
+    </script>
 </head>
 <body>
-    <h1>Logowanie</h1>
-    <!-- Formularz logowania z id do identyfikacji -->
-    <form id="loginForm" action="/login">
-        <!-- Pole nazwy użytkownika -->
-        <input name="username" type="text" placeholder="Nazwa użytkownika" required>
-        <!-- Pole hasła -->
-        <input name="password" type="password" placeholder="Hasło" required>
-        <button type="submit">Zaloguj</button>
-    </form>
-    
-    <!-- Przycisk logowania przez Google -->
-    <div class="google-login-container">
-        <p>lub</p>
-        <div id="g_id_onload"
-             data-client_id="409697200173-003cd5hk14iqmlip5irspoqk5j5vjebv.apps.googleusercontent.com"
-             data-callback="handleGoogleSignIn"
-             data-auto_prompt="false">
+    <div class="login-container">
+        <h1>Logowanie</h1>
+        
+        <!-- Formularz logowania z id do identyfikacji -->
+        <form id="loginForm" action="/login" method="POST">
+            <!-- Pole nazwy użytkownika -->
+            <div class="form-group">
+                <input name="username" type="text" placeholder="Nazwa użytkownika" required>
+            </div>
+            <!-- Pole hasła -->
+            <div class="form-group">
+                <input name="password" type="password" placeholder="Hasło" required>
+            </div>
+            <button type="submit" class="btn-primary">Zaloguj</button>
+        </form>
+        
+        <!-- Kontener na przycisk logowania przez Google -->
+        <div class="google-login-container">
+            <div id="google-signin-container">
+                <p>Ładowanie przycisku logowania przez Google...</p>
+            </div>
+            <div id="g_id_signin" style="display: flex; justify-content: center; margin-top: 10px;"></div>
         </div>
-        <div class="g_id_signin"
-             data-type="standard"
-             data-size="large"
-             data-theme="outline"
-             data-text="sign_in_with"
-             data-shape="rectangular"
-             data-logo_alignment="center">
+        
+        <!-- Link do rejestracji i powrotu -->
+        <div class="form-links">
+            <a href="/register">Zarejestruj się</a> | 
+            <a href="/">Powrót</a>
         </div>
     </div>
-    
-    <!-- Powrót do strony głównej -->
-    <a href="/">Powrót</a>
 </body>
 </html>
