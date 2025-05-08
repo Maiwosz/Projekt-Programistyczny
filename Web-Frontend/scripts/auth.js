@@ -83,6 +83,8 @@ document.addEventListener('submit', async (e) => {
                     const { token } = await response.json();
                     localStorage.setItem('token', token);
                     window.location.href = '/mainpage.html';
+                } else if (e.target.id === 'registerForm') {
+                    window.location.href = '/login.html'
                 } else {
                     window.location.reload();
                 }
