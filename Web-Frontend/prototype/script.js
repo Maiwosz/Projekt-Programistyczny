@@ -380,14 +380,25 @@ async function showFileDetails(fileId) {
         if (!response.ok) throw new Error('Błąd pobierania danych');
 
         const fileData = await response.json();
-        renderFileModal(fileData); // Renderuj modal z danymi
+        
+        // Load file tags
+        const tagsResponse = await fetch(`/api/tags/file/${fileId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (!tagsResponse.ok) throw new Error('Błąd pobierania tagów pliku');
+        
+        const fileTags = await tagsResponse.json();
+        
+        renderFileModal(fileData, fileTags); // Renderuj modal z danymi i tagami
     } catch (error) {
         console.error('Błąd:', error);
         alert('Nie udało się załadować danych pliku');
     }
 }
 
-function renderFileModal(file) {
+// Updated renderFileModal function to include tags
+function renderFileModal(file, fileTags = []) {
     const modal = document.getElementById('fileModal');
     const preview = document.getElementById('filePreviewLarge');
     // Określ typ pliku dla odpowiedniego podglądu
@@ -444,8 +455,15 @@ function renderFileModal(file) {
         metadataFields.innerHTML = '<p>Brak dostępnych metadanych</p>';
     }
 
+    // Renderuj tagi pliku
+    renderFileTags(fileTags);
+    
+    // Wypełnij selektor tagów dostępnymi tagami
+    populateTagSelector(fileTags);
+
     modal.style.display = 'block'; // Pokaż modal
 }
+
 
 function formatFileSize(bytes) {
     // Konwertuj bajty na czytelny format
@@ -569,23 +587,144 @@ async function createTag() {
 
 // Function to delete a tag
 async function deleteTag(tagId) {
-    if (!confirm('Czy na pewno chcesz usunąć ten tag?')) {
-        return;
-    }
+    //if (!confirm('Czy na pewno chcesz usunąć ten tag?')) return;
+
+    console.log(tagId);
 
     try {
-        const response = await fetch(`/api/tags/${tagId}`, {
+        await fetch(`/api/tags/${tagId}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
-
-        if (!response.ok) throw new Error('Błąd usuwania tagu');
-
-        // Remove tag from the list
-        userTags = userTags.filter(tag => tag._id !== tagId);
-        renderTagsList();
+        loadUserTags();
     } catch (error) {
         console.error('Błąd:', error);
         alert('Nie udało się usunąć tagu');
+    }
+}
+
+
+
+// Function to render file tags in the modal
+function renderFileTags(fileTags) {
+    const fileTagsList = document.getElementById('fileTagsList');
+    fileTagsList.innerHTML = '';
+
+    if (fileTags.length === 0) {
+        fileTagsList.innerHTML = '<p>Brak przypisanych tagów</p>';
+        return;
+    }
+
+    const tagsList = document.createElement('ul');
+    tagsList.className = 'tags-list';
+
+    fileTags.forEach(tag => {
+        const li = document.createElement('li');
+        li.className = 'file-tag-item';
+        li.innerHTML = `
+            <span>${tag.name}</span>
+            <button onclick="removeTagFromFile('${tag._id}')">Usuń</button>
+        `;
+        tagsList.appendChild(li);
+    });
+
+    fileTagsList.appendChild(tagsList);
+}
+
+
+function populateTagSelector(fileTags) {
+    const tagSelector = document.getElementById('tagSelector');
+    tagSelector.innerHTML = '<option value="">Wybierz tag</option>';
+
+    // Filter out tags that are already assigned to the file
+    const fileTagIds = fileTags.map(tag => tag._id);
+    
+    // Add only unassigned tags to the dropdown
+    userTags
+        .filter(tag => !fileTagIds.includes(tag._id))
+        .forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag._id;
+            option.textContent = tag.name;
+            tagSelector.appendChild(option);
+        });
+}
+
+async function addTagToFile() {
+    const tagId = document.getElementById('tagSelector').value;
+    
+    if (!tagId) {
+        alert('Wybierz tag');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/tags/assign', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                fileId: currentFileId,
+                tagId: tagId
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Błąd przypisywania tagu');
+        }
+
+        // Refresh file tags
+        const tagsResponse = await fetch(`/api/tags/file/${currentFileId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (!tagsResponse.ok) throw new Error('Błąd pobierania tagów pliku');
+        
+        const fileTags = await tagsResponse.json();
+        
+        // Update only the tags section of the modal
+        renderFileTags(fileTags);
+        populateTagSelector(fileTags);
+    } catch (error) {
+        console.error('Błąd:', error);
+        alert(error.message);
+    }
+}
+
+
+async function removeTagFromFile(tagId) {
+    try {
+        const response = await fetch('/api/tags/remove', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                fileId: currentFileId,
+                tagId: tagId
+            })
+        });
+
+        if (!response.ok) throw new Error('Błąd usuwania tagu z pliku');
+
+        // Refresh file tags
+        const tagsResponse = await fetch(`/api/tags/file/${currentFileId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (!tagsResponse.ok) throw new Error('Błąd pobierania tagów pliku');
+        
+        const fileTags = await tagsResponse.json();
+        
+        // Update only the tags section of the modal
+        renderFileTags(fileTags);
+        populateTagSelector(fileTags);
+    } catch (error) {
+        console.error('Błąd:', error);
+        alert('Nie udało się usunąć tagu z pliku');
     }
 }
