@@ -47,13 +47,10 @@ exports.getUserTags = async (req, res) => {
 
 // Delete a tag
 exports.deleteTag = async (req, res) => {
-    console.log('enter delete tag api');
 
     try {
 
         const {tagId} = req.params;
-        console.log('trying to find tag: ', tagId);
-        console.log('req params', req.params);
         const tag = await Tag.findOne({ _id: tagId, user: req.user.userId })
 
         if (!tag) {
@@ -135,6 +132,8 @@ exports.assignTagToFile = async (req, res) => {
 // Remove a tag from a file
 exports.removeTagFromFile = async (req, res) => {
     try {
+        console.log("requestr params: ", req.params);
+
         const { fileId, tagId } = req.params;
         
         // Delete the file-tag association

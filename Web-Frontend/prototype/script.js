@@ -697,7 +697,7 @@ async function addTagToFile() {
 
 async function removeTagFromFile(tagId) {
     try {
-        const response = await fetch('/api/tags/remove', {
+        const response = await fetch(`/api/tags/remove/${currentFileId}/${tagId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
