@@ -144,6 +144,48 @@ function handleGoogleSignIn(response) {
     }
 }
 
+function handleFacebookLogin(accessToken) {
+    try {
+        console.log("Facebook Login zakończony pomyślnie, otrzymano token dostępu");
+        
+        if (!accessToken) {
+            console.error("Brak tokenu dostępu z Facebook");
+            alert("Nieprawidłowa odpowiedź z Facebook. Brak tokenu dostępu.");
+            return;
+        }
+        
+        // Wysyłamy token dostępu do naszego API
+        fetch('/api/auth/facebook', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ accessToken })
+        })
+        .then(response => {
+            console.log("Status odpowiedzi API Facebook:", response.status);
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    throw new Error(errorData.error || 'Problem z autoryzacją Facebook');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Logowanie Facebook zakończone sukcesem:", data);
+            localStorage.setItem('token', data.token);
+            window.location.href = '/mainpage.html';
+        })
+        .catch(error => {
+            console.error('Facebook Login error:', error);
+            alert('Problem z logowaniem przez Facebook: ' + error.message);
+        });
+    } catch (error) {
+        console.error('Facebook Login error:', error);
+        alert('Problem z logowaniem przez Facebook: ' + error.message);
+    }
+}
+
 function logout() {
     localStorage.removeItem('token');
     window.location.href = '/';

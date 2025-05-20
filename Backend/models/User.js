@@ -5,12 +5,13 @@ const UserSchema = new mongoose.Schema({
     username: { type: String, unique: true },
     password: String,
     email: String,
-    googleId: String, // Dodane pole googleId
+    googleId: String,
+    facebookId: String,
     profilePictureId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'File'
     },
-    profilePictureUrl: String // Dodane pole dla URL zdjęcia z Google
+    profilePictureUrl: String // Pole dla URL zdjęcia z Google/Facebook
 });
 
 UserSchema.pre('save', async function (next) {

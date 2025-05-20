@@ -7,78 +7,120 @@
     <script src="/scripts/auth.js"></script>
     <!-- Dodanie Google Sign-In API -->
     <script src="https://accounts.google.com/gsi/client" async></script>
-    <!-- Skrypt inicjalizujący Google Sign-In po pobraniu konfiguracji -->
+    <!-- Dodanie Facebook SDK -->
+    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/pl_PL/sdk.js"></script>
+    <!-- Skrypt inicjalizujący social login po pobraniu konfiguracji -->
     <script>
         // Funkcja inicjalizująca Google Sign-In po pobraniu Client ID
-        async function initGoogleSignIn() {
+        async function initGoogleSignIn(googleClientId) {
+            if (!googleClientId) {
+                console.error('Brak Google Client ID w konfiguracji');
+                document.getElementById('google-signin-container').innerHTML = 
+                    '<p>Logowanie przez Google jest obecnie niedostępne.</p>';
+                return;
+            }
+            
+            // Skonfiguruj przycisk Google Sign-In
+            const googleSignInContainer = document.getElementById('google-signin-container');
+            googleSignInContainer.innerHTML = `
+                <div id="g_id_onload"
+                     data-client_id="${googleClientId}"
+                     data-callback="handleGoogleSignIn"
+                     data-auto_prompt="false">
+                </div>
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-size="large"
+                     data-theme="outline"
+                     data-text="sign_in_with"
+                     data-shape="rectangular"
+                     data-logo_alignment="center">
+                </div>
+            `;
+            
+            // Renderuj przycisk Google po załadowaniu API
+            if (window.google && window.google.accounts && window.google.accounts.id) {
+                window.google.accounts.id.initialize({
+                    client_id: googleClientId,
+                    callback: handleGoogleSignIn
+                });
+                
+                // Renderuj przycisk
+                window.google.accounts.id.renderButton(
+                    document.getElementById('g_id_signin'), 
+                    { theme: 'outline', size: 'large' }
+                );
+            } else {
+                // Jeśli API Google nie jest jeszcze dostępne, dodaj nasłuchiwacz
+                window.addEventListener('load', function() {
+                    if (window.google && window.google.accounts && window.google.accounts.id) {
+                        window.google.accounts.id.initialize({
+                            client_id: googleClientId,
+                            callback: handleGoogleSignIn
+                        });
+                        window.google.accounts.id.renderButton(
+                            document.getElementById('g_id_signin'), 
+                            { theme: 'outline', size: 'large' }
+                        );
+                    } else {
+                        console.error('Google API nie zostało poprawnie załadowane');
+                    }
+                });
+            }
+        }
+        
+        // Funkcja inicjalizująca Facebook SDK
+        function initFacebookSDK(facebookAppId) {
+            if (!facebookAppId) {
+                console.error('Brak Facebook App ID w konfiguracji');
+                document.getElementById('facebook-login-container').innerHTML = 
+                    '<p>Logowanie przez Facebook jest obecnie niedostępne.</p>';
+                return;
+            }
+            
+            // Inicjalizacja Facebook SDK
+            window.fbAsyncInit = function() {
+                FB.init({
+                    appId: facebookAppId,
+                    cookie: true,
+                    xfbml: true,
+                    version: 'v18.0' // Użyj najnowszej wersji API
+                });
+                
+                // Renderuj przycisk Facebook
+                document.getElementById('facebook-login-container').innerHTML = `
+                    <div class="facebook-login-button">
+                        <button onclick="loginWithFacebook()" class="fb-login-button">
+                            Zaloguj przez Facebook
+                        </button>
+                    </div>
+                `;
+            };
+        }
+        
+        // Funkcja inicjalizująca wszystkie social loginy po pobraniu konfiguracji
+        async function initSocialLogins() {
             try {
                 // Pobierz konfigurację z API
                 const response = await fetch('/api/config/client-config');
                 const config = await response.json();
                 
-                // Sprawdź czy mamy Client ID
-                if (!config.googleClientId) {
-                    console.error('Brak Google Client ID w konfiguracji');
-                    document.getElementById('google-signin-container').innerHTML = 
-                        '<p>Logowanie przez Google jest obecnie niedostępne.</p>';
-                    return;
-                }
+                // Inicjalizuj Google Sign-In
+                initGoogleSignIn(config.googleClientId);
                 
-                // Skonfiguruj przycisk Google Sign-In
-                const googleSignInContainer = document.getElementById('google-signin-container');
-                googleSignInContainer.innerHTML = `
-                    <div id="g_id_onload"
-                         data-client_id="${config.googleClientId}"
-                         data-callback="handleGoogleSignIn"
-                         data-auto_prompt="false">
-                    </div>
-                    <div class="g_id_signin"
-                         data-type="standard"
-                         data-size="large"
-                         data-theme="outline"
-                         data-text="sign_in_with"
-                         data-shape="rectangular"
-                         data-logo_alignment="center">
-                    </div>
-                `;
+                // Inicjalizuj Facebook SDK
+                initFacebookSDK(config.facebookAppId);
                 
-                // Renderuj przycisk Google po załadowaniu API
-                if (window.google && window.google.accounts && window.google.accounts.id) {
-                    window.google.accounts.id.initialize({
-                        client_id: config.googleClientId,
-                        callback: handleGoogleSignIn
-                    });
-                    
-                    // Renderuj przycisk
-                    window.google.accounts.id.renderButton(
-                        document.getElementById('g_id_signin'), 
-                        { theme: 'outline', size: 'large' }
-                    );
-                } else {
-                    // Jeśli API Google nie jest jeszcze dostępne, dodaj nasłuchiwacz
-                    window.addEventListener('load', function() {
-                        if (window.google && window.google.accounts && window.google.accounts.id) {
-                            window.google.accounts.id.initialize({
-                                client_id: config.googleClientId,
-                                callback: handleGoogleSignIn
-                            });
-                            window.google.accounts.id.renderButton(
-                                document.getElementById('g_id_signin'), 
-                                { theme: 'outline', size: 'large' }
-                            );
-                        } else {
-                            console.error('Google API nie zostało poprawnie załadowane');
-                        }
-                    });
-                }
             } catch (error) {
                 console.error('Błąd podczas pobierania konfiguracji:', error);
                 document.getElementById('google-signin-container').innerHTML = 
-                    '<p>Wystąpił błąd podczas konfiguracji logowania przez Google.</p>';
+                    '<p>Wystąpił błąd podczas konfiguracji logowania społecznościowego.</p>';
+                document.getElementById('facebook-login-container').innerHTML = 
+                    '<p>Wystąpił błąd podczas konfiguracji logowania społecznościowego.</p>';
             }
         }
         
-        // Funkcja pomocnicza do debugowania
+        // Funkcja pomocnicza do debugowania Google API
         function checkGoogleApiStatus() {
             console.log("Sprawdzanie statusu Google API:");
             console.log("window.google istnieje:", !!window.google);
@@ -89,24 +131,36 @@
                 }
             }
         }
+        
+        // Funkcja do logowania przez Facebook
+        function loginWithFacebook() {
+            FB.login(function(response) {
+                if (response.authResponse) {
+                    console.log('Facebook login successful');
+                    handleFacebookLogin(response.authResponse.accessToken);
+                } else {
+                    console.log('Facebook login cancelled or failed');
+                }
+            }, {scope: 'email,public_profile'});
+        }
 
         // Wywołaj funkcję inicjalizującą po załadowaniu zawartości DOM
         document.addEventListener('DOMContentLoaded', function() {
             // Sprawdź status API Google
             checkGoogleApiStatus();
             
-            // Inicjalizuj Google Sign-In
-            initGoogleSignIn();
+            // Inicjalizuj social loginy
+            initSocialLogins();
             
             // Sprawdź ponownie po pełnym załadowaniu strony
             window.addEventListener('load', function() {
                 console.log("Strona w pełni załadowana, sprawdzanie ponownie:");
                 checkGoogleApiStatus();
                 
-                // Jeśli przycisk nie został poprawnie zainicjalizowany, spróbuj ponownie
-                if (document.getElementById('g_id_signin').children.length === 0) {
+                // Jeśli przycisk Google nie został poprawnie zainicjalizowany, spróbuj ponownie
+                if (document.getElementById('g_id_signin') && document.getElementById('g_id_signin').children.length === 0) {
                     console.log("Ponowna próba inicjalizacji przycisku Google");
-                    initGoogleSignIn();
+                    initSocialLogins();
                 }
             });
         });
@@ -129,12 +183,18 @@
             <button type="submit" class="btn-primary">Zaloguj</button>
         </form>
         
-        <!-- Kontener na przycisk logowania przez Google -->
-        <div class="google-login-container">
+        <!-- Kontenery dla przycisków logowania społecznościowego -->
+        <div class="social-login-container">
+            <!-- Kontener na przycisk logowania przez Google -->
             <div id="google-signin-container">
                 <p>Ładowanie przycisku logowania przez Google...</p>
             </div>
             <div id="g_id_signin" style="display: flex; justify-content: center; margin-top: 10px;"></div>
+            
+            <!-- Kontener na przycisk logowania przez Facebook -->
+            <div id="facebook-login-container">
+                <p>Ładowanie przycisku logowania przez Facebook...</p>
+            </div>
         </div>
         
         <!-- Link do rejestracji i powrotu -->

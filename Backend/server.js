@@ -21,6 +21,7 @@ app.use((req, res, next) => {
 // Routy
 app.use('/api', require('./routes/authRoutes'));
 app.use('/api/auth', require('./routes/googleAuthRoutes'));
+app.use('/api/auth', require('./routes/facebookAuthRoutes'));
 app.use('/api/files', require('./routes/fileRoutes'));
 app.use('/api/folders', require('./routes/folderRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
