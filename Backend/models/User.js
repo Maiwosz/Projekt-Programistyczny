@@ -5,10 +5,22 @@ const UserSchema = new mongoose.Schema({
     username: { type: String, unique: true },
     password: String,
     email: String,
+    googleId: String,
+    facebookId: String,
     profilePictureId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'File'
-    }
+    },
+    profilePictureUrl: String,
+    googleDriveTokens: {
+        access_token: String,
+        refresh_token: String,
+        scope: String,
+        token_type: String,
+        expiry_date: Number
+    },
+    googleDriveEnabled: { type: Boolean, default: false },
+    lastDriveSyncDate: { type: Date }
 });
 
 UserSchema.pre('save', async function (next) {

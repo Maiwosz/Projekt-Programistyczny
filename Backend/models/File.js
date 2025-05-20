@@ -12,7 +12,11 @@ const FileSchema = new mongoose.Schema({
     },
     folder: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null },
     createdAt: { type: Date, default: Date.now },
-    metadata: { type: Object, default: {} }
+    metadata: { type: Object, default: {} },
+    googleDriveId: { type: String },
+    syncedFromDrive: { type: Boolean, default: false },
+    syncedToDrive: { type: Boolean, default: false },
+    lastSyncDate: { type: Date }
 });
 
 module.exports = mongoose.model('File', FileSchema);

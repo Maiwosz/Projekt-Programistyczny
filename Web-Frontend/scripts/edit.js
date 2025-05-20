@@ -212,3 +212,8 @@ function closePanel() {
     text2.value = "";
 }
 
+
+function open_mainpage() {
+    window.location.pathname = '/mainpage.html';
+}
+
