@@ -145,18 +145,24 @@ exports.deleteFile = async (req, res) => {
 exports.getFileMetadata = async (req, res) => {
     try {
         const file = await File.findOne({ _id: req.params.id, user: req.user.userId })
-            .select('originalName mimetype category createdAt metadata path')
+            .select('originalName mimetype category createdAt metadata path size')
             .lean();
 
         if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
 
         // Pobierz rozmiar pliku z systemu plików
         const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
-        const stats = await fs.promises.stat(filePath);
-        file.size = stats.size;
+        try {
+            const stats = await fs.promises.stat(filePath);
+            file.size = stats.size;
+        } catch (err) {
+            console.warn('Nie mo¿na odczytaæ rozmiaru pliku:', err);
+            file.size = 0;
+        }
 
         res.json(file);
     } catch (error) {
+        console.error('B³¹d pobierania metadanych:', error);
         res.status(500).json({ error: 'B³¹d pobierania metadanych' });
     }
 };
@@ -171,13 +177,41 @@ exports.updateFileMetadata = async (req, res) => {
         }
 
         const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
+        
+        // SprawdŸ czy plik istnieje na dysku
+        try {
+            await fs.promises.access(filePath, fs.constants.F_OK);
+        } catch (err) {
+            return res.status(404).json({ error: 'Plik nie istnieje na serwerze' });
+        }
 
-        // Aktualizacja metadanych w pliku
-        await exiftool.write(filePath, req.body);
-        const newMetadata = await exiftool.read(filePath);
-        await file.save();
-
-        res.json(file);
+        try {
+            // Aktualizacja metadanych w fizycznym pliku
+            console.log('Aktualizacja metadanych pliku:', filePath);
+            console.log('Nowe metadane:', req.body);
+            
+            // U¿ywamy exiftool do zapisu metadanych w pliku
+            await exiftool.write(filePath, req.body);
+            
+            // Odczytujemy zaktualizowane metadane
+            const updatedMetadata = await exiftool.read(filePath);
+            console.log('Zaktualizowane metadane:', updatedMetadata);
+            
+            // Aktualizujemy rekord w bazie danych
+            file.metadata = updatedMetadata;
+            await file.save();
+            
+            res.json({ 
+                message: 'Metadane zaktualizowane pomyœlnie',
+                metadata: updatedMetadata 
+            });
+        } catch (error) {
+            console.error('B³¹d podczas aktualizacji metadanych pliku:', error);
+            return res.status(500).json({ 
+                error: 'Nie uda³o siê zaktualizowaæ metadanych pliku',
+                details: error.message 
+            });
+        }
     } catch (error) {
         console.error('Szczegó³y b³êdu:', error);
         res.status(500).json({
@@ -189,12 +223,18 @@ exports.updateFileMetadata = async (req, res) => {
 
 const processMetadata = async (filePath) => {
     try {
-        return await exifr.parse(filePath, {
+        // Najpierw próbujemy odczytaæ metadane za pomoc¹ exifr
+        const metadata = await exifr.parse(filePath, {
             iptc: true,
             xmp: true,
             icc: true,
             maxBufferSize: 30 * 1024 * 1024
         });
+        
+        if (metadata) return metadata;
+        
+        // Jeœli exifr nie zwróci³ metadanych, próbujemy z exiftool
+        return await exiftool.read(filePath);
     } catch (error) {
         console.error('B³¹d przetwarzania metadanych:', error);
         return {};
@@ -206,4 +246,4 @@ process.on('SIGINT', () => exiftool.end());
 process.on('uncaughtException', (err) => {
     exiftool.end();
     process.exit(1);
-})
+});
