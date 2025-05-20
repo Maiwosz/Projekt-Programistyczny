@@ -74,7 +74,7 @@
     <!-- Modal do podglądu pliku i metadanych -->
     <div id="fileModal" class="modal" style="max-width: 800px;">
         <div id="modalContent">
-            <form class="modalContentDivide">
+            <div class="modalContentDivide">
                 <!-- Lewa kolumna - podgląd -->
                 <div>
                     <div id="filePreviewLarge"></div>
@@ -89,15 +89,15 @@
                 <!-- Prawa kolumna - metadane -->
                 <div>
                     <h3 style="margin-top: 0;">Metadane</h3>
-                    <form id="metadataForm" onsubmit="saveMetadata(event)">
+                    <form id="metadataForm">
                         <div id="metadataFields"></div>
                         <div style="margin-top: 15px; display: flex; gap: 10px;">
-                            <button type="submit">Zapisz zmiany</button>
+                            <button type="button" onclick="saveMetadata(event)">Zapisz zmiany</button>
                             <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
                         </div>
                     </form>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 

@@ -16,7 +16,7 @@ export function closeFolderModal() {
 
 export async function showFileDetails(fileId) {
     try {
-        currentFileId = fileId; // Zapamiętaj ID pliku
+        window.currentFileId = fileId; // Zapamiętaj ID pliku
         // Pobierz metadane pliku z API
         const response = await fetch(`/api/files/${fileId}/metadata`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -95,13 +95,20 @@ function renderFileModal(file) {
 export async function saveMetadata(event) {
     event.preventDefault(); // Blokuj domyślną akcję formularza
 
+    // Sprawdź czy mamy ID pliku
+    if (!window.currentFileId) {
+        alert('Błąd: brak ID pliku');
+        return;
+    }
+
     // Przygotuj dane metadanych z formularza
-    const formData = new FormData(event.target);
+    const form = document.getElementById('metadataForm');
+    const formData = new FormData(form);
     const metadata = Object.fromEntries(formData.entries());
 
     try {
         // Wyślij zaktualizowane metadane
-        const response = await fetch(`/api/files/${currentFileId}/metadata`, {
+        const response = await fetch(`/api/files/${window.currentFileId}/metadata`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -123,5 +130,5 @@ export async function saveMetadata(event) {
 export function closeFileModal() {
     // Ukryj modal i zresetuj ID pliku
     document.getElementById('fileModal').style.display = 'none';
-    currentFileId = null;
+    window.currentFileId = null;
 }
