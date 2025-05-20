@@ -11,7 +11,16 @@ const UserSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'File'
     },
-    profilePictureUrl: String // Pole dla URL zdjęcia z Google/Facebook
+    profilePictureUrl: String,
+    googleDriveTokens: {
+        access_token: String,
+        refresh_token: String,
+        scope: String,
+        token_type: String,
+        expiry_date: Number
+    },
+    googleDriveEnabled: { type: Boolean, default: false },
+    lastDriveSyncDate: { type: Date }
 });
 
 UserSchema.pre('save', async function (next) {

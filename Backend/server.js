@@ -25,7 +25,8 @@ app.use('/api/auth', require('./routes/facebookAuthRoutes'));
 app.use('/api/files', require('./routes/fileRoutes'));
 app.use('/api/folders', require('./routes/folderRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
-app.use('/api/config', require('./routes/configRoutes')); // Nowy endpoint konfiguracyjny
+app.use('/api/config', require('./routes/configRoutes'));
+app.use('/api/drive', require('./routes/googleDriveRoutes'));
 
 
 // Obsługa plików statycznych

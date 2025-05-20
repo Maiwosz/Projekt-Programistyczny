@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strona główna</title>
-	<link rel="stylesheet" href="./styles/mainpage.css">
+    <link rel="stylesheet" href="./styles/mainpage.css">
+    <!-- Najpierw załaduj główny moduł aplikacji -->
+    <script type="module" src="./scripts/main.js"></script>
+    <!-- Skrypt auth.js musi być dodany jako zwykły skrypt -->
+    <script src="./scripts/auth.js"></script>
 </head>
 <body>
     <div class="logged-in">
@@ -66,45 +70,42 @@
             <button onclick="closeFolderModal()" style="background: #6c757d;">Anuluj</button>
         </div>
     </div>
-	
-        <!-- Modal do podglądu pliku i metadanych -->
-        <div id="fileModal" class="modal" style="max-width: 800px;">
-            <div id="modalContent">
-                <form class="modalContentDivide">
-                    <!-- Lewa kolumna - podgląd -->
-                    <div>
-                        <div id="filePreviewLarge"></div>
-                        <div id="fileInfo" style="margin-top: 15px;">
-                            <p><strong>Nazwa:</strong> <span id="fileName"></span></p>
-                            <p><strong>Typ:</strong> <span id="fileType"></span></p>
-                            <p><strong>Rozmiar:</strong> <span id="fileSize"></span></p>
-                            <p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
+    
+    <!-- Modal do podglądu pliku i metadanych -->
+    <div id="fileModal" class="modal" style="max-width: 800px;">
+        <div id="modalContent">
+            <form class="modalContentDivide">
+                <!-- Lewa kolumna - podgląd -->
+                <div>
+                    <div id="filePreviewLarge"></div>
+                    <div id="fileInfo" style="margin-top: 15px;">
+                        <p><strong>Nazwa:</strong> <span id="fileName"></span></p>
+                        <p><strong>Typ:</strong> <span id="fileType"></span></p>
+                        <p><strong>Rozmiar:</strong> <span id="fileSize"></span></p>
+                        <p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
+                    </div>
+                </div>
+                
+                <!-- Prawa kolumna - metadane -->
+                <div>
+                    <h3 style="margin-top: 0;">Metadane</h3>
+                    <form id="metadataForm" onsubmit="saveMetadata(event)">
+                        <div id="metadataFields"></div>
+                        <div style="margin-top: 15px; display: flex; gap: 10px;">
+                            <button type="submit">Zapisz zmiany</button>
+                            <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
                         </div>
-                    </div>
-                    
-                    <!-- Prawa kolumna - metadane -->
-                    <div>
-                        <h3 style="margin-top: 0;">Metadane</h3>
-                        <form id="metadataForm" onsubmit="saveMetadata(event)">
-                            <div id="metadataFields"></div>
-                            <div style="margin-top: 15px; display: flex; gap: 10px;">
-                                <button type="submit">Zapisz zmiany</button>
-                                <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
-                            </div>
-                        </form>
-                    </div>
-                </form>
-            </div>
+                    </form>
+                </div>
+            </form>
         </div>
-
-        <!-- Podgląd obrazka -->
-		<div id="image-view-id" class="image-view">
-			<span class="close-button" onclick="close_img_view()">&times;</span>
-			<img id="image-zoom-id" class="image-zoom">
-		</div>
     </div>
-    <script src="./scripts/mainpage.js"></script>
-    <script src="./scripts/auth.js"></script>
 
+    <!-- Podgląd obrazka -->
+    <div id="image-view-id" class="image-view">
+        <span class="close-button" onclick="close_img_view()">&times;</span>
+        <img id="image-zoom-id" class="image-zoom">
+    </div>
+    </div>
 </body>
 </html>
