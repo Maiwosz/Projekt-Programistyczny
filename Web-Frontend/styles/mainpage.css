@@ -209,6 +209,7 @@ button:hover {
     background: #e9ecef;
     border-radius: 4px;
     margin-bottom: 8px;
+    cursor: pointer;
 }
 
 .file-icon {
@@ -237,7 +238,7 @@ button:hover {
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     z-index: 1000;
     min-width: 300px;
-    /* max-height: calc(100vh - 100px); */
+    overflow: auto;
 }
 
 .modal input[type="text"] {
@@ -256,31 +257,36 @@ button:hover {
 }
 
 /* File modal width when screen width > 900px */
-#fileModal.modal {
+#fileModal {
     max-width: 90%;
     width: 800px;
 }
 
 #metadataFields {
     max-height: 400px; 
-    overflow: auto;
+    overflow-y: scroll;
 }
 
 /* Present modal in one column when screen width < 900px */
 @media only screen and (max-width: 900px) {
+
     .modalContentDivide {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 10px;
     }
 
-    #fileModal.modal {
-        width: 400px;
+    .modal {
+        overflow: scroll;
+        max-height: calc(100vh - 200px); /*Dostosowywanie wysokości modalu*/
+    }
+
+    #fileModal {
+        width: 350px;
     }
 
     #metadataFields {
         max-height: 200px;
-        overflow: scroll;
     }
 }
 
