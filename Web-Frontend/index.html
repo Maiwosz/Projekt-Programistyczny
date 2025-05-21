@@ -102,6 +102,37 @@
                 </div>
             </div>
         </div>
+		
+		<!-- Modal do tworzenia folderu -->
+        <div id="folderModal" class="modal">
+            <h3>Nowy folder</h3>
+            <input type="text" id="folderName" placeholder="Nazwa folderu">
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button onclick="createFolder()">Utwórz</button>
+                <button onclick="closeFolderModal()" style="background: #6c757d;">Anuluj</button>
+            </div>
+        </div>
+        
+        <!-- Modal do synchronizacji folderu -->
+        <div id="syncModal" class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Synchronizacja folderu: <span id="syncFolderName"></span></h3>
+                <input type="hidden" id="syncFolderId">
+            </div>
+            <div class="modal-content">
+                <div id="syncStatusInfo" class="sync-status">
+                    <!-- Tutaj będzie wyświetlany status synchronizacji -->
+                </div>
+                <div id="syncOptions" class="sync-options">
+                    <!-- Tutaj będą wyświetlane opcje synchronizacji -->
+                </div>
+            </div>
+            <div style="margin-top: 15px; text-align: right;">
+                <button onclick="closeSyncModal()" style="background: #6c757d;">Zamknij</button>
+            </div>
+        </div>
+        
+        <!-- Modal do podglądu pliku i metadanych -->
 
         <!-- Podgląd obrazka -->
         <div id="image-view-id" class="image-view">

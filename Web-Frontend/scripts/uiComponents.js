@@ -59,6 +59,7 @@ export function renderItems(data) {
                 <!-- Przyciski akcji z funkcjami obsługi zdarzeń -->
                 <button onclick="renameFolder('${folder._id}')" title="Zmień nazwę">✏️</button>
                 <button onclick="deleteFolder('${folder._id}')" title="Usuń">🗑️</button>
+                <button onclick="showSyncModal('${folder._id}', '${folder.name.replace(/'/g, "\\'")}')" title="Synchronizacja">🔄</button>
             </div>
             <!-- Obszar klikalny z dynamicznie wstrzykniętymi danymi -->
             <div onclick="enterFolder('${folder._id}', '${folder.name.replace(/'/g, "\\'")}')" 
@@ -68,6 +69,8 @@ export function renderItems(data) {
                     ${folder.name}
                     <!-- Opcjonalny opis folderu -->
                     ${folder.description ? `<p class="folder-description">${folder.description}</p>` : ''}
+                    <!-- Wskaźnik synchronizacji, jeśli folder jest synchronizowany -->
+                    ${folder.googleDriveId ? '<p class="sync-indicator">🔄 Google Drive</p>' : ''}
                 </div>
             </div>
         </div>`;

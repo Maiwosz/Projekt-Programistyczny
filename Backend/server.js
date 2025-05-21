@@ -29,7 +29,7 @@ app.use('/api/files', require('./routes/fileRoutes'));
 app.use('/api/folders', require('./routes/folderRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/config', require('./routes/configRoutes'));
-app.use('/api/drive', require('./routes/googleDriveRoutes'));
+app.use('/api/sync', require('./routes/syncRoutes'));
 
 // Obsługa plików statycznych
 const uploadsPath = path.resolve(process.env.UPLOADS_DIR);
