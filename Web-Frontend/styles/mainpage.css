@@ -13,12 +13,12 @@ body {
 #layout {
     display: flex;
     height: 100%;
-  }
+}
 
 /* ========== SEKCJE STRONY ========== */
 .section {
     display: grid;
-    grid-template-columns: 200px 1fr; /*<---*/
+    grid-template-columns: 144px 1fr; /*<---*/
     gap: 15px;
     background: white;
     border-radius: 8px;
@@ -26,11 +26,12 @@ body {
     margin-bottom: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
 .main-content {
     flex: 1;
     padding: 1rem;
-    overflow-y: auto;
-  }
+    overflow-y: scroll;
+}
 
 /* ========== NAGŁÓWEK ========== */
 .header {
@@ -38,12 +39,12 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 10px;
-    flex-wrap: wrap;
+    /* flex-wrap: wrap; */
     gap: 15px;
 }
 
-.header h1 {
-    padding-bottom: 20px;
+.header h2 {
+    padding-bottom: 15px;
 }
 
 /* ========== PRZYCISKI I FORMULARZE ========== */
@@ -67,12 +68,13 @@ button:hover {
     align-items: center;
     gap: 10px;
     margin-bottom: 15px;
-    flex-wrap: wrap;
+    /* flex-wrap: wrap; */
 }
 
 .upload-section button {
     position: relative;
-    overflow: hidden;
+    /* overflow: visible; */
+    overflow: clip;
 }
 
 .hidden-file-input {
@@ -84,7 +86,7 @@ button:hover {
 /*=========== DRZEWO FOLDERÓW ============ */
 
 #sidebar {
-    width: 150px;
+    width: 144px;
     background: #f5f5f5;
     border-right: 1px solid #ddd;
     overflow-y: auto;
@@ -115,24 +117,25 @@ button:hover {
 #folderTree li:hover {
     text-decoration: underline;
 }
+
 .folder {
     cursor: pointer;
     margin-left: 20px;
-  }
+}
 
-  .folder::before {
+.folder::before {
     content: "📁 ";
-  }
+}
 
-  .active {
+.active {
     font-weight: bold;
     color:rgb(36, 36, 47);
-  }
+}
 
 /* ========== LISTA PLIKÓW I FOLDERÓW ========== */
 .items-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
     grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
 }
@@ -234,6 +237,7 @@ button:hover {
     box-shadow: 0 0 15px rgba(0,0,0,0.2);
     z-index: 1000;
     min-width: 300px;
+    /* max-height: calc(100vh - 100px); */
 }
 
 .modal input[type="text"] {
@@ -276,7 +280,7 @@ button:hover {
 
     #metadataFields {
         max-height: 200px;
-        overflow: auto;
+        overflow: scroll;
     }
 }
 
@@ -359,8 +363,9 @@ button:hover {
     right: 3rem;
     color: #f8f9fa;
     font-size: 64px;
-    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+    text-shadow: -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 2px 2px 0 black;
     transition: 0.25s;
+    z-index: 100;
 }
 
 .close-button:hover, .close-button:focus {
@@ -380,4 +385,19 @@ button:hover {
     to {transform:scale(1)}
 }
 
+/* Adjust elements when screen width < 800px */
+@media only screen and (max-width: 800px) {
 
+    #sidebar {
+        display: none;
+    }
+
+    .header {
+        flex-direction: column;
+    }
+
+    .upload-section {
+        flex-wrap: wrap;
+    }  
+
+}
