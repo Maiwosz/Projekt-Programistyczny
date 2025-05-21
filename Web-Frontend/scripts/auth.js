@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Przekieruj zalogowanych użytkowników ze stron logowania/rejestracji
     if (token && (window.location.pathname === '/login.html' || window.location.pathname === '/register.html')) {
-        window.location.href = '/';
+        window.location.href = '/index.html';
         return;  // Zatrzymaj dalsze wykonywanie
     }
 
@@ -82,7 +82,7 @@ document.addEventListener('submit', async (e) => {
                 if (e.target.id === 'loginForm') {
                     const { token } = await response.json();
                     localStorage.setItem('token', token);
-                    window.location.href = '/mainpage.html';
+                    window.location.href = '/index.html';
                 } else if (e.target.id === 'registerForm') {
                     window.location.href = '/login.html'
                 } else {
@@ -98,95 +98,24 @@ document.addEventListener('submit', async (e) => {
     }
 });
 
-// Funkcja obsługująca odpowiedź z Google Sign-In
-function handleGoogleSignIn(response) {
-    try {
-        console.log("Google Sign-In zakończony pomyślnie", response);
-        
-        if (!response || !response.credential) {
-            console.error("Brak poświadczenia w odpowiedzi Google:", response);
-            alert("Nieprawidłowa odpowiedź z Google. Brak poświadczenia.");
-            return;
-        }
-        
-        const credential = response.credential;
-        console.log("Poświadczenie Google otrzymane:", credential.substring(0, 20) + "...");
-        
-        // Wysyłamy token ID do naszego API
-        fetch('/api/auth/google', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ token: credential })
-        })
-        .then(response => {
-            console.log("Status odpowiedzi API:", response.status);
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    throw new Error(errorData.error || 'Problem z autoryzacją Google');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Logowanie Google zakończone sukcesem:", data);
-            localStorage.setItem('token', data.token);
-            window.location.href = '/mainpage.html';
-        })
-        .catch(error => {
-            console.error('Google Sign-In error:', error);
-            alert('Problem z logowaniem przez Google: ' + error.message);
-        });
-    } catch (error) {
-        console.error('Google Sign-In error:', error);
-        alert('Problem z logowaniem przez Google: ' + error.message);
-    }
-}
-
-function handleFacebookLogin(accessToken) {
-    try {
-        console.log("Facebook Login zakończony pomyślnie, otrzymano token dostępu");
-        
-        if (!accessToken) {
-            console.error("Brak tokenu dostępu z Facebook");
-            alert("Nieprawidłowa odpowiedź z Facebook. Brak tokenu dostępu.");
-            return;
-        }
-        
-        // Wysyłamy token dostępu do naszego API
-        fetch('/api/auth/facebook', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ accessToken })
-        })
-        .then(response => {
-            console.log("Status odpowiedzi API Facebook:", response.status);
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    throw new Error(errorData.error || 'Problem z autoryzacją Facebook');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Logowanie Facebook zakończone sukcesem:", data);
-            localStorage.setItem('token', data.token);
-            window.location.href = '/mainpage.html';
-        })
-        .catch(error => {
-            console.error('Facebook Login error:', error);
-            alert('Problem z logowaniem przez Facebook: ' + error.message);
-        });
-    } catch (error) {
-        console.error('Facebook Login error:', error);
-        alert('Problem z logowaniem przez Facebook: ' + error.message);
-    }
-}
-
+// Funkcja wylogowania użytkownika
 function logout() {
     localStorage.removeItem('token');
-    window.location.href = '/';
+    
+    // Usuń stan zalogowania FB przed przekierowaniem
+    if (window.FB) {
+        FB.getLoginStatus(function(response) {
+            if (response && response.status === 'connected') {
+                FB.logout(function() {
+                    console.log('Wylogowano z Facebook');
+                    window.location.href = '/index.html';
+                });
+            } else {
+                window.location.href = '/index.html';
+            }
+        });
+    } else {
+        window.location.href = '/index.html';
+    }
 }
+

@@ -14,6 +14,10 @@ import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata,
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', () => {
+    // Sprawdź czy użytkownik jest zalogowany
+    const token = localStorage.getItem('token');
+    if (!token) return; // Nie wykonuj dalszego kodu jeśli nie ma tokenu
+  
     // Sprawdź czy istnieje zapisany stan w localStorage
     const savedState = localStorage.getItem('folderState');
     if (savedState) {
