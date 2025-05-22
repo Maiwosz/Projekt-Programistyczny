@@ -2,8 +2,9 @@
 // Główne zmienne stanu aplikacji
 export let currentFolder = { id: null, name: 'Główny' }; 
 export let folderStack = []; 
-export let currentFileId = null;
+export let currentFileId = null; // już nieużywane?
 export let innerFolders = new Map();
+export var userTags = [];
 
 // Importy funkcji z poszczególnych modułów
 import { loadFolderContents, enterFolder, navigateToIndex, buildPathTo } from './folderNavigation.js';
@@ -12,6 +13,7 @@ import { triggerFileInput, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
 import { showSyncModal, closeSyncModal, startFolderSync, authorizeGoogleDrive, disconnectSync, checkGoogleDriveConnection } from './syncHandler.js';
+import { loadUserTags,  renderTagsList, createTag, deleteTag, renderFileTags, populateTagSelector, addTagToFile, removeTagFromFile} from './tagPrototype.js';
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -37,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Załaduj zawartość folderu i zaktualizuj okruszki
     loadFolderContents();
+    loadUserTags();
     updateBreadcrumbs();
     updateTree();
 });
@@ -73,6 +76,16 @@ window.closeSyncModal = closeSyncModal;
 window.startFolderSync = startFolderSync;
 window.authorizeGoogleDrive = authorizeGoogleDrive;
 window.disconnectSync = disconnectSync;
+
+// TAGI
+window.loadUserTags = loadUserTags;
+window.renderTagsList = renderTagsList;
+window.createTag = createTag;
+window.deleteTag = deleteTag;
+window.renderFileTags = renderFileTags;
+window.populateTagSelector = populateTagSelector;
+window.addTagToFile = addTagToFile;
+window.removeTagFromFile = removeTagFromFile;
 
 // Funkcje UI
 window.view_image = function(image_preview_src) {
