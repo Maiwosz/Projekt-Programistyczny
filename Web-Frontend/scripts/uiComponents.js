@@ -54,7 +54,7 @@ export function renderItems(data) {
     // Generuj HTML dla folderów
     data.subfolders.forEach(folder => {
         html_dirs += ` 
-        <div class="item-card">
+        <div class="item-card" data-folder-id="${folder._id}">
             <div class="item-actions">
                 <!-- Przyciski akcji z funkcjami obsługi zdarzeń -->
                 <button onclick="renameFolder('${folder._id}')" title="Zmień nazwę">✏️</button>
@@ -200,4 +200,19 @@ export function updateTree() {
     const treeContainer = document.getElementById("folderTree");
     treeContainer.innerHTML = '';
     treeContainer.appendChild(renderTree());
+}
+
+export function updateSyncIndicator(folderId, isSync) {
+    const folderCards = document.querySelectorAll(`[data-folder-id="${folderId}"]`);
+    folderCards.forEach(card => {
+        const indicator = card.querySelector('.sync-indicator');
+        if (isSync && !indicator) {
+            const syncEl = document.createElement('p');
+            syncEl.className = 'sync-indicator';
+            syncEl.textContent = '🔄 Synchronizowany';
+            card.querySelector('.file-name').appendChild(syncEl);
+        } else if (!isSync && indicator) {
+            indicator.remove();
+        }
+    });
 }

@@ -22,38 +22,38 @@ class SyncInterface {
         throw new Error("Metoda disconnect() musi być zaimplementowana");
     }
 
-    // Pobranie folderów z usługi zewnętrznej i zapisanie w aplikacji
-    async syncFoldersFrom() {
-        throw new Error("Metoda syncFoldersFrom() musi być zaimplementowana");
+    // Pobieranie listy folderów z usługi zewnętrznej
+    async getExternalFolders(parentId = null) {
+        throw new Error("Metoda getExternalFolders() musi być zaimplementowana");
     }
 
-    // Wysłanie folderów z aplikacji do usługi zewnętrznej
-    async syncFoldersTo() {
-        throw new Error("Metoda syncFoldersTo() musi być zaimplementowana");
+    // Tworzenie pary synchronizacji między lokalnym folderem a zewnętrznym
+    async createSyncPair(localFolderId, externalFolderId, syncDirection = 'bidirectional') {
+        throw new Error("Metoda createSyncPair() musi być zaimplementowana");
     }
 
-    // Pobranie plików z usługi zewnętrznej i zapisanie w aplikacji
-    async syncFilesFrom() {
-        throw new Error("Metoda syncFilesFrom() musi być zaimplementowana");
+    // Usuwanie pary synchronizacji
+    async removeSyncPair(syncPairId) {
+        throw new Error("Metoda removeSyncPair() musi być zaimplementowana");
     }
 
-    // Wysłanie plików z aplikacji do usługi zewnętrznej
-    async syncFilesTo() {
-        throw new Error("Metoda syncFilesTo() musi być zaimplementowana");
+    // Synchronizacja konkretnej pary folderów
+    async syncFolder(syncPairId) {
+        throw new Error("Metoda syncFolder() musi być zaimplementowana");
     }
 
-    // Pełna synchronizacja w obu kierunkach
-    async fullSync() {
-        throw new Error("Metoda fullSync() musi być zaimplementowana");
+    // Synchronizacja wszystkich aktywnych par dla danego providera
+    async syncAllPairs() {
+        throw new Error("Metoda syncAllPairs() musi być zaimplementowana");
     }
 
     // Pobranie URL potrzebnego do autoryzacji (jeśli wymagane)
-    getAuthUrl() {
+    static getAuthUrl(userId) {
         throw new Error("Metoda getAuthUrl() musi być zaimplementowana");
     }
 
     // Obsługa callbacku po autoryzacji (jeśli wymagane)
-    async handleAuthCallback(params) {
+    static async handleAuthCallback(userId, params) {
         throw new Error("Metoda handleAuthCallback() musi być zaimplementowana");
     }
 }

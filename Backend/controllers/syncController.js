@@ -1,91 +1,156 @@
-const User = require('../models/User');
-const syncManager = require('../services/sync/SyncManager');
+const SyncManager = require('../services/sync/SyncManager');
+const jwt = require('jsonwebtoken');
 
-exports.getActiveSyncProviders = async (req, res) => {
+// Pobierz dostępnych providerów dla użytkownika
+exports.getActiveProviders = async (req, res) => {
     try {
-        const activeProviders = await syncManager.getUserActiveProviders(req.user.userId);
-        res.json({ providers: activeProviders });
+        const providers = await SyncManager.getUserActiveProviders(req.user.userId);
+        res.json({ providers });
     } catch (error) {
-        console.error('Błąd pobierania aktywnych providerów synchronizacji:', error);
-        res.status(500).json({ error: 'Błąd pobierania statusu synchronizacji' });
+        res.status(500).json({ error: error.message });
     }
 };
 
-exports.syncWithProvider = async (req, res) => {
+// Pobierz foldery z zewnętrznego providera
+exports.getExternalFolders = async (req, res) => {
     try {
         const { provider } = req.params;
-        const result = await syncManager.syncWithProvider(req.user.userId, provider);
-        res.json(result);
-    } catch (error) {
-        console.error(`Błąd synchronizacji z ${req.params.provider}:`, error);
-        res.status(500).json({ error: `Błąd synchronizacji: ${error.message}` });
-    }
-};
-
-exports.syncAll = async (req, res) => {
-    try {
-        const results = await syncManager.syncAll(req.user.userId);
-        res.json(results);
-    } catch (error) {
-        console.error('Błąd synchronizacji ze wszystkimi providerami:', error);
-        res.status(500).json({ error: `Błąd synchronizacji: ${error.message}` });
-    }
-};
-
-exports.disconnectProvider = async (req, res) => {
-    try {
-        const { provider } = req.params;
-        const result = await syncManager.disconnectProvider(req.user.userId, provider);
-        res.json(result);
-    } catch (error) {
-        console.error(`Błąd odłączania ${req.params.provider}:`, error);
-        res.status(500).json({ error: `Błąd odłączania synchronizacji: ${error.message}` });
-    }
-};
-
-exports.getAuthUrl = async (req, res) => {
-    try {
-        const { provider } = req.params;
-        const result = syncManager.getAuthUrl(provider, req.user.userId);
-        res.json(result);
-    } catch (error) {
-        console.error(`Błąd generowania URL autoryzacji dla ${req.params.provider}:`, error);
-        res.status(500).json({ error: `Błąd generowania URL autoryzacji: ${error.message}` });
-    }
-};
-
-exports.handleAuthCallback = async (req, res) => {
-    try {
-        const { provider } = req.params;
-        const { code, state } = req.query;
-
-        // State jest używany do identyfikacji użytkownika zamiast tokenu JWT
-        const userId = state;
+        const { parentId } = req.query;
         
-        // Sprawdź, czy userId jest prawidłowy
-        if (!userId) {
-            return res.status(400).json({ error: 'Brak identyfikatora użytkownika' });
-        }
-
-        const result = await syncManager.handleAuthCallback(provider, userId, { code });
-        res.json(result);
+        const folders = await SyncManager.getExternalFolders(provider, req.user.userId, parentId);
+        res.json({ folders });
     } catch (error) {
-        console.error(`Błąd obsługi callbacku autoryzacji dla ${req.params.provider}:`, error);
-        res.status(500).json({ error: `Błąd autoryzacji: ${error.message}` });
+        res.status(500).json({ error: error.message });
     }
 };
 
-exports.getSyncStatus = async (req, res) => {
+// Utwórz parę synchronizacji
+exports.createSyncPair = async (req, res) => {
     try {
         const { provider } = req.params;
-        const providerInstance = await syncManager.getProvider(provider, req.user.userId);
+        const { localFolderId, externalFolderId, syncDirection } = req.body;
+        
+        const syncPair = await SyncManager.createSyncPair(
+            provider, 
+            req.user.userId, 
+            localFolderId, 
+            externalFolderId, 
+            syncDirection
+        );
+        
+        res.status(201).json(syncPair);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Usuń parę synchronizacji
+exports.removeSyncPair = async (req, res) => {
+    try {
+        const { provider, syncPairId } = req.params;
+        
+        const result = await SyncManager.removeSyncPair(provider, req.user.userId, syncPairId);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Pobierz wszystkie pary synchronizacji użytkownika
+exports.getSyncPairs = async (req, res) => {
+    try {
+        const { provider } = req.query;
+        
+        const syncPairs = await SyncManager.getUserSyncPairs(req.user.userId, provider);
+        res.json({ syncPairs });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Synchronizuj konkretną parę folderów
+exports.syncFolder = async (req, res) => {
+    try {
+        const { provider, syncPairId } = req.params;
+        
+        const result = await SyncManager.syncFolder(provider, req.user.userId, syncPairId);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Synchronizuj wszystkie pary dla providera
+exports.syncAllPairs = async (req, res) => {
+    try {
+        const { provider } = req.params;
+        
+        const results = await SyncManager.syncAllPairs(provider, req.user.userId);
+        res.json({ results });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Sprawdź status połączenia z providerem
+exports.checkConnection = async (req, res) => {
+    try {
+        const { provider } = req.params;
+        
+        const providerInstance = await SyncManager.getProvider(provider, req.user.userId);
         const status = await providerInstance.checkConnection();
         res.json(status);
     } catch (error) {
-        console.error(`Błąd sprawdzania statusu synchronizacji ${req.params.provider}:`, error);
-        res.status(500).json({ 
-            connected: false, 
-            error: `Błąd sprawdzania statusu synchronizacji: ${error.message}` 
-        });
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Rozłącz providera
+exports.disconnectProvider = async (req, res) => {
+    try {
+        const { provider } = req.params;
+        
+        const result = await SyncManager.disconnectProvider(req.user.userId, provider);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Pobierz URL autoryzacji dla providera
+exports.getAuthUrl = async (req, res) => {
+    try {
+        const { provider } = req.params;
+        
+        // Generuj state z userId
+        const state = jwt.sign(
+            { userId: req.user.userId },
+            process.env.JWT_SECRET,
+            { expiresIn: '10m' }
+        );
+
+        const authUrl = await SyncManager.getAuthUrl(provider, state); // Przekaż state
+        res.json({ authUrl });
+        
+    } catch (error) {
+        console.error('Błąd generowania URL autoryzacji:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Obsługa callbacku autoryzacji
+exports.handleAuthCallback = async (req, res) => {
+    try {
+        const { provider } = req.params; // provider z URL
+        const { state } = req.query; // state z query params
+        
+        // Zweryfikuj state (np. odszyfruj JWT)
+        const decoded = jwt.verify(state, process.env.JWT_SECRET);
+        const userId = decoded.userId;
+
+        const result = await SyncManager.handleAuthCallback(provider, userId, req.query);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
     }
 };

@@ -1,456 +1,420 @@
-const { google } = require('googleapis');
-const fs = require('fs');
-const path = require('path');
 const SyncInterface = require('../SyncInterface');
+const { google } = require('googleapis');
 const User = require('../../../models/User');
 const Folder = require('../../../models/Folder');
 const File = require('../../../models/File');
-const { getCategoryFromMimeType } = require('../../utils/fileUtils');
+const SyncPair = require('../../../models/SyncPair');
+const path = require('path');
+const fs = require('fs');
 
 class GoogleDriveSync extends SyncInterface {
     constructor(userId) {
         super(userId);
+        this.drive = null;
+        this.oauth2Client = null;
+    }
+
+    async initialize() {
+        const user = await User.findById(this.userId);
+        if (!user || !user.googleDriveTokens) {
+            throw new Error('Brak autoryzacji Google Drive');
+        }
+
         this.oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.GOOGLE_CLIENT_SECRET,
             process.env.GOOGLE_REDIRECT_URI
         );
-        this.drive = null;
-        this.user = null;
-    }
 
-    // Inicjalizacja połączenia z Google Drive
-    async initialize() {
-        this.user = await User.findById(this.userId);
-        if (!this.user || !this.user.googleDriveTokens) {
-            throw new Error('Użytkownik nie ma uprawnień do Google Drive');
-        }
+        this.oauth2Client.setCredentials(user.googleDriveTokens);
+        this.drive = google.drive({ version: 'v3', auth: this.oauth2Client });
 
-        this.oauth2Client.setCredentials(this.user.googleDriveTokens);
-        
-        // Sprawdzenie, czy token wymaga odświeżenia
-        if (this.user.googleDriveTokens.expiry_date < Date.now()) {
-            try {
-                const { tokens } = await this.oauth2Client.refreshToken(
-                    this.user.googleDriveTokens.refresh_token
-                );
-                this.user.googleDriveTokens = {
-                    ...this.user.googleDriveTokens,
-                    ...tokens
-                };
-                await this.user.save();
-            } catch (error) {
-                console.error('Błąd odświeżania tokena:', error);
-                throw new Error('Błąd autoryzacji Google Drive');
+        // Sprawdź czy token nie wygasł
+        try {
+            await this.drive.about.get({ fields: 'user' });
+        } catch (error) {
+            if (error.code === 401) {
+                // Token wygasł, spróbuj odświeżyć
+                await this.refreshToken();
+            } else {
+                throw error;
             }
         }
-
-        this.drive = google.drive({ version: 'v3', auth: this.oauth2Client });
     }
 
-    // Sprawdzenie statusu połączenia
-    async checkConnection() {
-        if (!this.user || !this.user.googleDriveEnabled || !this.user.googleDriveTokens) {
-            return { connected: false };
-        }
-
+    async refreshToken() {
         try {
-            // Próba wykonania prostego zapytania, aby sprawdzić, czy tokeny działają
-            await this.drive.about.get({ fields: 'user' });
-            return {
-                connected: true,
-                lastSync: this.user.lastDriveSyncDate || null
-            };
+            const { credentials } = await this.oauth2Client.refreshAccessToken();
+            this.oauth2Client.setCredentials(credentials);
+
+            // Zapisz nowy token w bazie
+            await User.findByIdAndUpdate(this.userId, {
+                googleDriveTokens: credentials
+            });
         } catch (error) {
-            console.error('Błąd sprawdzania połączenia z Google Drive:', error);
+            throw new Error('Nie można odświeżyć tokenu Google Drive');
+        }
+    }
+
+    async checkConnection() {
+        try {
+            const response = await this.drive.about.get({ fields: 'user' });
+            return { connected: true, user: response.data.user };
+        } catch (error) {
             return { connected: false, error: error.message };
         }
     }
 
-    // Rozłączenie z Google Drive
     async disconnect() {
-        if (!this.user) {
-            throw new Error('Użytkownik nie znaleziony');
+        try {
+            // Deaktywuj wszystkie pary synchronizacji tego providera
+            await SyncPair.updateMany(
+                { user: this.userId, provider: 'google-drive' },
+                { isActive: false }
+            );
+
+            // Usuń tokeny z bazy danych
+            await User.findByIdAndUpdate(this.userId, {
+                googleDriveEnabled: false,
+                googleDriveTokens: null
+            });
+
+            return { success: true };
+        } catch (error) {
+            throw new Error('Błąd rozłączania Google Drive: ' + error.message);
         }
-
-        this.user.googleDriveTokens = undefined;
-        this.user.googleDriveEnabled = false;
-        await this.user.save();
-
-        return { success: true, message: 'Konto Google Drive odłączone' };
     }
 
-    // Pobranie folderów z Google Drive i zapisanie w aplikacji
-    async syncFoldersFrom() {
+    async getExternalFolders(parentId = null) {
         try {
-            // Pobierz wszystkie foldery z Google Drive
+            const query = parentId 
+                ? `'${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+                : `parents in 'root' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+
             const response = await this.drive.files.list({
-                q: "mimeType='application/vnd.google-apps.folder'",
+                q: query,
                 fields: 'files(id, name, parents)',
-                spaces: 'drive'
+                pageSize: 100
             });
 
-            const driveFolders = response.data.files;
-            const syncedFolders = [];
-
-            // Mapowanie folderów Google Drive na foldery aplikacji
-            for (const driveFolder of driveFolders) {
-                // Sprawdź czy folder już istnieje w bazie
-                let folder = await Folder.findOne({
-                    user: this.userId,
-                    googleDriveId: driveFolder.id
-                });
-
-                if (!folder) {
-                    // Określenie rodzica folderu
-                    let parent = null;
-                    if (driveFolder.parents && driveFolder.parents.length > 0) {
-                        const parentFolder = await Folder.findOne({
-                            user: this.userId,
-                            googleDriveId: driveFolder.parents[0]
-                        });
-                        if (parentFolder) {
-                            parent = parentFolder._id;
-                        }
-                    }
-
-                    // Utwórz nowy folder
-                    folder = new Folder({
-                        user: this.userId,
-                        name: driveFolder.name,
-                        parent,
-                        googleDriveId: driveFolder.id,
-                        syncedFromDrive: true,
-                        lastSyncDate: new Date()
-                    });
-
-                    await folder.save();
-                    syncedFolders.push(folder);
-                }
-            }
-
-            // Aktualizacja daty ostatniej synchronizacji
-            this.user.lastDriveSyncDate = new Date();
-            await this.user.save();
-
-            return {
-                success: true,
-                message: 'Foldery zsynchronizowane z Google Drive',
-                syncedFolders: syncedFolders.length
-            };
+            return response.data.files.map(folder => ({
+                id: folder.id,
+                name: folder.name,
+                path: folder.name, // W przyszłości możemy budować pełną ścieżkę
+                parentId: folder.parents ? folder.parents[0] : null
+            }));
         } catch (error) {
-            console.error('Błąd synchronizacji folderów z Google Drive:', error);
-            throw new Error(`Błąd synchronizacji folderów: ${error.message}`);
+            throw new Error('Błąd pobierania folderów z Google Drive: ' + error.message);
         }
     }
 
-    // Wysłanie folderów z aplikacji do Google Drive
-    async syncFoldersTo() {
+    async createSyncPair(localFolderId, externalFolderId, syncDirection = 'bidirectional') {
         try {
-            // Pobierz wszystkie foldery użytkownika, które nie są jeszcze zsynchronizowane
-            const folders = await Folder.find({
+            // Sprawdź czy folder lokalny istnieje
+            const localFolder = await Folder.findOne({ _id: localFolderId, user: this.userId });
+            if (!localFolder) {
+                throw new Error('Lokalny folder nie znaleziony');
+            }
+
+            // Sprawdź czy folder na Google Drive istnieje
+            const driveFolder = await this.drive.files.get({
+                fileId: externalFolderId,
+                fields: 'id, name, parents'
+            });
+
+            // Sprawdź czy para już istnieje
+            const existingPair = await SyncPair.findOne({
                 user: this.userId,
-                googleDriveId: { $exists: false }
+                localFolder: localFolderId,
+                provider: 'google-drive'
             });
 
-            const syncedFolders = [];
-
-            for (const folder of folders) {
-                // Parametry dla folderu na Google Drive
-                const folderMetadata = {
-                    name: folder.name,
-                    mimeType: 'application/vnd.google-apps.folder'
-                };
-
-                // Jeśli folder ma rodzica, który jest zsynchronizowany z Google Drive
-                if (folder.parent) {
-                    const parentFolder = await Folder.findById(folder.parent);
-                    if (parentFolder && parentFolder.googleDriveId) {
-                        folderMetadata.parents = [parentFolder.googleDriveId];
-                    }
-                }
-
-                // Utwórz folder na Google Drive
-                const driveFolder = await this.drive.files.create({
-                    resource: folderMetadata,
-                    fields: 'id'
-                });
-
-                // Aktualizuj folder w bazie danych
-                folder.googleDriveId = driveFolder.data.id;
-                folder.syncedToDrive = true;
-                folder.lastSyncDate = new Date();
-                await folder.save();
-
-                syncedFolders.push(folder);
+            if (existingPair) {
+                throw new Error('Para synchronizacji już istnieje dla tego folderu');
             }
 
-            // Aktualizacja daty ostatniej synchronizacji
-            this.user.lastDriveSyncDate = new Date();
-            await this.user.save();
-
-            return {
-                success: true,
-                message: 'Foldery zsynchronizowane do Google Drive',
-                syncedFolders: syncedFolders.length
-            };
-        } catch (error) {
-            console.error('Błąd synchronizacji folderów do Google Drive:', error);
-            throw new Error(`Błąd synchronizacji folderów: ${error.message}`);
-        }
-    }
-
-    // Pobranie plików z Google Drive i zapisanie w aplikacji
-    async syncFilesFrom() {
-        try {
-            // Pobierz wszystkie pliki z Google Drive (oprócz folderów)
-            const response = await this.drive.files.list({
-                q: "mimeType!='application/vnd.google-apps.folder'",
-                fields: 'files(id, name, mimeType, parents, size, modifiedTime)',
-                spaces: 'drive'
-            });
-
-            const driveFiles = response.data.files;
-            const syncedFiles = [];
-
-            for (const driveFile of driveFiles) {
-                // Sprawdź czy plik już istnieje w bazie
-                let file = await File.findOne({
-                    user: this.userId,
-                    googleDriveId: driveFile.id
-                });
-
-                // Jeśli plik już istnieje, sprawdź czy wymaga aktualizacji
-                if (file) {
-                    const driveModifiedTime = new Date(driveFile.modifiedTime);
-                    if (file.lastSyncDate && driveModifiedTime <= file.lastSyncDate) {
-                        // Plik na Google Drive nie został zmieniony od ostatniej synchronizacji
-                        continue;
-                    }
-                }
-
-                // Określenie kategorii pliku
-                const category = getCategoryFromMimeType(driveFile.mimeType);
-
-                // Określenie folderu nadrzędnego
-                let folder = null;
-                if (driveFile.parents && driveFile.parents.length > 0) {
-                    const parentFolder = await Folder.findOne({
-                        user: this.userId,
-                        googleDriveId: driveFile.parents[0]
-                    });
-                    if (parentFolder) {
-                        folder = parentFolder._id;
-                    }
-                }
-
-                // Ścieżka do zapisania pliku
-                const filePath = path.join(category, `${Date.now()}-${driveFile.name}`);
-                const fullPath = path.resolve(process.env.UPLOADS_DIR, filePath);
-
-                // Upewnij się, że folder docelowy istnieje
-                await fs.promises.mkdir(path.dirname(fullPath), { recursive: true });
-
-                // Pobierz plik z Google Drive
-                const dest = fs.createWriteStream(fullPath);
-                const response = await this.drive.files.get({
-                    fileId: driveFile.id,
-                    alt: 'media'
-                }, { responseType: 'stream' });
-
-                // Zapisz plik na dysku
-                await new Promise((resolve, reject) => {
-                    response.data
-                        .on('end', resolve)
-                        .on('error', reject)
-                        .pipe(dest);
-                });
-
-                if (file) {
-                    // Jeśli plik istnieje, zaktualizuj jego ścieżkę i datę synchronizacji
-                    file.path = filePath.replace(/\\/g, '/');
-                    file.lastSyncDate = new Date();
-                    await file.save();
-                } else {
-                    // Utwórz nowy rekord pliku w bazie
-                    file = new File({
-                        user: this.userId,
-                        path: filePath.replace(/\\/g, '/'),
-                        originalName: driveFile.name,
-                        mimetype: driveFile.mimeType,
-                        category,
-                        folder,
-                        googleDriveId: driveFile.id,
-                        syncedFromDrive: true,
-                        lastSyncDate: new Date()
-                    });
-                    await file.save();
-                }
-
-                syncedFiles.push(file);
-            }
-
-            // Aktualizacja daty ostatniej synchronizacji
-            this.user.lastDriveSyncDate = new Date();
-            await this.user.save();
-
-            return {
-                success: true,
-                message: 'Pliki zsynchronizowane z Google Drive',
-                syncedFiles: syncedFiles.length
-            };
-        } catch (error) {
-            console.error('Błąd synchronizacji plików z Google Drive:', error);
-            throw new Error(`Błąd synchronizacji plików: ${error.message}`);
-        }
-    }
-
-    // Wysłanie plików z aplikacji do Google Drive
-    async syncFilesTo() {
-        try {
-            // Pobierz wszystkie pliki użytkownika, które nie są jeszcze zsynchronizowane
-            const files = await File.find({
+            // Utwórz nową parę synchronizacji
+            const syncPair = new SyncPair({
                 user: this.userId,
-                googleDriveId: { $exists: false }
+                localFolder: localFolderId,
+                provider: 'google-drive',
+                externalFolderId: externalFolderId,
+                externalFolderName: driveFolder.data.name,
+                syncDirection: syncDirection,
+                isActive: true
             });
 
-            const syncedFiles = [];
+            await syncPair.save();
+            return syncPair;
+        } catch (error) {
+            throw new Error('Błąd tworzenia pary synchronizacji: ' + error.message);
+        }
+    }
 
-            for (const file of files) {
-                // Ścieżka pliku lokalnego
-                const localFilePath = path.resolve(process.env.UPLOADS_DIR, file.path);
+    async removeSyncPair(syncPairId) {
+        try {
+            const syncPair = await SyncPair.findOne({
+                _id: syncPairId,
+                user: this.userId,
+                provider: 'google-drive'
+            });
 
-                // Sprawdź czy plik istnieje
+            if (!syncPair) {
+                throw new Error('Para synchronizacji nie znaleziona');
+            }
+
+            await SyncPair.findByIdAndDelete(syncPairId);
+            return { success: true };
+        } catch (error) {
+            throw new Error('Błąd usuwania pary synchronizacji: ' + error.message);
+        }
+    }
+
+    async syncFolder(syncPairId) {
+        try {
+            const syncPair = await SyncPair.findOne({
+                _id: syncPairId,
+                user: this.userId,
+                provider: 'google-drive',
+                isActive: true
+            }).populate('localFolder');
+
+            if (!syncPair) {
+                throw new Error('Para synchronizacji nie znaleziona');
+            }
+
+            const result = {
+                syncPairId: syncPairId,
+                localFolder: syncPair.localFolder.name,
+                externalFolder: syncPair.externalFolderName,
+                direction: syncPair.syncDirection,
+                filesTransferred: 0,
+                errors: []
+            };
+
+            // Synchronizacja w zależności od kierunku
+            if (syncPair.syncDirection === 'bidirectional' || syncPair.syncDirection === 'from-external') {
+                await this.syncFromDrive(syncPair, result);
+            }
+
+            if (syncPair.syncDirection === 'bidirectional' || syncPair.syncDirection === 'to-external') {
+                await this.syncToDrive(syncPair, result);
+            }
+
+            // Aktualizuj statystyki synchronizacji
+            syncPair.lastSyncDate = new Date();
+            syncPair.syncStats.totalSyncs += 1;
+            if (result.errors.length === 0) {
+                syncPair.syncStats.successfulSyncs += 1;
+            } else {
+                syncPair.syncStats.failedSyncs += 1;
+                syncPair.syncStats.lastError = result.errors[0];
+            }
+            syncPair.syncStats.filesTransferred += result.filesTransferred;
+
+            await syncPair.save();
+
+            return result;
+        } catch (error) {
+            throw new Error('Błąd synchronizacji folderu: ' + error.message);
+        }
+    }
+
+    async syncFromDrive(syncPair, result) {
+        try {
+            // Pobierz pliki z Google Drive
+            const driveFiles = await this.drive.files.list({
+                q: `'${syncPair.externalFolderId}' in parents and trashed=false`,
+                fields: 'files(id, name, mimeType, size, modifiedTime)',
+                pageSize: 100
+            });
+
+            for (const driveFile of driveFiles.data.files) {
                 try {
-                    await fs.promises.access(localFilePath, fs.constants.F_OK);
-                } catch (error) {
-                    console.warn(`Plik ${localFilePath} nie istnieje, pomijam synchronizację`);
-                    continue;
-                }
+                    // Sprawdź czy plik już istnieje lokalnie
+                    const existingFile = await File.findOne({
+                        user: this.userId,
+                        folder: syncPair.localFolder,
+                        googleDriveId: driveFile.id
+                    });
 
-                // Parametry dla pliku na Google Drive
-                const fileMetadata = {
-                    name: file.originalName
-                };
-
-                // Jeśli plik jest w folderze, który jest zsynchronizowany z Google Drive
-                if (file.folder) {
-                    const folder = await Folder.findById(file.folder);
-                    if (folder && folder.googleDriveId) {
-                        fileMetadata.parents = [folder.googleDriveId];
+                    if (!existingFile) {
+                        await this.downloadFileFromDrive(driveFile, syncPair, result);
                     }
+                } catch (error) {
+                    result.errors.push(`Błąd synchronizacji pliku ${driveFile.name}: ${error.message}`);
                 }
-
-                // Utwórz strumień odczytu pliku
-                const fileStream = fs.createReadStream(localFilePath);
-
-                // Wyślij plik na Google Drive
-                const driveFile = await this.drive.files.create({
-                    resource: fileMetadata,
-                    media: {
-                        mimeType: file.mimetype,
-                        body: fileStream
-                    },
-                    fields: 'id'
-                });
-
-                // Aktualizuj plik w bazie danych
-                file.googleDriveId = driveFile.data.id;
-                file.syncedToDrive = true;
-                file.lastSyncDate = new Date();
-                await file.save();
-
-                syncedFiles.push(file);
             }
-
-            // Aktualizacja daty ostatniej synchronizacji
-            this.user.lastDriveSyncDate = new Date();
-            await this.user.save();
-
-            return {
-                success: true,
-                message: 'Pliki zsynchronizowane do Google Drive',
-                syncedFiles: syncedFiles.length
-            };
         } catch (error) {
-            console.error('Błąd synchronizacji plików do Google Drive:', error);
-            throw new Error(`Błąd synchronizacji plików: ${error.message}`);
+            result.errors.push('Błąd pobierania z Google Drive: ' + error.message);
         }
     }
 
-    // Pełna synchronizacja w obu kierunkach
-    async fullSync() {
+    async syncToDrive(syncPair, result) {
         try {
-            const folderFromResult = await this.syncFoldersFrom();
-            const folderToResult = await this.syncFoldersTo();
-            const filesFromResult = await this.syncFilesFrom();
-            const filesToResult = await this.syncFilesTo();
+            // Pobierz lokalne pliki z folderu
+            const localFiles = await File.find({
+                user: this.userId,
+                folder: syncPair.localFolder,
+                syncedToDrive: { $ne: true }
+            });
 
-            return {
-                success: true,
-                foldersFromDrive: folderFromResult.syncedFolders,
-                foldersToDrive: folderToResult.syncedFolders,
-                filesFromDrive: filesFromResult.syncedFiles,
-                filesToDrive: filesToResult.syncedFiles,
-                lastSync: new Date()
-            };
+            for (const localFile of localFiles) {
+                try {
+                    await this.uploadFileToDrive(localFile, syncPair, result);
+                } catch (error) {
+                    result.errors.push(`Błąd uploadu pliku ${localFile.originalName}: ${error.message}`);
+                }
+            }
         } catch (error) {
-            console.error('Błąd pełnej synchronizacji:', error);
-            throw new Error(`Błąd pełnej synchronizacji: ${error.message}`);
+            result.errors.push('Błąd wysyłania do Google Drive: ' + error.message);
         }
     }
 
-    // Generowanie URL do autoryzacji Google Drive
-    static getAuthUrl(userId) {
-        const oauth2Client = new google.auth.OAuth2(
-            process.env.GOOGLE_CLIENT_ID,
-            process.env.GOOGLE_CLIENT_SECRET,
-            process.env.GOOGLE_REDIRECT_URI
-        );
+    async downloadFileFromDrive(driveFile, syncPair, result) {
+        // Pomiń foldery Google Apps
+        if (driveFile.mimeType === 'application/vnd.google-apps.folder') {
+            return;
+        }
 
-        const url = oauth2Client.generateAuthUrl({
-            access_type: 'offline',
-            scope: process.env.GOOGLE_API_SCOPE.split(','),
-            prompt: 'consent',  // Zawsze pytaj o zgodę, aby otrzymać refresh_token
-            state: userId       // Przechowujemy userId w stanie, aby zidentyfikować użytkownika w callbacku
+        const category = this.getCategoryFromMimeType(driveFile.mimeType);
+        const uploadDir = path.resolve(process.env.UPLOADS_DIR, category);
+        fs.mkdirSync(uploadDir, { recursive: true });
+
+        const uniqueName = Date.now() + '-' + driveFile.name;
+        const filePath = path.join(uploadDir, uniqueName);
+
+        // Pobierz plik z Google Drive
+        const response = await this.drive.files.get({
+            fileId: driveFile.id,
+            alt: 'media'
+        }, { responseType: 'stream' });
+
+        // Zapisz plik lokalnie
+        const writeStream = fs.createWriteStream(filePath);
+        response.data.pipe(writeStream);
+
+        await new Promise((resolve, reject) => {
+            writeStream.on('finish', resolve);
+            writeStream.on('error', reject);
         });
 
-        return { url };
+        // Utwórz rekord w bazie danych
+        const file = new File({
+            user: this.userId,
+            path: path.join(category, uniqueName).replace(/\\/g, '/'),
+            originalName: driveFile.name,
+            mimetype: driveFile.mimeType,
+            category: category,
+            folder: syncPair.localFolder,
+            googleDriveId: driveFile.id,
+            syncedFromDrive: true,
+            lastSyncDate: new Date()
+        });
+
+        await file.save();
+        result.filesTransferred += 1;
     }
 
-    // Obsługa callbacku po autoryzacji
-    static async handleAuthCallback(userId, params) {
-        const { code } = params;
-
-        const oauth2Client = new google.auth.OAuth2(
-            process.env.GOOGLE_CLIENT_ID,
-            process.env.GOOGLE_CLIENT_SECRET,
-            process.env.GOOGLE_REDIRECT_URI
-        );
-
-        try {
-            // Wymiana kodu na tokeny
-            const { tokens } = await oauth2Client.getToken(code);
-
-            // Zapisanie tokenów w bazie dla użytkownika
-            const user = await User.findById(userId);
-            if (!user) {
-                throw new Error('Użytkownik nie znaleziony');
-            }
-
-            user.googleDriveTokens = tokens;
-            user.googleDriveEnabled = true;
-            await user.save();
-
-            return {
-                success: true,
-                message: 'Autoryzacja Google Drive zakończona pomyślnie'
-            };
-        } catch (error) {
-            console.error('Błąd wymiany kodu na token:', error);
-            throw new Error('Błąd autoryzacji Google Drive');
+    async uploadFileToDrive(localFile, syncPair, result) {
+        const filePath = path.resolve(process.env.UPLOADS_DIR, localFile.path);
+        
+        // Sprawdź czy plik istnieje
+        if (!fs.existsSync(filePath)) {
+            throw new Error('Lokalny plik nie istnieje');
         }
+
+        const fileMetadata = {
+            name: localFile.originalName,
+            parents: [syncPair.externalFolderId]
+        };
+
+        const media = {
+            mimeType: localFile.mimetype,
+            body: fs.createReadStream(filePath)
+        };
+
+        const response = await this.drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: 'id'
+        });
+
+        // Aktualizuj rekord w bazie danych
+        localFile.googleDriveId = response.data.id;
+        localFile.syncedToDrive = true;
+        localFile.lastSyncDate = new Date();
+        await localFile.save();
+
+        result.filesTransferred += 1;
     }
+
+    async syncAllPairs() {
+        const syncPairs = await SyncPair.find({
+            user: this.userId,
+            provider: 'google-drive',
+            isActive: true
+        });
+
+        const results = [];
+        for (const syncPair of syncPairs) {
+            try {
+                const result = await this.syncFolder(syncPair._id);
+                results.push(result);
+            } catch (error) {
+                results.push({
+                    syncPairId: syncPair._id,
+                    error: error.message
+                });
+            }
+        }
+
+        return results;
+    }
+
+    getCategoryFromMimeType(mimetype) {
+        if (mimetype.startsWith('image/')) return 'image';
+        if (mimetype.startsWith('video/')) return 'video';
+        if (mimetype.startsWith('audio/')) return 'audio';
+        if (mimetype === 'application/pdf' || mimetype.startsWith('text/')) return 'document';
+        return 'other';
+    }
+
+    static getAuthUrl(state) {
+		const oauth2Client = new google.auth.OAuth2(
+			process.env.GOOGLE_CLIENT_ID,
+			process.env.GOOGLE_CLIENT_SECRET,
+			process.env.GOOGLE_REDIRECT_URI
+		);
+
+		const scopes = process.env.GOOGLE_API_SCOPE.split(',');
+
+		return oauth2Client.generateAuthUrl({
+			access_type: 'offline',
+			scope: scopes,
+			state: state
+		});
+	}
+
+    static async handleAuthCallback(userId, params) {
+		const { code } = params;
+
+		const oauth2Client = new google.auth.OAuth2(
+			process.env.GOOGLE_CLIENT_ID,
+			process.env.GOOGLE_CLIENT_SECRET,
+			process.env.GOOGLE_REDIRECT_URI
+		);
+
+		const { tokens } = await oauth2Client.getToken(code);
+
+		// Zapisz tokeny w bazie danych
+		await User.findByIdAndUpdate(userId, {
+			googleDriveTokens: tokens,
+			googleDriveEnabled: true
+		});
+
+		return { success: true };
+	}
 }
 
 module.exports = GoogleDriveSync;

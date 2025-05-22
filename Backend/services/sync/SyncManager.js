@@ -1,5 +1,6 @@
 const GoogleDriveSync = require('./providers/GoogleDriveSync');
 const User = require('../../models/User');
+const SyncPair = require('../../models/SyncPair');
 
 class SyncManager {
     constructor() {
@@ -37,40 +38,49 @@ class SyncManager {
             activeProviders.push('google-drive');
         }
 
-        // W przyszłości dodamy sprawdzanie innych providerów
-        // if (user.desktopSyncEnabled) {
-        //     activeProviders.push('desktop');
-        // }
-        // 
-        // if (user.mobileSyncEnabled) {
-        //     activeProviders.push('mobile');
-        // }
-
         return activeProviders;
     }
 
-    // Wykonuje pełną synchronizację dla określonego użytkownika i providera
-    async syncWithProvider(userId, providerType) {
+    // Pobiera listę folderów z zewnętrznego providera
+    async getExternalFolders(providerType, userId, parentId = null) {
         const provider = await this.getProvider(providerType, userId);
-        return await provider.fullSync();
+        return await provider.getExternalFolders(parentId);
     }
 
-    // Wykonuje pełną synchronizację dla wszystkich aktywnych providerów użytkownika
-    async syncAll(userId) {
-        const activeProviders = await this.getUserActiveProviders(userId);
-        const results = {};
+    // Tworzy parę synchronizacji
+    async createSyncPair(providerType, userId, localFolderId, externalFolderId, syncDirection = 'bidirectional') {
+        const provider = await this.getProvider(providerType, userId);
+        return await provider.createSyncPair(localFolderId, externalFolderId, syncDirection);
+    }
 
-        for (const providerType of activeProviders) {
-            try {
-                const provider = await this.getProvider(providerType, userId);
-                results[providerType] = await provider.fullSync();
-            } catch (error) {
-                console.error(`Błąd synchronizacji z ${providerType}:`, error);
-                results[providerType] = { success: false, error: error.message };
-            }
+    // Usuwa parę synchronizacji
+    async removeSyncPair(providerType, userId, syncPairId) {
+        const provider = await this.getProvider(providerType, userId);
+        return await provider.removeSyncPair(syncPairId);
+    }
+
+    // Synchronizuje konkretną parę folderów
+    async syncFolder(providerType, userId, syncPairId) {
+        const provider = await this.getProvider(providerType, userId);
+        return await provider.syncFolder(syncPairId);
+    }
+
+    // Synchronizuje wszystkie aktywne pary dla użytkownika i providera
+    async syncAllPairs(providerType, userId) {
+        const provider = await this.getProvider(providerType, userId);
+        return await provider.syncAllPairs();
+    }
+
+    // Pobiera wszystkie pary synchronizacji użytkownika
+    async getUserSyncPairs(userId, providerType = null) {
+        const query = { user: userId, isActive: true };
+        if (providerType) {
+            query.provider = providerType;
         }
 
-        return results;
+        return await SyncPair.find(query)
+            .populate('localFolder', 'name')
+            .sort({ createdAt: -1 });
     }
 
     // Rozłącza provider synchronizacji
@@ -80,14 +90,14 @@ class SyncManager {
     }
 
     // Pobiera URL autoryzacji dla wybranego providera
-    getAuthUrl(providerType, userId) {
-        if (!this.providers[providerType]) {
-            throw new Error(`Nieobsługiwany typ synchronizacji: ${providerType}`);
-        }
+    getAuthUrl(providerType, state) {
+		if (!this.providers[providerType]) {
+			throw new Error(`Nieobsługiwany typ synchronizacji: ${providerType}`);
+		}
 
-        const ProviderClass = this.providers[providerType];
-        return ProviderClass.getAuthUrl(userId);
-    }
+		const ProviderClass = this.providers[providerType];
+		return ProviderClass.getAuthUrl(state); // Przekaż state do providera
+	}
 
     // Obsługuje callback autoryzacji dla wybranego providera
     async handleAuthCallback(providerType, userId, params) {

@@ -96,3 +96,8 @@ window.close_img_view = function() {
 window.open_profile_edit = function() {
     window.location.pathname = '/EditProfilePage.html';
 };
+
+window.removeSyncPair = async function(provider, syncPairId) {
+    const { removeSyncPair } = await import('./syncHandler.js');
+    return removeSyncPair(provider, syncPairId);
+};
