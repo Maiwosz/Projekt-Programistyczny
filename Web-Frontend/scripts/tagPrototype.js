@@ -13,6 +13,7 @@ export async function loadUserTags() {
         userTags.push(...tags);
 
         renderTagsList();
+        populateTagFilterSelector();
     } catch (error) {
         console.error('Błąd:', error);
         alert('Nie udało się załadować tagów');
@@ -217,5 +218,44 @@ export async function removeTagFromFile(tagId) {
     } catch (error) {
         console.error('Błąd:', error);
         alert('Nie udało się usunąć tagu z pliku');
+    }
+}
+
+export function populateTagFilterSelector() {
+    const tagFilter = document.getElementById('tagFilterSelector');
+    if (!tagFilter) return;
+
+    tagFilter.innerHTML = '<option value="">-- Wybierz tag --</option>';
+    userTags.forEach(tag => {
+        const option = document.createElement('option');
+        option.value = tag._id;
+        option.textContent = tag.name;
+        tagFilter.appendChild(option);
+    });
+}
+
+export async function filterFilesByTag() {
+    const tagId = document.getElementById('tagFilterSelector').value;
+
+    if (!tagId) {
+        //alert('Wybierz tag, aby przefiltrować pliki');
+        window.loadFolderContents();
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/tags/files/${tagId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!response.ok) throw new Error('Błąd pobierania plików');
+
+        const files = await response.json();
+
+        window.renderItems({ subfolders: [], files: files });
+
+    } catch (error) {
+        console.error('Błąd:', error);
+        alert('Nie udało się załadować plików dla wybranego tagu');
     }
 }

@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Style aplikacji -->
     <link rel="stylesheet" href="./styles/styles.css">
-	<link rel="stylesheet" href="./styles/sync.css">
+    <link rel="stylesheet" href="./styles/sync.css">
     <link rel="stylesheet" href="./styles/mainpage.css">
-	
+
     <!-- Skrypt autoryzacyjny musi być dodany jako pierwszy -->
     <script src="./scripts/auth.js"></script>
     <!-- Moduły aplikacji -->
     <script type="module" src="./scripts/main.js"></script>
 </head>
+
 <body>
     <!-- Sekcja widoczna TYLKO po zalogowaniu - cała zawartość mainpage.html -->
     <div class="logged-in" style="display: none;">
@@ -48,7 +50,7 @@
                     <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px;">
                         <div class="breadcrumbs"> Ścieżka: </div>
                         <div class="breadcrumbs" id="breadcrumbs">
-                            
+
                         </div>
                     </div>
 
@@ -78,6 +80,13 @@
                             </div>
                         </div>
                     </div>
+                    <div class="section">
+                        <h3>Przeglądaj pliki według tagu</h3>
+                        <select id="tagFilterSelector">
+                            <option value="">-- Wybierz tag --</option>
+                        </select>
+                        <button onclick="filterFilesByTag()">Pokaż pliki</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -91,7 +100,7 @@
                 <button onclick="closeFolderModal()" style="background: #6c757d;">Anuluj</button>
             </div>
         </div>
-        
+
         <!-- Modal do podglądu pliku i metadanych -->
         <div id="fileModal" class="modal" style="max-width: 800px;">
             <div id="modalContent">
@@ -106,7 +115,7 @@
                             <p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
                         </div>
                     </div>
-                    
+
                     <!-- Prawa kolumna - metadane -->
                     <div>
                         <h3 style="margin-top: 0;">Metadane</h3>
@@ -114,7 +123,8 @@
                             <div id="metadataFields"></div>
                             <div style="margin-top: 15px; display: flex; gap: 10px;">
                                 <button type="button" onclick="saveMetadata(event)">Zapisz zmiany</button>
-                                <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
+                                <button type="button" onclick="closeFileModal()"
+                                    style="background: #6c757d;">Anuluj</button>
                             </div>
                         </form>
                     </div>
@@ -135,29 +145,29 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Modal do synchronizacji folderu -->
-		<div id="syncModal" class="modal">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h3>Synchronizacja folderu: <span id="syncFolderName"></span></h3>
-					<input type="hidden" id="syncFolderId">
-				</div>
-				
-				<div id="syncStatusInfo" class="sync-status" style="display: none;">
-					<!-- Tutaj będzie wyświetlany status synchronizacji -->
-				</div>
-				
-				<div id="syncOptions" class="sync-options">
-					<!-- Tutaj będą wyświetlane opcje synchronizacji -->
-				</div>
-				
-				<div style="margin-top: 20px; text-align: right;">
-					<button onclick="closeSyncModal()" class="btn-secondary">Zamknij</button>
-				</div>
-			</div>
-		</div>
-        
+        <div id="syncModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Synchronizacja folderu: <span id="syncFolderName"></span></h3>
+                    <input type="hidden" id="syncFolderId">
+                </div>
+
+                <div id="syncStatusInfo" class="sync-status" style="display: none;">
+                    <!-- Tutaj będzie wyświetlany status synchronizacji -->
+                </div>
+
+                <div id="syncOptions" class="sync-options">
+                    <!-- Tutaj będą wyświetlane opcje synchronizacji -->
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeSyncModal()" class="btn-secondary">Zamknij</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal do podglądu pliku i metadanych -->
 
         <!-- Podgląd obrazka -->
@@ -166,13 +176,14 @@
             <img id="image-zoom-id" class="image-zoom">
         </div>
     </div>
-    
+
     <!-- Sekcja widoczna TYLKO dla niezalogowanych - zawartość aktualnego index.html -->
     <div class="logged-out" style="display: none;">
         <h1>Witaj gościu!</h1>
         <!-- Linki do logowania i rejestracji -->
-        <a href="/login.html">Zaloguj się</a> | 
+        <a href="/login.html">Zaloguj się</a> |
         <a href="/register.html">Zarejestruj</a>
     </div>
 </body>
+
 </html>

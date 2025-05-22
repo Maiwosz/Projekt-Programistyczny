@@ -13,7 +13,7 @@ import { triggerFileInput, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
 import { showSyncModal, closeSyncModal, startFolderSync, authorizeGoogleDrive, disconnectSync, checkGoogleDriveConnection } from './syncHandler.js';
-import { loadUserTags,  renderTagsList, createTag, deleteTag, renderFileTags, populateTagSelector, addTagToFile, removeTagFromFile} from './tagPrototype.js';
+import { loadUserTags,  renderTagsList, createTag, deleteTag, renderFileTags, populateTagSelector, addTagToFile, removeTagFromFile, populateTagFilterSelector, filterFilesByTag } from './tagPrototype.js';
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -86,6 +86,8 @@ window.renderFileTags = renderFileTags;
 window.populateTagSelector = populateTagSelector;
 window.addTagToFile = addTagToFile;
 window.removeTagFromFile = removeTagFromFile;
+window.populateTagFilterSelector = populateTagFilterSelector;
+window.filterFilesByTag = filterFilesByTag;
 
 // Funkcje UI
 window.view_image = function(image_preview_src) {
@@ -114,3 +116,4 @@ window.removeSyncPair = async function(provider, syncPairId) {
     const { removeSyncPair } = await import('./syncHandler.js');
     return removeSyncPair(provider, syncPairId);
 };
+
