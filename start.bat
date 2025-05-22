@@ -5,20 +5,20 @@ set "SCRIPT_NAME=%~nx0"
 set "SCRIPT_PATH=%~dp0"
 set "ERROR_FLAG=0"
 
-:: SprawdŸ uprawnienia administratora
+:: SprawdÅº uprawnienia administratora
 fltmc >nul 2>&1 || (
-    echo [UWAGA] Wymagane s¹ uprawnienia administratora!
-    echo Automatyczna próba ponownego uruchomienia z elevacj¹...
+    echo [UWAGA] Wymagane sÄ… uprawnienia administratora!
+    echo Automatyczna prÃ³ba ponownego uruchomienia z elevacjÄ…...
     
     PowerShell -Command "Start-Process -Verb RunAs -FilePath 'cmd' -ArgumentList '/c', 'cd', '/d', '%SCRIPT_PATH%', '&&', 'call', '%SCRIPT_NAME%'" || (
-        call :ERROR "Nie uda³o siê uruchomiæ z uprawnieniami administratora!"
+        call :ERROR "Nie udaÅ‚o siÄ™ uruchomiÄ‡ z uprawnieniami administratora!"
         exit /b 1
     )
     exit /b
 )
 
 :: =============================================
-:: G£ÓWNA LOGIKA SKRYPTU
+:: GÅÃ“WNA LOGIKA SKRYPTU
 :: =============================================
 
 echo -------------------------------
@@ -47,7 +47,7 @@ where mongod >nul 2>&1 && (
 :MONGO_FOUND
 if %found% == 0 (
     call :ERROR "Nie znaleziono MongoDB!"
-    echo Zainstaluj MongoDB i spróbuj ponownie
+    echo Zainstaluj MongoDB i sprÃ³buj ponownie
     echo Pobierz instalator: https://www.mongodb.com/try/download/community
     goto :END
 )
@@ -57,27 +57,27 @@ echo Znaleziono MongoDB w: %mongo_path%
 echo --------------------------------------
 
 if not exist "C:\data\db\" (
-    echo Tworzê folder C:\data\db...
+    echo TworzÄ™ folder C:\data\db...
     mkdir "C:\data\db" 2>nul || (
-        call :ERROR "Nie mo¿na utworzyæ folderu danych!"
-        echo SprawdŸ uprawnienia do dysku C:\
+        call :ERROR "Nie moÅ¼na utworzyÄ‡ folderu danych!"
+        echo SprawdÅº uprawnienia do dysku C:\
         goto :END
     )
 )
 
 tasklist | find /i "mongod.exe" >nul
 if %errorlevel% == 0 (
-    echo MongoDB jest ju¿ uruchomione!
+    echo MongoDB jest juÅ¼ uruchomione!
     goto :START_NODE
 )
 
 echo Uruchamiam MongoDB...
 start "MongoDB" /MIN cmd /c ""%mongo_path%" --dbpath=C:\data\db" || (
-    call :ERROR "Nie uda³o siê uruchomiæ MongoDB!"
+    call :ERROR "Nie udaÅ‚o siÄ™ uruchomiÄ‡ MongoDB!"
     goto :END
 )
 
-echo Czekam na inicjalizacjê serwera (maksymalnie 15 sekund)...
+echo Czekam na inicjalizacjÄ™ serwera (maksymalnie 15 sekund)...
 set "counter=0"
 :MONGO_STATUS_CHECK
 timeout /t 1 /nobreak >nul
@@ -92,8 +92,8 @@ if %counter% leq 15 (
     goto :MONGO_STATUS_CHECK
 )
 
-call :ERROR "MongoDB nie uruchomi³o siê w ci¹gu 15 sekund!"
-echo SprawdŸ konfiguracjê MongoDB i porty sieciowe
+call :ERROR "MongoDB nie uruchomiÅ‚o siÄ™ w ciÄ…gu 15 sekund!"
+echo SprawdÅº konfiguracjÄ™ MongoDB i porty sieciowe
 goto :END
 
 :START_NODE
@@ -110,63 +110,63 @@ where node >nul 2>&1 || (
 echo Znaleziono Node.js w systemie
 echo -------------------------------
 
-echo Przechodzê do folderu Backend...
+echo PrzechodzÄ™ do folderu Backend...
 cd /d "%SCRIPT_PATH%Backend" 2>nul || (
     call :ERROR "Nie znaleziono folderu Backend!"
-    echo Utwórz folder Backend w lokalizacji: "%SCRIPT_PATH%"
+    echo UtwÃ³rz folder Backend w lokalizacji: "%SCRIPT_PATH%"
     goto :END
 )
 
 set "NODE_LOG=%CD%\node_errors.log"
-echo Logi b³êdów Node.js bêd¹ zapisywane w: %NODE_LOG%
+echo Logi bÅ‚Ä™dÃ³w Node.js bÄ™dÄ… zapisywane w: %NODE_LOG%
 
-echo Instalujê zale¿noœci npm...
+echo InstalujÄ™ zaleÅ¼noÅ›ci npm...
 call npm install
-call :CHECK_ERROR "B³¹d podczas instalacji zale¿noœci npm!"
+call :CHECK_ERROR "BÅ‚Ä…d podczas instalacji zaleÅ¼noÅ›ci npm!"
 
 echo Uruchamiam serwer Node.js...
 start "Serwer Node.js" cmd /c "node server.js > "%NODE_LOG%" 2>&1" || (
-    call :ERROR "Nie uda³o siê uruchomiæ serwera Node.js!"
+    call :ERROR "Nie udaÅ‚o siÄ™ uruchomiÄ‡ serwera Node.js!"
     goto :END
 )
 
-echo Oczekiwanie na inicjalizacjê serwera...
+echo Oczekiwanie na inicjalizacjÄ™ serwera...
 ping -n 6 127.0.0.1 >nul
 
 echo Sprawdzanie statusu serwera...
 tasklist | find /i "node.exe" >nul || (
-    call :ERROR "Serwer Node.js nie zosta³ uruchomiony! SprawdŸ plik logu: %NODE_LOG%"
+    call :ERROR "Serwer Node.js nie zostaÅ‚ uruchomiony! SprawdÅº plik logu: %NODE_LOG%"
     goto :END
 )
 
 
 
-echo Otwieram przegl¹darkê...
+echo Otwieram przeglÄ…darkÄ™...
 start "" "http://localhost:3000" || (
-    echo [OSTRZE¯ENIE] Nie uda³o siê otworzyæ przegl¹darki
-    echo Mo¿esz rêcznie otworzyæ adres: http://localhost:3000
+    echo [OSTRZEÅ»ENIE] Nie udaÅ‚o siÄ™ otworzyÄ‡ przeglÄ…darki
+    echo MoÅ¼esz rÄ™cznie otworzyÄ‡ adres: http://localhost:3000
 )
 
 :END
 echo -------------------------------
 if %ERROR_FLAG% == 0 (
-    echo [SUKCES] Aplikacja powinna byæ dostêpna pod adresem http://localhost:3000
+    echo [SUKCES] Aplikacja powinna byÄ‡ dostÄ™pna pod adresem http://localhost:3000
 ) else (
-    echo [NIEPOWODZENIE] Wyst¹pi³y b³êdy podczas uruchamiania
+    echo [NIEPOWODZENIE] WystÄ…piÅ‚y bÅ‚Ä™dy podczas uruchamiania
 )
 echo -------------------------------
 timeout /t 5 /nobreak >nul
 exit /b %ERROR_FLAG%
 
 
-:: Funkcja do wyœwietlania komunikatów b³êdów
+:: Funkcja do wyÅ›wietlania komunikatÃ³w bÅ‚Ä™dÃ³w
 :ERROR
-echo [B£¥D] %~1
+echo [BÅÄ„D] %~1
 echo.
 set "ERROR_FLAG=1"
 goto :END
 
-:: Funkcja sprawdzaj¹ca kod b³êdu
+:: Funkcja sprawdzajÄ…ca kod bÅ‚Ä™du
 :CHECK_ERROR
 if %ERRORLEVEL% neq 0 (
     call :ERROR "%~1"

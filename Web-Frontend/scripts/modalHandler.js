@@ -1,6 +1,7 @@
 // Naprawione importy
-import { currentFileId } from './main.js';
+import { currentFileId } from './main.js'; // już nieużywane?
 import { getFileIcon, formatFileSize } from './uiComponents.js';
+import { userTags } from './main.js';
 
 export function showCreateFolderModal() {
     // Pokaż modal i ustaw focus na polu nazwy
@@ -25,14 +26,24 @@ export async function showFileDetails(fileId) {
         if (!response.ok) throw new Error('Błąd pobierania danych');
 
         const fileData = await response.json();
-        renderFileModal(fileData); // Renderuj modal z danymi
+
+                // Load file tags
+        const tagsResponse = await fetch(`/api/tags/file/${fileId}`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        
+        if (!tagsResponse.ok) throw new Error('Błąd pobierania tagów pliku');
+        
+        const fileTags = await tagsResponse.json();
+
+        renderFileModal(fileData, fileTags); // Renderuj modal z danymi
     } catch (error) {
         console.error('Błąd:', error);
         alert('Nie udało się załadować danych pliku');
     }
 }
 
-function renderFileModal(file) {
+function renderFileModal(file, fileTags = []) {
     const modal = document.getElementById('fileModal');
     const preview = document.getElementById('filePreviewLarge');
     // Określ typ pliku dla odpowiedniego podglądu
@@ -88,6 +99,11 @@ function renderFileModal(file) {
     } else {
         metadataFields.innerHTML = '<p>Brak dostępnych metadanych</p>';
     }
+
+    // Renderuj tagi pliku
+    renderFileTags(fileTags);
+    // Wypełnij selektor tagów dostępnymi tagami
+    populateTagSelector(fileTags);
 
     modal.style.display = 'block'; // Pokaż modal
 }

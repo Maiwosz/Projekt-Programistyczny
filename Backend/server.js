@@ -1,11 +1,27 @@
+const fs = require('fs');
+const path = require('path');
+
+const crashLogPath = path.join(__dirname, 'node_crash.log');
+
+process.on('uncaughtException', (err) => {
+  fs.appendFileSync(crashLogPath, `Uncaught Exception: ${err.stack || err}\n`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason) => {
+  fs.appendFileSync(crashLogPath, `Unhandled Rejection: ${reason.stack || reason}\n`);
+  process.exit(1);
+});
+
+
+
 require('dotenv').config();
 const express = require('express');
-const path = require('path');
+
 const cors = require('cors');
 const connectDB = require('./config/db');
 const https = require('https');
 const http = require('http');
-const fs = require('fs');
 
 // Obsługa niewyłapanych błędów
 process.on('uncaughtException', (error) => {
@@ -49,7 +65,8 @@ const routes = [
     { path: '/api/folders', file: './routes/folderRoutes' },
     { path: '/api/user', file: './routes/userRoutes' },
     { path: '/api/config', file: './routes/configRoutes' },
-    { path: '/api/sync', file: './routes/syncRoutes' }
+    { path: '/api/sync', file: './routes/syncRoutes' },
+    { path: '/api/tags', file: './routes/tagRoutes' }
 ];
 
 routes.forEach(route => {
