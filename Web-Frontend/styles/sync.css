@@ -1,0 +1,402 @@
+/* ========== MODAL SYNCHRONIZACJI ========== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    z-index: 1000;
+    min-width: 300px;
+    max-width: 90%;
+    width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-content {
+    /* Usunięto nadmiarowe style - modal już ma odpowiednie style */
+}
+
+.modal h3, .modal h4, .modal h5 {
+    color: #2c3e50;
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+/* ========== STATUS SYNCHRONIZACJI ========== */
+.sync-status {
+    margin-bottom: 20px;
+}
+
+.sync-status-message {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.sync-status-message.info {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #bbdefb;
+}
+
+.sync-status-message.success {
+    background-color: #e8f5e8;
+    color: #2e7d2e;
+    border: 1px solid #c8e6c9;
+}
+
+.sync-status-message.warning {
+    background-color: #fff3e0;
+    color: #f57c00;
+    border: 1px solid #ffcc02;
+}
+
+.sync-status-message.error {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdd2;
+}
+
+/* ========== PARY SYNCHRONIZACJI ========== */
+.sync-pairs-list {
+    margin-bottom: 20px;
+}
+
+.sync-pair-item {
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: white;
+    transition: transform 0.2s;
+}
+
+.sync-pair-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.sync-pair-info {
+    flex: 1;
+}
+
+.sync-pair-info strong {
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+.sync-folder-path {
+    color: #666;
+    font-style: italic;
+    margin: 5px 0;
+}
+
+.sync-pair-info small {
+    color: #6c757d;
+    display: block;
+    margin: 2px 0;
+}
+
+.sync-pair-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 15px;
+}
+
+/* ========== PROVIDERY ========== */
+.no-providers {
+    text-align: center;
+    padding: 30px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin: 15px 0;
+}
+
+.provider-tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+    gap: 5px;
+}
+
+.provider-tab {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: #6c757d;
+    font-size: 14px;
+    transition: all 0.3s;
+    border-radius: 4px 4px 0 0;
+}
+
+.provider-tab.active {
+    border-bottom-color: #007bff;
+    color: #007bff;
+    background: #f8f9fa;
+}
+
+.provider-tab:hover {
+    background-color: #f8f9fa;
+    color: #007bff;
+}
+
+/* ========== PRZEGLĄDARKA FOLDERÓW ========== */
+.folder-browser {
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    background: white;
+}
+
+.folder-path {
+    padding: 12px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 6px 6px 0 0;
+}
+
+.folder-path span {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.folder-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.folder-item {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.2s;
+}
+
+.folder-item:hover {
+    background-color: #f8f9fa;
+}
+
+.folder-item.selected {
+    background-color: #e3f2fd;
+    border-left: 3px solid #007bff;
+}
+
+.folder-item:last-child {
+    border-bottom: none;
+}
+
+.folder-icon {
+    font-size: 18px;
+}
+
+.folder-info {
+    flex: 1;
+}
+
+.folder-name {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.folder-actions {
+    margin-left: auto;
+}
+
+.empty-folder, .error {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* ========== USTAWIENIA SYNCHRONIZACJI ========== */
+.sync-settings {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fafafa;
+    border-radius: 6px;
+}
+
+.sync-direction {
+    margin: 15px 0;
+}
+
+.sync-direction label {
+    display: block;
+    margin-bottom: 12px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.sync-direction label:hover {
+    background-color: #f0f2f5;
+}
+
+.sync-direction input[type="radio"] {
+    margin-right: 8px;
+}
+
+.provider-setup h5 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.provider-actions {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+/* ========== PRZYCISKI ========== */
+/* Użyj stylów przycisków z głównej aplikacji */
+button, .button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    white-space: nowrap;
+    font-size: 14px;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+button:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-primary:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
+    min-width: auto;
+}
+
+/* ========== RESPONSYWNOŚĆ ========== */
+@media (max-width: 900px) {
+    .modal {
+        width: 95%;
+        max-width: 500px;
+        margin: 2% auto;
+        padding: 20px;
+    }
+    
+    .sync-pair-item {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .sync-pair-actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: flex-end;
+        margin-left: 0;
+    }
+    
+    .provider-tabs {
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+    
+    .provider-tab {
+        flex: 1;
+        min-width: 120px;
+        text-align: center;
+    }
+    
+    .folder-path {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .folder-item {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .folder-actions {
+        margin-left: 0;
+        width: 100%;
+        text-align: right;
+    }
+}
+
+@media (max-width: 600px) {
+    .modal {
+        width: 95%;
+        max-width: none;
+        padding: 15px;
+    }
+    
+    .sync-pair-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .provider-tab {
+        min-width: 100px;
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}

@@ -11,6 +11,7 @@ import { updateBreadcrumbs, updateTree, saveState, getFileIcon, formatFileSize, 
 import { triggerFileInput, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
+import { showSyncModal, closeSyncModal, startFolderSync, authorizeGoogleDrive, disconnectSync, checkGoogleDriveConnection } from './syncHandler.js';
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -66,6 +67,13 @@ window.showFileDetails = showFileDetails;
 window.saveMetadata = saveMetadata;
 window.closeFileModal = closeFileModal;
 
+// Funkcje obsługi synchronizacji"
+window.showSyncModal = showSyncModal;
+window.closeSyncModal = closeSyncModal;
+window.startFolderSync = startFolderSync;
+window.authorizeGoogleDrive = authorizeGoogleDrive;
+window.disconnectSync = disconnectSync;
+
 // Funkcje UI
 window.view_image = function(image_preview_src) {
     // Get modal for image view
@@ -87,4 +95,9 @@ window.close_img_view = function() {
 // Dodatkowe funkcje
 window.open_profile_edit = function() {
     window.location.pathname = '/EditProfilePage.html';
+};
+
+window.removeSyncPair = async function(provider, syncPairId) {
+    const { removeSyncPair } = await import('./syncHandler.js');
+    return removeSyncPair(provider, syncPairId);
 };

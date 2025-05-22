@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Style aplikacji -->
     <link rel="stylesheet" href="./styles/styles.css">
+	<link rel="stylesheet" href="./styles/sync.css">
     <link rel="stylesheet" href="./styles/mainpage.css">
+	
     <!-- Skrypt autoryzacyjny musi być dodany jako pierwszy -->
     <script src="./scripts/auth.js"></script>
     <!-- Moduły aplikacji -->
@@ -102,6 +104,30 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Modal do synchronizacji folderu -->
+		<div id="syncModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>Synchronizacja folderu: <span id="syncFolderName"></span></h3>
+					<input type="hidden" id="syncFolderId">
+				</div>
+				
+				<div id="syncStatusInfo" class="sync-status" style="display: none;">
+					<!-- Tutaj będzie wyświetlany status synchronizacji -->
+				</div>
+				
+				<div id="syncOptions" class="sync-options">
+					<!-- Tutaj będą wyświetlane opcje synchronizacji -->
+				</div>
+				
+				<div style="margin-top: 20px; text-align: right;">
+					<button onclick="closeSyncModal()" class="btn-secondary">Zamknij</button>
+				</div>
+			</div>
+		</div>
+        
+        <!-- Modal do podglądu pliku i metadanych -->
 
         <!-- Podgląd obrazka -->
         <div id="image-view-id" class="image-view">
