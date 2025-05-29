@@ -234,28 +234,54 @@ export function populateTagFilterSelector() {
     });
 }
 
-export async function filterFilesByTag() {
-    const tagId = document.getElementById('tagFilterSelector').value;
+// export async function filterFilesByTag() {
+//     const tagId = document.getElementById('tagFilterSelector').value;
 
-    if (!tagId) {
-        //alert('Wybierz tag, aby przefiltrować pliki');
+//     if (!tagId) {
+//         //alert('Wybierz tag, aby przefiltrować pliki');
+//         window.loadFolderContents();
+//         return;
+//     }
+
+//     try {
+//         const response = await fetch(`/api/tags/files/${tagId}`, {
+//             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+//         });
+
+//         if (!response.ok) throw new Error('Błąd pobierania plików');
+
+//         const files = await response.json();
+
+//         window.renderItems({ subfolders: [], files: files });
+
+//     } catch (error) {
+//         console.error('Błąd:', error);
+//         alert('Nie udało się załadować plików dla wybranego tagu');
+//     }
+// }
+
+export async function filterFilesByTag() {
+    const selector = document.getElementById('tagFilterSelector');
+    const selectedOptions = Array.from(selector.selectedOptions).map(option => option.value).filter(Boolean);
+
+    if (selectedOptions.length === 0) {
         window.loadFolderContents();
         return;
     }
 
     try {
-        const response = await fetch(`/api/tags/files/${tagId}`, {
+        const query = selectedOptions.join(',');
+        const response = await fetch(`/api/tags/files?tagIds=${query}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
 
         if (!response.ok) throw new Error('Błąd pobierania plików');
 
         const files = await response.json();
-
         window.renderItems({ subfolders: [], files: files });
 
     } catch (error) {
         console.error('Błąd:', error);
-        alert('Nie udało się załadować plików dla wybranego tagu');
+        alert('Nie udało się załadować plików dla wybranych tagów');
     }
 }

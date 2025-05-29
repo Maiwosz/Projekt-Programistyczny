@@ -14,6 +14,6 @@ router.delete('/:tagId', tagController.deleteTag);
 router.post('/assign', tagController.assignTagToFile);
 router.delete('/remove/:fileId/:tagId', tagController.removeTagFromFile);
 router.get('/file/:fileId', tagController.getFileTags);
-router.get('/files/:tagId', tagController.getFilesByTag);
+router.get('/files', tagController.getFilesByTags);
 
 module.exports = router;

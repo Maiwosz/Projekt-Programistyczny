@@ -185,37 +185,77 @@ exports.getFileTags = async (req, res) => {
         res.status(500).json({ error: 'Błąd pobierania tagów pliku' });
     }
 };
-exports.getFilesByTag = async (req, res) => {
+// exports.getFilesByTag = async (req, res) => {
+//     try {
+//         const tagId = req.params.tagId;
+        
+//         // Check if tag exists and belongs to user
+//         const tag = await Tag.findOne({ 
+//             _id: tagId, 
+//             user: req.user.userId 
+//         });
+        
+//         if (!tag) {
+//             return res.status(404).json({ error: 'Tag nie znaleziony' });
+//         }
+
+//         // Get all file-tag associations for this tag
+//         const fileTags = await FileTag.find({ 
+//             tag: tagId,
+//             user: req.user.userId
+//         }).populate({
+//             path: 'file',
+//             select: 'originalName path mimetype category createdAt'
+//         });
+
+//         // Extract file objects from file-tag associations
+//         const files = fileTags
+//             .map(fileTag => fileTag.file)
+//             .filter(file => file !== null); // Filter out any null values (deleted files)
+        
+//         res.json(files);
+//     } catch (error) {
+//         console.error('Błąd pobierania plików według tagu:', error);
+//         res.status(500).json({ error: 'Błąd pobierania plików według tagu' });
+//     }
+// };
+
+exports.getFilesByTags = async (req, res) => {
     try {
-        const tagId = req.params.tagId;
-        
-        // Check if tag exists and belongs to user
-        const tag = await Tag.findOne({ 
-            _id: tagId, 
-            user: req.user.userId 
-        });
-        
-        if (!tag) {
-            return res.status(404).json({ error: 'Tag nie znaleziony' });
+        const tagIds = req.query.tagIds?.split(',') || [];
+
+        if (tagIds.length === 0) {
+            return res.status(400).json({ error: 'Brak tagów do filtrowania' });
         }
 
-        // Get all file-tag associations for this tag
-        const fileTags = await FileTag.find({ 
-            tag: tagId,
+        // Ensure all tag IDs belong to the user
+        const userTags = await Tag.find({
+            _id: { $in: tagIds },
+            user: req.user.userId
+        });
+
+        if (userTags.length === 0) {
+            return res.status(404).json({ error: 'Tagi nie znalezione' });
+        }
+
+        const fileTags = await FileTag.find({
+            tag: { $in: tagIds },
             user: req.user.userId
         }).populate({
             path: 'file',
             select: 'originalName path mimetype category createdAt'
         });
 
-        // Extract file objects from file-tag associations
         const files = fileTags
             .map(fileTag => fileTag.file)
-            .filter(file => file !== null); // Filter out any null values (deleted files)
-        
-        res.json(files);
+            .filter(file => file !== null);
+
+        // Optional: remove duplicates
+        const uniqueFiles = Array.from(new Map(files.map(file => [file._id.toString(), file])).values());
+
+        res.json(uniqueFiles);
     } catch (error) {
-        console.error('Błąd pobierania plików według tagu:', error);
-        res.status(500).json({ error: 'Błąd pobierania plików według tagu' });
+        console.error('Błąd pobierania plików według tagów:', error);
+        res.status(500).json({ error: 'Błąd pobierania plików według tagów' });
     }
 };
