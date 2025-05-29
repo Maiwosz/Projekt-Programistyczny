@@ -1,4 +1,5 @@
 const SyncInterface = require('../SyncInterface');
+const { generateFileHash, getCategoryFromMimeType } = require('../../../utils/fileUtils');
 const { google } = require('googleapis');
 const User = require('../../../models/User');
 const Folder = require('../../../models/Folder');
@@ -29,12 +30,17 @@ class GoogleDriveSync extends SyncInterface {
         this.oauth2Client.setCredentials(user.googleDriveTokens);
         this.drive = google.drive({ version: 'v3', auth: this.oauth2Client });
 
-        // Sprawdź czy token nie wygasł
+        // Sprawdź i odśwież token jeśli potrzeba
+        await this.ensureValidToken();
+    }
+
+    async ensureValidToken() {
         try {
+            // Sprawdź czy token jest prawidłowy
             await this.drive.about.get({ fields: 'user' });
         } catch (error) {
-            if (error.code === 401) {
-                // Token wygasł, spróbuj odświeżyć
+            if (error.code === 401 || error.message.includes('invalid_grant')) {
+                console.log('Token wygasł, próba odświeżenia...');
                 await this.refreshToken();
             } else {
                 throw error;
@@ -44,23 +50,48 @@ class GoogleDriveSync extends SyncInterface {
 
     async refreshToken() {
         try {
+            // Sprawdź czy mamy refresh token
+            const user = await User.findById(this.userId);
+            if (!user.googleDriveTokens || !user.googleDriveTokens.refresh_token) {
+                throw new Error('Brak refresh token - wymagana ponowna autoryzacja');
+            }
+
+            console.log('Odświeżanie tokenu Google Drive...');
             const { credentials } = await this.oauth2Client.refreshAccessToken();
+            
+            // Zachowaj refresh token jeśli nie został zwrócony nowy
+            if (!credentials.refresh_token && user.googleDriveTokens.refresh_token) {
+                credentials.refresh_token = user.googleDriveTokens.refresh_token;
+            }
+
             this.oauth2Client.setCredentials(credentials);
 
             // Zapisz nowy token w bazie
             await User.findByIdAndUpdate(this.userId, {
                 googleDriveTokens: credentials
             });
+
+            console.log('Token odświeżony pomyślnie');
         } catch (error) {
-            throw new Error('Nie można odświeżyć tokenu Google Drive');
+            console.error('Błąd odświeżania tokenu:', error);
+            
+            // Jeśli odświeżenie się nie powiodło, wyczyść tokeny
+            await User.findByIdAndUpdate(this.userId, {
+                googleDriveEnabled: false,
+                googleDriveTokens: null
+            });
+            
+            throw new Error('Token wygasł - wymagana ponowna autoryzacja');
         }
     }
 
     async checkConnection() {
         try {
+            await this.ensureValidToken();
             const response = await this.drive.about.get({ fields: 'user' });
             return { connected: true, user: response.data.user };
         } catch (error) {
+            console.error('Błąd sprawdzania połączenia:', error);
             return { connected: false, error: error.message };
         }
     }
@@ -87,6 +118,8 @@ class GoogleDriveSync extends SyncInterface {
 
     async getExternalFolders(parentId = null) {
         try {
+            await this.ensureValidToken();
+            
             const query = parentId 
                 ? `'${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
                 : `parents in 'root' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
@@ -100,16 +133,26 @@ class GoogleDriveSync extends SyncInterface {
             return response.data.files.map(folder => ({
                 id: folder.id,
                 name: folder.name,
-                path: folder.name, // W przyszłości możemy budować pełną ścieżkę
+                path: folder.name,
                 parentId: folder.parents ? folder.parents[0] : null
             }));
         } catch (error) {
+            console.error('Błąd pobierania folderów:', error);
+            
+            // Jeśli to błąd autoryzacji, wyczyść połączenie
+            if (error.code === 401 || error.message.includes('invalid_grant')) {
+                await this.disconnect();
+                throw new Error('Autoryzacja wygasła - wymagane ponowne połączenie');
+            }
+            
             throw new Error('Błąd pobierania folderów z Google Drive: ' + error.message);
         }
     }
 
     async createSyncPair(localFolderId, externalFolderId, syncDirection = 'bidirectional') {
         try {
+            await this.ensureValidToken();
+            
             // Sprawdź czy folder lokalny istnieje
             const localFolder = await Folder.findOne({ _id: localFolderId, user: this.userId });
             if (!localFolder) {
@@ -150,6 +193,7 @@ class GoogleDriveSync extends SyncInterface {
             throw new Error('Błąd tworzenia pary synchronizacji: ' + error.message);
         }
     }
+
 
     async removeSyncPair(syncPairId) {
         try {
@@ -221,25 +265,61 @@ class GoogleDriveSync extends SyncInterface {
     }
 
     async syncFromDrive(syncPair, result) {
-        try {
-            // Pobierz pliki z Google Drive
-            const driveFiles = await this.drive.files.list({
-                q: `'${syncPair.externalFolderId}' in parents and trashed=false`,
-                fields: 'files(id, name, mimeType, size, modifiedTime)',
-                pageSize: 100
-            });
+		try {
+			// Pobierz pliki z Google Drive
+			const driveFiles = await this.drive.files.list({
+				q: `'${syncPair.externalFolderId}' in parents and trashed=false`,
+				fields: 'files(id, name, mimeType, size, modifiedTime, md5Checksum)',
+				pageSize: 100
+			});
 
+			// Pobierz lokalne pliki zsynchronizowane z tego folderu
+			const localFiles = await File.find({
+				user: this.userId,
+				folder: syncPair.localFolder,
+				googleDriveId: { $exists: true },
+				isDeleted: false
+			});
+
+			const driveFileIds = driveFiles.data.files.map(f => f.id);
+			const localFileIds = localFiles.map(f => f.googleDriveId);
+
+			// ZMIANA: Wykryj usunięte pliki na Google Drive, ale pomiń przywrócone
+			if (syncPair.deleteSync.enabled && 
+				['bidirectional', 'from-external'].includes(syncPair.deleteSync.deleteDirection)) {
+				
+				for (const localFile of localFiles) {
+					if (!driveFileIds.includes(localFile.googleDriveId)) {
+						// NOWA LOGIKA: Sprawdź czy plik został przywrócony
+						if (localFile.restoredFromTrash) {
+							console.log(`Plik ${localFile.originalName} został przywrócony - pomijam usuwanie`);
+							// Oznacz że plik wymaga ponownego uploadu do Drive
+							localFile.syncedToDrive = false;
+							localFile.restoredFromTrash = false; // Resetuj flagę
+							await localFile.save();
+							continue;
+						}
+						
+						await this.deleteLocalFile(localFile, syncPair, result);
+					}
+				}
+			}
+
+            // Synchronizuj pliki z Google Drive
             for (const driveFile of driveFiles.data.files) {
                 try {
-                    // Sprawdź czy plik już istnieje lokalnie
                     const existingFile = await File.findOne({
                         user: this.userId,
                         folder: syncPair.localFolder,
-                        googleDriveId: driveFile.id
+                        googleDriveId: driveFile.id,
+                        isDeleted: false
                     });
 
                     if (!existingFile) {
                         await this.downloadFileFromDrive(driveFile, syncPair, result);
+                    } else {
+                        // Sprawdź czy plik został zmodyfikowany
+                        await this.checkFileModification(driveFile, existingFile, syncPair, result);
                     }
                 } catch (error) {
                     result.errors.push(`Błąd synchronizacji pliku ${driveFile.name}: ${error.message}`);
@@ -256,50 +336,193 @@ class GoogleDriveSync extends SyncInterface {
             const localFiles = await File.find({
                 user: this.userId,
                 folder: syncPair.localFolder,
-                syncedToDrive: { $ne: true }
+                isDeleted: false
             });
 
-            for (const localFile of localFiles) {
-                try {
-                    await this.uploadFileToDrive(localFile, syncPair, result);
-                } catch (error) {
-                    result.errors.push(`Błąd uploadu pliku ${localFile.originalName}: ${error.message}`);
+            // Pobierz pliki z Google Drive dla porównania
+            const driveFiles = await this.drive.files.list({
+                q: `'${syncPair.externalFolderId}' in parents and trashed=false`,
+                fields: 'files(id, name, mimeType, size, modifiedTime)',
+                pageSize: 100
+            });
+
+            const driveFileNames = driveFiles.data.files.map(f => f.name);
+            const localFileNames = localFiles.map(f => f.originalName);
+
+            // Wykryj usunięte pliki lokalnie
+            if (syncPair.deleteSync.enabled && 
+                ['bidirectional', 'to-external'].includes(syncPair.deleteSync.deleteDirection)) {
+                
+                for (const driveFile of driveFiles.data.files) {
+                    const localFile = localFiles.find(lf => lf.googleDriveId === driveFile.id);
+                    if (!localFile || localFile.isDeleted) {
+                        await this.deleteFileFromDrive(driveFile.id, syncPair, result);
+                    }
                 }
             }
+
+            // Upload nowych plików ORAZ przywróconych
+			for (const localFile of localFiles) {
+				try {
+					// ZMIANA: Upload jeśli brak googleDriveId LUB jest oznaczony jako nie zsynchronizowany
+					if (!localFile.googleDriveId || !localFile.syncedToDrive) {
+						await this.uploadFileToDrive(localFile, syncPair, result);
+					}
+				} catch (error) {
+					result.errors.push(`Błąd uploadu pliku ${localFile.originalName}: ${error.message}`);
+				}
+			}
+
+            // Synchronizuj usunięte pliki
+            await this.syncDeletedFiles(syncPair, result);
+
         } catch (error) {
             result.errors.push('Błąd wysyłania do Google Drive: ' + error.message);
         }
     }
+	
+	async deleteLocalFile(localFile, syncPair, result) {
+        try {
 
-    async downloadFileFromDrive(driveFile, syncPair, result) {
-        // Pomiń foldery Google Apps
-        if (driveFile.mimeType === 'application/vnd.google-apps.folder') {
-            return;
+
+            // Oznacz jako usunięty w bazie danych (soft delete)
+            localFile.isDeleted = true;
+            localFile.deletedAt = new Date();
+            localFile.deletedBy = 'sync';
+            await localFile.save();
+
+            result.filesTransferred += 1;
+            console.log(`Usunięto lokalny plik: ${localFile.originalName}`);
+        } catch (error) {
+            throw new Error(`Błąd usuwania lokalnego pliku: ${error.message}`);
         }
+    }
 
-        const category = this.getCategoryFromMimeType(driveFile.mimeType);
-        const uploadDir = path.resolve(process.env.UPLOADS_DIR, category);
-        fs.mkdirSync(uploadDir, { recursive: true });
+    async deleteFileFromDrive(driveFileId, syncPair, result) {
+        try {
+            await this.drive.files.delete({
+                fileId: driveFileId
+            });
 
-        const uniqueName = Date.now() + '-' + driveFile.name;
-        const filePath = path.join(uploadDir, uniqueName);
+            // Znajdź i oznacz lokalny plik jako usunięty
+            const localFile = await File.findOne({
+                user: this.userId,
+                googleDriveId: driveFileId,
+                isDeleted: false
+            });
 
-        // Pobierz plik z Google Drive
-        const response = await this.drive.files.get({
-            fileId: driveFile.id,
-            alt: 'media'
-        }, { responseType: 'stream' });
+            if (localFile) {
+                localFile.isDeleted = true;
+                localFile.deletedAt = new Date();
+                localFile.deletedBy = 'sync';
+                await localFile.save();
+            }
 
-        // Zapisz plik lokalnie
-        const writeStream = fs.createWriteStream(filePath);
-        response.data.pipe(writeStream);
+            result.filesTransferred += 1;
+            console.log(`Usunięto plik z Google Drive: ${driveFileId}`);
+        } catch (error) {
+            throw new Error(`Błąd usuwania pliku z Google Drive: ${error.message}`);
+        }
+    }
 
-        await new Promise((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-        });
+    async checkFileModification(driveFile, localFile, syncPair, result) {
+        try {
+            const driveModified = new Date(driveFile.modifiedTime);
+            const localModified = localFile.lastModified || localFile.createdAt;
 
-        // Utwórz rekord w bazie danych
+            // Jeśli plik na Drive jest nowszy, pobierz go ponownie
+            if (driveModified > localModified) {
+                // Usuń stary plik
+                const oldFilePath = path.resolve(process.env.UPLOADS_DIR, localFile.path);
+                if (fs.existsSync(oldFilePath)) {
+                    fs.unlinkSync(oldFilePath);
+                }
+
+                // Pobierz nową wersję
+                await this.downloadFileFromDrive(driveFile, syncPair, result, localFile);
+            }
+        } catch (error) {
+            console.error('Błąd sprawdzania modyfikacji pliku:', error);
+        }
+    }
+
+    async syncDeletedFiles(syncPair, result) {
+        try {
+            // Znajdź lokalne pliki oznaczone do usunięcia, które nie zostały jeszcze przetworzone
+            const deletedLocalFiles = await File.find({
+                user: this.userId,
+                folder: syncPair.localFolder,
+                isDeleted: true,
+                deletedBy: 'user',
+                googleDriveId: { $exists: true }
+            });
+
+            for (const deletedFile of deletedLocalFiles) {
+                if (syncPair.deleteSync.enabled && 
+                    ['bidirectional', 'to-external'].includes(syncPair.deleteSync.deleteDirection)) {
+                    
+                    try {
+                        await this.drive.files.delete({
+                            fileId: deletedFile.googleDriveId
+                        });
+
+                        // Oznacz jako przetworzone
+                        deletedFile.deletedBy = 'sync';
+                        await deletedFile.save();
+
+                        result.filesTransferred += 1;
+                    } catch (error) {
+                        if (error.code !== 404) { // Ignoruj jeśli plik już nie istnieje
+                            result.errors.push(`Błąd usuwania z Drive: ${error.message}`);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            result.errors.push('Błąd synchronizacji usuniętych plików: ' + error.message);
+        }
+    }
+
+    async downloadFileFromDrive(driveFile, syncPair, result, existingFile = null) {
+    // Pomiń foldery Google Apps
+    if (driveFile.mimeType === 'application/vnd.google-apps.folder') {
+        return;
+    }
+
+    const category = getCategoryFromMimeType(driveFile.mimeType);
+    const uploadDir = path.resolve(process.env.UPLOADS_DIR, category);
+    fs.mkdirSync(uploadDir, { recursive: true });
+
+    const uniqueName = Date.now() + '-' + driveFile.name;
+    const filePath = path.join(uploadDir, uniqueName);
+
+    // Pobierz plik z Google Drive
+    const response = await this.drive.files.get({
+        fileId: driveFile.id,
+        alt: 'media'
+    }, { responseType: 'stream' });
+
+    // Zapisz plik lokalnie
+    const writeStream = fs.createWriteStream(filePath);
+    response.data.pipe(writeStream);
+
+    await new Promise((resolve, reject) => {
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
+    });
+
+    // Oblicz hash pliku używając wspólnej funkcji
+    const fileHash = await generateFileHash(filePath);
+
+    if (existingFile) {
+        // Aktualizuj istniejący plik
+        existingFile.path = path.join(category, uniqueName).replace(/\\/g, '/');
+        existingFile.fileHash = fileHash;
+        existingFile.lastModified = new Date(driveFile.modifiedTime);
+        existingFile.lastSyncDate = new Date();
+        await existingFile.save();
+    } else {
+        // Utwórz nowy rekord w bazie danych
         const file = new File({
             user: this.userId,
             path: path.join(category, uniqueName).replace(/\\/g, '/'),
@@ -309,12 +532,16 @@ class GoogleDriveSync extends SyncInterface {
             folder: syncPair.localFolder,
             googleDriveId: driveFile.id,
             syncedFromDrive: true,
+            fileHash: fileHash,
+            lastModified: new Date(driveFile.modifiedTime),
             lastSyncDate: new Date()
         });
 
         await file.save();
-        result.filesTransferred += 1;
     }
+    
+    result.filesTransferred += 1;
+}
 
     async uploadFileToDrive(localFile, syncPair, result) {
         const filePath = path.resolve(process.env.UPLOADS_DIR, localFile.path);
@@ -372,49 +599,52 @@ class GoogleDriveSync extends SyncInterface {
         return results;
     }
 
-    getCategoryFromMimeType(mimetype) {
-        if (mimetype.startsWith('image/')) return 'image';
-        if (mimetype.startsWith('video/')) return 'video';
-        if (mimetype.startsWith('audio/')) return 'audio';
-        if (mimetype === 'application/pdf' || mimetype.startsWith('text/')) return 'document';
-        return 'other';
+    static getAuthUrl(state) {
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI
+        );
+
+        const scopes = process.env.GOOGLE_API_SCOPE.split(',');
+
+        return oauth2Client.generateAuthUrl({
+            access_type: 'offline', // Ważne: wymusza refresh token
+            prompt: 'consent',      // Wymusza ponowną zgodę (gwarantuje refresh token)
+            scope: scopes,
+            state: state
+        });
     }
 
-    static getAuthUrl(state) {
-		const oauth2Client = new google.auth.OAuth2(
-			process.env.GOOGLE_CLIENT_ID,
-			process.env.GOOGLE_CLIENT_SECRET,
-			process.env.GOOGLE_REDIRECT_URI
-		);
-
-		const scopes = process.env.GOOGLE_API_SCOPE.split(',');
-
-		return oauth2Client.generateAuthUrl({
-			access_type: 'offline',
-			scope: scopes,
-			state: state
-		});
-	}
-
     static async handleAuthCallback(userId, params) {
-		const { code } = params;
+        const { code } = params;
 
-		const oauth2Client = new google.auth.OAuth2(
-			process.env.GOOGLE_CLIENT_ID,
-			process.env.GOOGLE_CLIENT_SECRET,
-			process.env.GOOGLE_REDIRECT_URI
-		);
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            process.env.GOOGLE_REDIRECT_URI
+        );
 
-		const { tokens } = await oauth2Client.getToken(code);
+        try {
+            const { tokens } = await oauth2Client.getToken(code);
+            
+            // Sprawdź czy otrzymaliśmy refresh token
+            if (!tokens.refresh_token) {
+                console.warn('Nie otrzymano refresh token - może być wymagana ponowna autoryzacja');
+            }
 
-		// Zapisz tokeny w bazie danych
-		await User.findByIdAndUpdate(userId, {
-			googleDriveTokens: tokens,
-			googleDriveEnabled: true
-		});
+            // Zapisz tokeny w bazie danych
+            await User.findByIdAndUpdate(userId, {
+                googleDriveTokens: tokens,
+                googleDriveEnabled: true
+            });
 
-		return { success: true };
-	}
+            return { success: true };
+        } catch (error) {
+            console.error('Błąd autoryzacji:', error);
+            throw new Error('Błąd autoryzacji Google Drive: ' + error.message);
+        }
+    }
 }
 
 module.exports = GoogleDriveSync;

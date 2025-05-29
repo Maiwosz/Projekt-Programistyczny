@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./styles/styles.css">
 	<link rel="stylesheet" href="./styles/sync.css">
     <link rel="stylesheet" href="./styles/mainpage.css">
-	
+	<link rel="stylesheet" href="./styles/trash.css">
     <!-- Skrypt autoryzacyjny musi być dodany jako pierwszy -->
     <script src="./scripts/auth.js"></script>
     <!-- Moduły aplikacji -->
@@ -43,6 +43,7 @@
                             <button onclick="triggerFileInput(false)">Dodaj plik</button>
                             <button onclick="triggerFileInput(true)">Dodaj wiele</button>
                             <button onclick="showCreateFolderModal()">Nowy folder</button>
+							<button onclick="showTrashModal()">Kosz</button>
                         </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px;">
@@ -127,7 +128,27 @@
 			</div>
 		</div>
         
-        <!-- Modal do podglądu pliku i metadanych -->
+        <!-- Modal kosza -->
+		<div id="trashModal" class="modal" style="max-width: 900px;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>Kosz</h3>
+					<button onclick="closeTrashModal()" class="close-button">&times;</button>
+				</div>
+				
+				<div class="trash-actions" style="margin-bottom: 20px;">
+					<button onclick="emptyTrash()" class="btn-danger">Opróżnij kosz</button>
+				</div>
+				
+				<div id="trashItems" class="items-list">
+					<!-- Tutaj będą wyświetlane usunięte pliki -->
+				</div>
+				
+				<div style="margin-top: 20px; text-align: right;">
+					<button onclick="closeTrashModal()" class="btn-secondary">Zamknij</button>
+				</div>
+			</div>
+		</div>
 
         <!-- Podgląd obrazka -->
         <div id="image-view-id" class="image-view">

@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
+const AutoSyncScheduler = require('./services/sync/AutoSyncScheduler');
 
 // Obsługa niewyłapanych błędów
 process.on('uncaughtException', (error) => {
@@ -20,6 +21,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Inicjalizacja aplikacji Express
 const app = express();
+
 
 // Połączenie z bazą z obsługą błędów
 async function initializeDatabase() {
@@ -112,6 +114,23 @@ async function startServer() {
     try {
         // Inicjalizacja bazy danych
         await initializeDatabase();
+		
+		// Uruchomienie AutoSyncScheduler
+		console.log('Uruchamianie AutoSyncScheduler...');
+        AutoSyncScheduler.start();
+		
+		// Graceful shutdown - zatrzymaj scheduler przy zamykaniu aplikacji
+        process.on('SIGTERM', () => {
+            console.log('Otrzymano SIGTERM, zatrzymywanie AutoSyncScheduler...');
+            AutoSyncScheduler.stop();
+            process.exit(0);
+        });
+
+        process.on('SIGINT', () => {
+            console.log('Otrzymano SIGINT, zatrzymywanie AutoSyncScheduler...');
+            AutoSyncScheduler.stop();
+            process.exit(0);
+        });
 
         // Uruchomienie serwera HTTP (przekierowanie na HTTPS)
         http.createServer((req, res) => {
@@ -153,6 +172,7 @@ async function startServer() {
 
     } catch (error) {
         console.error('✗ Błąd uruchamiania serwera:', error);
+		AutoSyncScheduler.stop();
         process.exit(1);
     }
 }

@@ -1,4 +1,5 @@
 const SyncManager = require('../services/sync/SyncManager');
+const AutoSyncScheduler = require('../services/sync/AutoSyncScheduler');
 const jwt = require('jsonwebtoken');
 
 // Pobierz dostępnych providerów dla użytkownika
@@ -144,13 +145,181 @@ exports.handleAuthCallback = async (req, res) => {
         const { provider } = req.params; // provider z URL
         const { state } = req.query; // state z query params
         
+        console.log('Auth callback received:', { provider, hasState: !!state }); // Debug
+        
         // Zweryfikuj state (np. odszyfruj JWT)
         const decoded = jwt.verify(state, process.env.JWT_SECRET);
         const userId = decoded.userId;
 
         const result = await SyncManager.handleAuthCallback(provider, userId, req.query);
+        console.log('Auth callback result:', result); // Debug
+        
+        res.json(result);
+    } catch (error) {
+        console.error('Auth callback error:', error); // Debug
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Włącz automatyczną synchronizację dla pary
+exports.enableAutoSync = async (req, res) => {
+    try {
+        const { syncPairId } = req.params;
+        const { intervalMinutes = 60 } = req.body;
+        
+        const result = await AutoSyncScheduler.enableAutoSync(syncPairId, intervalMinutes);
         res.json(result);
     } catch (error) {
         res.status(400).json({ error: error.message });
+    }
+};
+
+// Wyłącz automatyczną synchronizację dla pary
+exports.disableAutoSync = async (req, res) => {
+    try {
+        const { syncPairId } = req.params;
+        
+        const result = await AutoSyncScheduler.disableAutoSync(syncPairId);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Zaktualizuj interwał automatycznej synchronizacji
+exports.updateAutoSyncInterval = async (req, res) => {
+    try {
+        const { syncPairId } = req.params;
+        const { intervalMinutes } = req.body;
+        
+        if (!intervalMinutes || intervalMinutes < 5) {
+            return res.status(400).json({ error: 'Interwał musi być co najmniej 5 minut' });
+        }
+        
+        const result = await AutoSyncScheduler.updateSyncInterval(syncPairId, intervalMinutes);
+        res.json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Pobierz status automatycznej synchronizacji
+exports.getAutoSyncStatus = async (req, res) => {
+    try {
+        const status = await AutoSyncScheduler.getAutoSyncStatus();
+        res.json(status);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Zaktualizuj ustawienia synchronizacji dla pary (włączając usuwanie)
+exports.updateSyncPairSettings = async (req, res) => {
+    try {
+        const { syncPairId } = req.params;
+        const { 
+            syncDirection,
+            autoSync,
+            deleteSync,
+            fileFilters,
+            syncSubfolders  // DODAJ TO
+        } = req.body;
+        
+        const SyncPair = require('../models/SyncPair');
+        
+        const syncPair = await SyncPair.findOne({
+            _id: syncPairId,
+            user: req.user.userId
+        });
+        
+        if (!syncPair) {
+            return res.status(404).json({ error: 'Para synchronizacji nie znaleziona' });
+        }
+        
+        // Aktualizuj ustawienia
+        if (syncDirection) {
+            syncPair.syncDirection = syncDirection;
+        }
+        
+        if (autoSync !== undefined) {
+            syncPair.autoSync = { ...syncPair.autoSync, ...autoSync };
+            
+            // DODAJ: Jeśli włączamy auto-sync, zaplanuj następną synchronizację
+            if (autoSync.enabled && autoSync.intervalMinutes) {
+                const nextSync = new Date();
+                nextSync.setMinutes(nextSync.getMinutes() + autoSync.intervalMinutes);
+                syncPair.autoSync.nextAutoSync = nextSync;
+            }
+        }
+        
+        if (deleteSync !== undefined) {
+            syncPair.deleteSync = { ...syncPair.deleteSync, ...deleteSync };
+        }
+        
+        if (fileFilters !== undefined) {
+            syncPair.fileFilters = { ...syncPair.fileFilters, ...fileFilters };
+        }
+        
+        // DODAJ TO
+        if (syncSubfolders !== undefined) {
+            syncPair.syncSubfolders = syncSubfolders;
+        }
+        
+        await syncPair.save();
+        
+        // DODAJ: Jeśli włączamy auto-sync, zarejestruj w schedulerze
+        if (autoSync?.enabled) {
+            const AutoSyncScheduler = require('../services/sync/AutoSyncScheduler');
+            await AutoSyncScheduler.enableAutoSync(syncPairId, autoSync.intervalMinutes);
+        } else if (autoSync?.enabled === false) {
+            const AutoSyncScheduler = require('../services/sync/AutoSyncScheduler');
+            await AutoSyncScheduler.disableAutoSync(syncPairId);
+        }
+        
+        res.json(syncPair);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+exports.getSyncPairDetails = async (req, res) => {
+    try {
+        const { syncPairId } = req.params;
+        const SyncPair = require('../models/SyncPair');
+        
+        const syncPair = await SyncPair.findOne({
+            _id: syncPairId,
+            user: req.user.userId
+        }).populate('localFolder', 'name path')
+          .populate('user', 'email');
+        
+        if (!syncPair) {
+            return res.status(404).json({ error: 'Para synchronizacji nie znaleziona' });
+        }
+        
+        res.json(syncPair);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.checkConnection = async (req, res) => {
+    try {
+        const { provider } = req.params;
+        
+        const providerInstance = await SyncManager.getProvider(provider, req.user.userId);
+        const isConnected = await providerInstance.checkConnection();
+        
+        res.json({ 
+            connected: isConnected,
+            provider: provider 
+        });
+    } catch (error) {
+        console.error('Connection check error:', error);
+        res.json({ 
+            connected: false,
+            provider: req.params.provider,
+            error: error.message 
+        });
     }
 };

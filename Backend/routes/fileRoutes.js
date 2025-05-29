@@ -10,4 +10,10 @@ router.delete('/:id', authMiddleware, fileController.deleteFile);
 router.get('/:id/metadata', authMiddleware, fileController.getFileMetadata);
 router.put('/:id/metadata', authMiddleware, fileController.updateFileMetadata);
 
+router.post('/restore/:id', authMiddleware, fileController.restoreFile);
+router.get('/deleted', authMiddleware, fileController.getDeletedFiles);
+router.delete('/trash/empty', authMiddleware, fileController.emptyTrash);
+router.get('/:id/integrity', authMiddleware, fileController.checkFileIntegrity);
+router.put('/:id/hash', authMiddleware, fileController.updateFileHash);
+
 module.exports = router;
