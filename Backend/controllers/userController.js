@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const File = require('../models/File');
 const bcrypt = require('bcryptjs');
 
 exports.getCurrentUserEmail = async (req, res) => {
@@ -21,9 +22,11 @@ exports.getCurrentUserLogin = async (req, res) => {
 
 exports.getCurrentUserProfilePicture = async (req, res) => {
     try {
-        const fileId = await User.findById(req.user.userId).select('profilePictureId');
-        const file = await File.findById(fileId).select(path);
-        res.json(file);
+        const user = await User.findById(req.user.userId).select('profilePictureId');;
+        const file = await File.findById(user.profilePictureId).select('path');
+        console.log('Dane zwracane:', file.path);
+        res.json({ path: file.path });
+
     } catch (error) {
         res.status(500).json({ error: 'Blad serwera' });
     }
@@ -73,10 +76,6 @@ exports.updateCurrentUserProfilePicture = async (req, res) => {
     try {
         const { profilePictureId } = req.body;
 
-        if (!profilePictureId) {
-            return res.status(400).json({ error: 'ID zdjęcia profilowego jest wymagane' });
-        }
-
         const file = await File.findById(profilePictureId);
         if (!file) {
             return res.status(404).json({ error: 'Plik nie istnieje' });
@@ -117,6 +116,22 @@ exports.updateCurrentUserPassword = async (req, res) => {
 
         res.json({ message: 'Hasło zostało zaktualizowane' });
     } catch (error) {
+        res.status(500).json({ error: 'Błąd serwera' });
+    }
+};
+
+exports.deleteUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'Użytkownik nie istnieje' });
+        }
+
+        await user.remove();
+
+        res.json({ message: 'Użytkownik i jego pliki zostały usunięte' });
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Błąd serwera' });
     }
 };

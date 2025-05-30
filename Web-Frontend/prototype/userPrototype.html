@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Tester</title>
+  <style>
+    body { font-family: Arial; margin: 2rem; }
+    input, button { margin: 5px; }
+    .user { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <h1>Testowanie API Użytkowników</h1>
+
+  <h2>Dodaj użytkownika</h2>
+  <input type="text" id="name" placeholder="Imię">
+  <input type="email" id="email" placeholder="Email">
+  <button onclick="addUser()">Dodaj</button>
+
+  <h2>Użytkownicy</h2>
+  <button onclick="loadUsers()">Załaduj użytkowników</button>
+  <div id="users"></div>
+
+  <script>
+    const API_BASE = 'http://localhost:3000/api/users'; // dostosuj port i ścieżkę jeśli inna
+
+    async function loadUsers() {
+      const res = await fetch(API_BASE);
+      const users = await res.json();
+      const list = document.getElementById('users');
+      list.innerHTML = '';
+      users.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'user';
+        div.innerText = `Imię: ${u.name}, Email: ${u.email}`;
+        list.appendChild(div);
+      });
+    }
+
+    async function addUser() {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const res = await fetch(API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email })
+      });
+      const newUser = await res.json();
+      alert(`Dodano: ${newUser.name}`);
+      loadUsers();
+    }
+  </script>
+</body>
+</html>

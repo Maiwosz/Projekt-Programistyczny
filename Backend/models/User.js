@@ -18,4 +18,14 @@ UserSchema.pre('save', async function (next) {
     next();
 });
 
+UserSchema.pre('remove', async function (next) {
+    try {
+        await File.deleteMany({ user: this._id });
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
+
 module.exports = mongoose.model('User', UserSchema);
