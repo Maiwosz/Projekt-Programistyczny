@@ -22,9 +22,7 @@ exports.getCurrentUserLogin = async (req, res) => {
 
 exports.getCurrentUserProfilePicture = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId).select('profilePictureId');;
-        const file = await File.findById(user.profilePictureId).select('path');
-        console.log('Dane zwracane:', file.path);
+        const file = await File.findOne({ user: req.user.userId, isProfilePicture: true }).select('path');
         res.json({ path: file.path });
 
     } catch (error) {
@@ -74,21 +72,21 @@ exports.updateCurrentUserLogin = async (req, res) => {
 
 exports.updateCurrentUserProfilePicture = async (req, res) => {
     try {
-        const { profilePictureId } = req.body;
+        const userId = req.user.userId; 
+        const newFileId = req.body.fileId;
 
-        const file = await File.findById(profilePictureId);
-        if (!file) {
-            return res.status(404).json({ error: 'Plik nie istnieje' });
-        }
+        await File.findOneAndUpdate(
+            { user: userId, isProfilePicture: true },
+            { isProfilePicture: false }
+        );
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.user.userId,
-            { profilePictureId },
-            { new: true }
-        ).select('profilePictureId');
+        const updatedFile = await File.findOneAndUpdate(
+            { _id: newFileId, user: userId },
+            { isProfilePicture: true },
+        );
+        res.status(200).json({ message: 'Zaktualizowano zdjęcie profilowe', file: updatedFile });
 
-        res.json({ message: 'Zdjęcie profilowe zaktualizowane', profilePictureId: updatedUser.profilePictureId });
-    } catch (error) {
+        } catch (error) {
         res.status(500).json({ error: 'Błąd serwera' });
     }
 };
@@ -133,5 +131,43 @@ exports.deleteUser = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Błąd serwera' });
+    }
+};
+
+exports.uploadProfilePicture = async (req, res) => {
+    upload.single('file'),
+    async (req, res) => {
+        try {
+            await File.findOneAndUpdate(
+            { user: userId, isProfilePicture: true },
+            { isProfilePicture: false }
+        );
+
+            const category = getCategory(req.file.mimetype);
+            const filePath = req.file.path;
+            const metadata = await processMetadata(filePath);
+            const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder)
+                ? req.body.folder
+                : null;
+
+            const file = new File({
+                user: req.user.userId,
+                path: path.join(category, req.file.filename).replace(/\\/g, '/'),
+                originalName: req.file.originalname,
+                mimetype: req.file.mimetype,
+                category: category,
+                folder: folderId,
+                metadata: metadata,
+                isProfilePicture: true
+            });
+            await file.save();
+            res.status(201).json(file);
+        } catch (error) {
+            console.error('Szczeg�y b��du uploadu:', error);
+            res.status(500).json({
+                error: 'B��d przesy�ania pliku',
+                details: error.message
+            });
+        }
     }
 };

@@ -12,7 +12,8 @@ const FileSchema = new mongoose.Schema({
     },
     folder: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null },
     createdAt: { type: Date, default: Date.now },
-    metadata: { type: Object, default: {} }
+    metadata: { type: Object, default: {} },
+    isProfilePicture: {type: Boolean, default: false}
 });
 
 module.exports = mongoose.model('File', FileSchema);
