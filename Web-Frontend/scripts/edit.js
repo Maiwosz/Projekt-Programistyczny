@@ -214,6 +214,6 @@ function closePanel() {
 
 
 function open_mainpage() {
-    window.location.pathname = '/mainpage.html';
+    window.location.pathname = '/index.html';
 }
 

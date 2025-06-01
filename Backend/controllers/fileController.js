@@ -5,18 +5,11 @@ const fs = require('fs');
 const exifr = require('exifr');
 const { exiftool } = require('exiftool-vendored');
 const mongoose = require('mongoose');
-
-const getCategory = (mimetype) => {
-    if (mimetype.startsWith('image/')) return 'image';
-    if (mimetype.startsWith('video/')) return 'video';
-    if (mimetype.startsWith('audio/')) return 'audio';
-    if (mimetype === 'application/pdf' || mimetype.startsWith('text/')) return 'document';
-    return 'other';
-};
+const { generateFileHash, getFileStats, getCategoryFromMimeType } = require('../utils/fileUtils');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const category = getCategory(file.mimetype);
+        const category = getCategoryFromMimeType(file.mimetype);
         const uploadDir = path.resolve(process.env.UPLOADS_DIR, category);
         fs.mkdirSync(uploadDir, { recursive: true });
         cb(null, uploadDir);
@@ -36,9 +29,11 @@ exports.uploadFile = [
     upload.single('file'),
     async (req, res) => {
         try {
-            const category = getCategory(req.file.mimetype);
+            const category = getCategoryFromMimeType(req.file.mimetype);
             const filePath = req.file.path;
             const metadata = await processMetadata(filePath);
+            const fileHash = await generateFileHash(filePath);
+            const fileStats = await getFileStats(filePath);
             const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder)
                 ? req.body.folder
                 : null;
@@ -50,8 +45,12 @@ exports.uploadFile = [
                 mimetype: req.file.mimetype,
                 category: category,
                 folder: folderId,
-                metadata: metadata
+                metadata: metadata,
+                fileHash: fileHash,
+                lastModified: fileStats.lastModified,
+                isDeleted: false
             });
+            
             await file.save();
             res.status(201).json(file);
         } catch (error) {
@@ -74,9 +73,11 @@ exports.uploadMultipleFiles = [
 
             const files = await Promise.all(
                 req.files.map(async (file) => {
-                    const category = getCategory(file.mimetype);
+                    const category = getCategoryFromMimeType(file.mimetype);
                     const filePath = file.path;
                     const metadata = await processMetadata(filePath);
+                    const fileHash = await generateFileHash(filePath);
+                    const fileStats = await getFileStats(filePath);
                     const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder)
                         ? req.body.folder
                         : null;
@@ -88,8 +89,12 @@ exports.uploadMultipleFiles = [
                         mimetype: file.mimetype,
                         category: category,
                         folder: folderId,
-                        metadata: metadata
+                        metadata: metadata,
+                        fileHash: fileHash,
+                        lastModified: fileStats.lastModified,
+                        isDeleted: false
                     });
+                    
                     await newFile.save();
                     return newFile;
                 })
@@ -108,56 +113,181 @@ exports.uploadMultipleFiles = [
 
 exports.getUserFiles = async (req, res) => {
     try {
-        const files = await File.find({ user: req.user.userId });
+        const includeDeleted = req.query.includeDeleted === 'true';
+        const filter = { user: req.user.userId };
+        
+        // ZMIANA: Zawsze wykluczaj usuniête pliki z g³ównego widoku
+        filter.isDeleted = { $ne: true };
+
+        const files = await File.find(filter)
+            .populate('folder', 'name')
+            .sort({ createdAt: -1 });
+            
         res.json(files);
     } catch (error) {
+        console.error('B³¹d pobierania plików:', error);
         res.status(500).json({ error: 'B³¹d pobierania plików' });
     }
 };
 
 exports.deleteFile = async (req, res) => {
     try {
-        const file = await File.findOne({ _id: req.params.id, user: req.user.userId });
+        const { permanent } = req.query;
+        let file;
+		if (permanent === 'true') {
+			// Dla trwa³ego usuwania szukaj wœród usuniêtych plików
+			file = await File.findOne({ 
+				_id: req.params.id, 
+				user: req.user.userId,
+				isDeleted: true
+			});
+		} else {
+			// Dla soft delete szukaj wœród aktywnych plików
+			file = await File.findOne({ 
+				_id: req.params.id, 
+				user: req.user.userId,
+				isDeleted: { $ne: true }
+			});
+		}
+        
         if (!file) {
             return res.status(404).json({ error: 'Plik nie znaleziony' });
         }
 
-        const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
+        if (permanent === 'true') {
+            // Trwa³e usuniêcie - usuñ plik z dysku i bazê danych
+            const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
 
-        try {
-            await fs.promises.access(filePath, fs.constants.F_OK);
-            await fs.promises.unlink(filePath);
-        } catch (err) {
-            if (err.code !== 'ENOENT') {
-                throw err;
+            try {
+                await fs.promises.access(filePath, fs.constants.F_OK);
+                await fs.promises.unlink(filePath);
+            } catch (err) {
+                if (err.code !== 'ENOENT') {
+                    throw err;
+                }
+                console.warn('Plik nie istnieje na dysku:', filePath);
             }
-            console.warn('Plik nie istnieje na dysku:', filePath);
+
+            await File.findByIdAndDelete(req.params.id);
+            res.json({ message: 'Plik trwale usuniêty', permanent: true });
+        } else {
+            // Soft delete - oznacz jako usuniêty
+            file.isDeleted = true;
+            file.deletedAt = new Date();
+            file.deletedBy = 'user';
+            await file.save();
+            
+            res.json({ message: 'Plik przeniesiony do kosza', permanent: false });
+        }
+    } catch (error) {
+        console.error('B³¹d usuwania pliku:', error);
+        res.status(500).json({ error: 'B³¹d serwera' });
+    }
+};
+
+exports.restoreFile = async (req, res) => {
+    try {
+        const file = await File.findOne({ 
+            _id: req.params.id, 
+            user: req.user.userId,
+            isDeleted: true
+        });
+        
+        if (!file) {
+            return res.status(404).json({ error: 'Plik nie znaleziony w koszu' });
         }
 
-        await File.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Plik usuniêty' });
+        file.isDeleted = false;
+        file.deletedAt = null;
+        file.deletedBy = null;
+        file.restoredFromTrash = true;
+        file.restoredAt = new Date();
+        
+        file.syncedToDrive = false; // Bêdzie wymaga³ ponownego uploadu
+        file.lastSyncDate = null;
+        await file.save();
+        
+        res.json({ message: 'Plik przywrócony z kosza', file });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'B³¹d serwera' });
+        console.error('B³¹d przywracania pliku:', error);
+        res.status(500).json({ error: 'B³¹d przywracania pliku' });
+    }
+};
+
+exports.getDeletedFiles = async (req, res) => {
+    try {
+        const deletedFiles = await File.find({ 
+            user: req.user.userId,
+            isDeleted: true
+        })
+        .populate('folder', 'name')
+        .sort({ deletedAt: -1 });
+        
+        res.json(deletedFiles);
+    } catch (error) {
+        console.error('B³¹d pobierania usuniêtych plików:', error);
+        res.status(500).json({ error: 'B³¹d pobierania usuniêtych plików' });
+    }
+};
+
+exports.emptyTrash = async (req, res) => {
+    try {
+        const deletedFiles = await File.find({ 
+            user: req.user.userId,
+            isDeleted: true
+        });
+
+        // Usuñ fizyczne pliki z dysku
+        for (const file of deletedFiles) {
+            const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
+            try {
+                await fs.promises.access(filePath, fs.constants.F_OK);
+                await fs.promises.unlink(filePath);
+            } catch (err) {
+                if (err.code !== 'ENOENT') {
+                    console.warn('B³¹d usuwania pliku z dysku:', err);
+                }
+            }
+        }
+
+        // Usuñ rekordy z bazy danych
+        const result = await File.deleteMany({ 
+            user: req.user.userId,
+            isDeleted: true
+        });
+
+        res.json({ 
+            message: 'Kosz zosta³ opró¿niony',
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        console.error('B³¹d opró¿niania kosza:', error);
+        res.status(500).json({ error: 'B³¹d opró¿niania kosza' });
     }
 };
 
 exports.getFileMetadata = async (req, res) => {
     try {
-        const file = await File.findOne({ _id: req.params.id, user: req.user.userId })
-            .select('originalName mimetype category createdAt metadata path size')
-            .lean();
+        const file = await File.findOne({ 
+            _id: req.params.id, 
+            user: req.user.userId,
+            isDeleted: { $ne: true }
+        })
+        .select('originalName mimetype category createdAt metadata path fileHash lastModified syncedFromDrive syncedToDrive lastSyncDate')
+        .lean();
 
         if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
 
-        // Pobierz rozmiar pliku z systemu plików
+        // Pobierz aktualny rozmiar pliku z systemu plików
         const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
         try {
             const stats = await fs.promises.stat(filePath);
             file.size = stats.size;
+            file.currentLastModified = stats.mtime;
         } catch (err) {
             console.warn('Nie mo¿na odczytaæ rozmiaru pliku:', err);
             file.size = 0;
+            file.currentLastModified = null;
         }
 
         res.json(file);
@@ -169,7 +299,12 @@ exports.getFileMetadata = async (req, res) => {
 
 exports.updateFileMetadata = async (req, res) => {
     try {
-        const file = await File.findOne({ _id: req.params.id, user: req.user.userId });
+        const file = await File.findOne({ 
+            _id: req.params.id, 
+            user: req.user.userId,
+            isDeleted: { $ne: true }
+        });
+        
         if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
 
         if (!file.mimetype.startsWith('image/')) {
@@ -197,13 +332,21 @@ exports.updateFileMetadata = async (req, res) => {
             const updatedMetadata = await exiftool.read(filePath);
             console.log('Zaktualizowane metadane:', updatedMetadata);
             
+            // Generuj nowy hash po zmianie metadanych
+            const newFileHash = await generateFileHash(filePath);
+            const fileStats = await getFileStats(filePath);
+            
             // Aktualizujemy rekord w bazie danych
             file.metadata = updatedMetadata;
+            file.fileHash = newFileHash;
+            file.lastModified = fileStats.lastModified;
             await file.save();
             
             res.json({ 
                 message: 'Metadane zaktualizowane pomyœlnie',
-                metadata: updatedMetadata 
+                metadata: updatedMetadata,
+                fileHash: newFileHash,
+                lastModified: fileStats.lastModified
             });
         } catch (error) {
             console.error('B³¹d podczas aktualizacji metadanych pliku:', error);
@@ -218,6 +361,84 @@ exports.updateFileMetadata = async (req, res) => {
             error: 'B³¹d aktualizacji metadanych',
             details: error.message
         });
+    }
+};
+
+exports.checkFileIntegrity = async (req, res) => {
+    try {
+        const file = await File.findOne({ 
+            _id: req.params.id, 
+            user: req.user.userId,
+            isDeleted: { $ne: true }
+        });
+        
+        if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
+
+        const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
+        
+        try {
+            await fs.promises.access(filePath, fs.constants.F_OK);
+            const currentHash = await generateFileHash(filePath);
+            const fileStats = await getFileStats(filePath);
+            
+            const isIntact = currentHash === file.fileHash;
+            const isModified = file.lastModified && 
+                new Date(fileStats.lastModified).getTime() !== new Date(file.lastModified).getTime();
+            
+            res.json({
+                fileExists: true,
+                hashMatch: isIntact,
+                isModified: isModified,
+                storedHash: file.fileHash,
+                currentHash: currentHash,
+                storedLastModified: file.lastModified,
+                currentLastModified: fileStats.lastModified
+            });
+        } catch (err) {
+            res.json({
+                fileExists: false,
+                hashMatch: false,
+                error: 'Plik nie istnieje na dysku'
+            });
+        }
+    } catch (error) {
+        console.error('B³¹d sprawdzania integralnoœci pliku:', error);
+        res.status(500).json({ error: 'B³¹d sprawdzania integralnoœci pliku' });
+    }
+};
+
+exports.updateFileHash = async (req, res) => {
+    try {
+        const file = await File.findOne({ 
+            _id: req.params.id, 
+            user: req.user.userId,
+            isDeleted: { $ne: true }
+        });
+        
+        if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
+
+        const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
+        
+        try {
+            await fs.promises.access(filePath, fs.constants.F_OK);
+            const newHash = await generateFileHash(filePath);
+            const fileStats = await getFileStats(filePath);
+            
+            file.fileHash = newHash;
+            file.lastModified = fileStats.lastModified;
+            await file.save();
+            
+            res.json({
+                message: 'Hash pliku zaktualizowany',
+                fileHash: newHash,
+                lastModified: fileStats.lastModified
+            });
+        } catch (err) {
+            return res.status(404).json({ error: 'Plik nie istnieje na serwerze' });
+        }
+    } catch (error) {
+        console.error('B³¹d aktualizacji hash pliku:', error);
+        res.status(500).json({ error: 'B³¹d aktualizacji hash pliku' });
     }
 };
 

@@ -1,24 +1,164 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
-    <!-- Tytuł strony głównej -->
-    <title>Strona Główna</title>
-	<link rel="stylesheet" href="/styles/styles.css">
-    <!-- Podpięcie skryptu odpowiedzialnego za autentykację -->
-    <script src="/scripts/auth.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Style aplikacji -->
+    <link rel="stylesheet" href="./styles/styles.css">
+	<link rel="stylesheet" href="./styles/sync.css">
+    <link rel="stylesheet" href="./styles/mainpage.css">
+	<link rel="stylesheet" href="./styles/trash.css">
+    <!-- Skrypt autoryzacyjny musi być dodany jako pierwszy -->
+    <script src="./scripts/auth.js"></script>
+    <!-- Moduły aplikacji -->
+    <script type="module" src="./scripts/main.js"></script>
 </head>
 <body>
-    <!-- Sekcja widoczna TYLKO po zalogowaniu -->
+    <!-- Sekcja widoczna TYLKO po zalogowaniu - cała zawartość mainpage.html -->
     <div class="logged-in" style="display: none;">
-        <!-- Dynamicznie wstawiana nazwa użytkownika -->
-        <h1>Witaj, <span id="username"></span>!</h1>
-        <!-- Przycisk wywołujący funkcję wylogowania -->
-        <button onclick="logout()">Wyloguj</button>
+        <div class="container">
+            <!-- Główny nagłówek z przyciskami akcji -->
+            <div class="header">
+                <h1 id="username2"></h1>
+                <div class="upload-section">
+                    <button onclick="open_profile_edit()">Edytuj profil</button>
+                    <button onclick="logout()">Wyloguj</button>
+                </div>
+            </div>
+            <!-- Główna sekcja strony -->
+            <div id="layout">
+                <!-- Sidebar z drzewem folderów -->
+                <div id="sidebar">
+                    <div class="sidebar-header">
+                        <span style="margin-right:15px;"> Foldery</span>
+                    </div>
+                    <div id="folderTree">
+                        <!-- Tutaj będzie dynamicznie wczytywane drzewo folderów -->
+                    </div>
+                </div>
+                <div class="main-content">
+                    <div class="header">
+                        <h2>Twoje pliki</h2>
+                        <div class="upload-section">
+                            <button onclick="triggerFileInput(false)">Dodaj plik</button>
+                            <button onclick="triggerFileInput(true)">Dodaj wiele</button>
+                            <button onclick="showCreateFolderModal()">Nowy folder</button>
+							<button onclick="showTrashModal()">Kosz</button>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px;">
+                        <div class="breadcrumbs"> Ścieżka: </div>
+                        <div class="breadcrumbs" id="breadcrumbs">
+                            
+                        </div>
+                    </div>
+
+                    <!-- Główna sekcja z zawartością -->
+                    <div class="section">
+                        <div class="items-list" id="dirsList">
+                            <!-- Tutaj będą dynamicznie wczytywane foldery -->
+                        </div>
+                        <div class="items-list" id="itemsList">
+                            <!-- Tutaj będą dynamicznie wczytywane pliki -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal do tworzenia folderu -->
+        <div id="folderModal" class="modal">
+            <h3>Nowy folder</h3>
+            <input type="text" id="folderName" placeholder="Nazwa folderu">
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button onclick="createFolder()">Utwórz</button>
+                <button onclick="closeFolderModal()" style="background: #6c757d;">Anuluj</button>
+            </div>
+        </div>
+        
+        <!-- Modal do podglądu pliku i metadanych -->
+        <div id="fileModal" class="modal" style="max-width: 800px;">
+            <div id="modalContent">
+                <div class="modalContentDivide">
+                    <!-- Lewa kolumna - podgląd -->
+                    <div>
+                        <div id="filePreviewLarge"></div>
+                        <div id="fileInfo" style="margin-top: 15px;">
+                            <p><strong>Nazwa:</strong> <span id="fileName"></span></p>
+                            <p><strong>Typ:</strong> <span id="fileType"></span></p>
+                            <p><strong>Rozmiar:</strong> <span id="fileSize"></span></p>
+                            <p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- Prawa kolumna - metadane -->
+                    <div>
+                        <h3 style="margin-top: 0;">Metadane</h3>
+                        <form id="metadataForm">
+                            <div id="metadataFields"></div>
+                            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                <button type="button" onclick="saveMetadata(event)">Zapisz zmiany</button>
+                                <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal do synchronizacji folderu -->
+		<div id="syncModal" class="modal">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>Synchronizacja folderu: <span id="syncFolderName"></span></h3>
+					<input type="hidden" id="syncFolderId">
+				</div>
+				
+				<div id="syncStatusInfo" class="sync-status" style="display: none;">
+					<!-- Tutaj będzie wyświetlany status synchronizacji -->
+				</div>
+				
+				<div id="syncOptions" class="sync-options">
+					<!-- Tutaj będą wyświetlane opcje synchronizacji -->
+				</div>
+				
+				<div style="margin-top: 20px; text-align: right;">
+					<button onclick="closeSyncModal()" class="btn-secondary">Zamknij</button>
+				</div>
+			</div>
+		</div>
+        
+        <!-- Modal kosza -->
+		<div id="trashModal" class="modal" style="max-width: 900px;">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>Kosz</h3>
+					<button onclick="closeTrashModal()" class="close-button">&times;</button>
+				</div>
+				
+				<div class="trash-actions" style="margin-bottom: 20px;">
+					<button onclick="emptyTrash()" class="btn-danger">Opróżnij kosz</button>
+				</div>
+				
+				<div id="trashItems" class="items-list">
+					<!-- Tutaj będą wyświetlane usunięte pliki -->
+				</div>
+				
+				<div style="margin-top: 20px; text-align: right;">
+					<button onclick="closeTrashModal()" class="btn-secondary">Zamknij</button>
+				</div>
+			</div>
+		</div>
+
+        <!-- Podgląd obrazka -->
+        <div id="image-view-id" class="image-view">
+            <span class="close-button" onclick="close_img_view()">&times;</span>
+            <img id="image-zoom-id" class="image-zoom">
+        </div>
     </div>
     
-    <!-- Sekcja widoczna TYLKO dla niezalogowanych -->
-    <div class="logged-out">
+    <!-- Sekcja widoczna TYLKO dla niezalogowanych - zawartość aktualnego index.html -->
+    <div class="logged-out" style="display: none;">
         <h1>Witaj gościu!</h1>
         <!-- Linki do logowania i rejestracji -->
         <a href="/login.html">Zaloguj się</a> | 

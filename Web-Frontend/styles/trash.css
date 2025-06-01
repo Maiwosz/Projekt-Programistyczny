@@ -1,0 +1,231 @@
+/* ========== MODAL KOSZA ========== */
+#trashModal {
+    max-width: 900px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: auto;
+}
+
+#trashModal .modal-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#trashModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+#trashModal .modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+#trashModal .close-button {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+#trashModal .close-button:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+/* ========== AKCJE KOSZA ========== */
+.trash-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 14px;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+/* ========== ELEMENTY KOSZA ========== */
+.trash-item {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    opacity: 0.8;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.trash-item:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.trash-item .item-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+}
+
+.trash-item .item-actions button {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 3px;
+    min-width: 30px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.trash-item .file-clickable {
+    cursor: default;
+    padding-top: 35px; /* Miejsce na przyciski akcji */
+}
+
+.trash-item .thumbnail {
+    opacity: 0.6;
+    transition: opacity 0.3s;
+}
+
+.trash-item:hover .thumbnail {
+    opacity: 0.8;
+}
+
+.trash-item .file-preview {
+    opacity: 0.6;
+    background: #e9ecef;
+    border: 2px dashed #adb5bd;
+}
+
+.trash-item:hover .file-preview {
+    opacity: 0.8;
+}
+
+.trash-item .file-name {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.file-deleted-date {
+    font-size: 0.75em !important;
+    color: #868e96 !important;
+    margin-top: 5px;
+    font-style: normal;
+}
+
+/* ========== PUSTY KOSZ ========== */
+.empty-info {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 40px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 2px dashed #dee2e6;
+    grid-column: 1 / -1; /* Rozciągnij na całą szerokość grida */
+}
+
+.empty-info::before {
+    content: "🗑️";
+    display: block;
+    font-size: 48px;
+    margin-bottom: 10px;
+    opacity: 0.5;
+}
+
+/* ========== RESPONSYWNOŚĆ ========== */
+@media only screen and (max-width: 768px) {
+    #trashModal {
+        width: 95%;
+        max-width: none;
+        margin: 10px;
+    }
+    
+    .trash-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .trash-item .item-actions {
+        position: static;
+        margin-bottom: 10px;
+        justify-content: center;
+    }
+    
+    .trash-item .file-clickable {
+        padding-top: 0;
+    }
+    
+    .items-list {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+}
+
+@media only screen and (max-width: 480px) {
+    .items-list {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    
+    .trash-item .item-actions button {
+        padding: 3px 6px;
+        font-size: 11px;
+        min-width: 25px;
+        height: 22px;
+    }
+}
