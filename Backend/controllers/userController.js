@@ -1,5 +1,14 @@
 const User = require('../models/User');
+const File = require('../models/File');
 const bcrypt = require('bcryptjs');
+
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const exifr = require('exifr');
+const { exiftool } = require('exiftool-vendored');
+const mongoose = require('mongoose');
+const { generateFileHash, getFileStats, getCategoryFromMimeType } = require('../utils/fileUtils');
 
 exports.getCurrentUserEmail = async (req, res) => {
     try {
@@ -21,9 +30,9 @@ exports.getCurrentUserLogin = async (req, res) => {
 
 exports.getCurrentUserProfilePicture = async (req, res) => {
     try {
-        const fileId = await User.findById(req.user.userId).select('profilePictureId');
-        const file = await File.findById(fileId).select(path);
-        res.json(file);
+        const file = await File.findOne({ user: req.user.userId, isProfilePicture: true }).select('path');
+        res.json({ path: file.path });
+
     } catch (error) {
         res.status(500).json({ error: 'Blad serwera' });
     }
@@ -71,25 +80,21 @@ exports.updateCurrentUserLogin = async (req, res) => {
 
 exports.updateCurrentUserProfilePicture = async (req, res) => {
     try {
-        const { profilePictureId } = req.body;
+        const userId = req.user.userId; 
+        const newFileId = req.body.fileId;
 
-        if (!profilePictureId) {
-            return res.status(400).json({ error: 'ID zdjęcia profilowego jest wymagane' });
-        }
+        await File.findOneAndUpdate(
+            { user: userId, isProfilePicture: true },
+            { isProfilePicture: false }
+        );
 
-        const file = await File.findById(profilePictureId);
-        if (!file) {
-            return res.status(404).json({ error: 'Plik nie istnieje' });
-        }
+        const updatedFile = await File.findOneAndUpdate(
+            { _id: newFileId, user: userId },
+            { isProfilePicture: true },
+        );
+        res.status(200).json({ message: 'Zaktualizowano zdjęcie profilowe', file: updatedFile });
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.user.userId,
-            { profilePictureId },
-            { new: true }
-        ).select('profilePictureId');
-
-        res.json({ message: 'Zdjęcie profilowe zaktualizowane', profilePictureId: updatedUser.profilePictureId });
-    } catch (error) {
+        } catch (error) {
         res.status(500).json({ error: 'Błąd serwera' });
     }
 };
@@ -118,5 +123,78 @@ exports.updateCurrentUserPassword = async (req, res) => {
         res.json({ message: 'Hasło zostało zaktualizowane' });
     } catch (error) {
         res.status(500).json({ error: 'Błąd serwera' });
+    }
+};
+
+exports.deleteUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'Użytkownik nie istnieje' });
+        }
+
+        await user.remove();
+
+        res.json({ message: 'Użytkownik i jego pliki zostały usunięte' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Błąd serwera' });
+    }
+};
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const category = getCategoryFromMimeType(file.mimetype);
+        const uploadDir = path.resolve(process.env.UPLOADS_DIR, category);
+        fs.mkdirSync(uploadDir, { recursive: true });
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname);
+        cb(null, uniqueName);
+    }
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
+});
+
+exports.uploadProfilePicture = async (req, res) => {
+    upload.single('file'),
+    async (req, res) => {
+        try {
+            await File.findOneAndUpdate(
+            { user: req.user.userId, 
+              isProfilePicture: true },
+            { isProfilePicture: false }
+        );
+
+            const category = getCategoryFromMimeType(req.file.mimetype);
+            const filePath = req.file.path;
+            const metadata = await processMetadata(filePath);
+            const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder)
+                ? req.body.folder
+                : null;
+
+            const file = new File({
+                user: req.user.userId,
+                path: path.join(category, req.file.filename).replace(/\\/g, '/'),
+                originalName: req.file.originalname,
+                mimetype: req.file.mimetype,
+                category: category,
+                folder: folderId,
+                metadata: metadata,
+                isProfilePicture: true
+            });
+            await file.save();
+            res.status(201).json(file);
+        } catch (error) {
+            console.error('Szczeg�y b��du uploadu:', error);
+            res.status(500).json({
+                error: 'B��d przesy�ania pliku',
+                details: error.message
+            });
+        }
     }
 };

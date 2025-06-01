@@ -7,10 +7,7 @@ const UserSchema = new mongoose.Schema({
     email: String,
     googleId: String,
     facebookId: String,
-    profilePictureId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'File'
-    },
+
     profilePictureUrl: String,
     googleDriveTokens: {
         access_token: String,
@@ -28,6 +25,16 @@ UserSchema.pre('save', async function (next) {
         this.password = await bcrypt.hash(this.password, 10);
     }
     next();
+});
+
+UserSchema.pre('remove', async function (next) {
+    try {
+        await File.deleteMany({ user: this._id });
+
+        next();
+    } catch (err) {
+        next(err);
+    }
 });
 
 module.exports = mongoose.model('User', UserSchema);

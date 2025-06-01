@@ -13,6 +13,7 @@ const FileSchema = new mongoose.Schema({
     folder: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null },
     createdAt: { type: Date, default: Date.now },
     metadata: { type: Object, default: {} },
+    isProfilePicture: {type: Boolean, default: false},
     googleDriveId: { type: String },
     syncedFromDrive: { type: Boolean, default: false },
     syncedToDrive: { type: Boolean, default: false },
@@ -28,6 +29,7 @@ const FileSchema = new mongoose.Schema({
     // Hash pliku do wykrywania zmian
     fileHash: { type: String }, // MD5 hash dla wykrywania modyfikacji
     lastModified: { type: Date } // Ostatnia modyfikacja pliku
+   
 });
 
 module.exports = mongoose.model('File', FileSchema);

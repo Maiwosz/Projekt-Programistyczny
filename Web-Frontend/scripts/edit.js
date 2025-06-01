@@ -67,6 +67,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadEmail();
 });
 
+function triggerFileInput() {
+    // Utwórz dynamiczny input plikowy
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = false; // Konfiguruj wielokrotny wybór
+    input.style.display = 'none';
+
+    // Obsłuż zmianę wybranych plików
+    input.addEventListener('change', (e) => {
+        
+        TEST_ProfilePic(e.target.files);
+        
+        document.body.removeChild(input); // Posprzątaj po sobie
+    });
+
+    // Symuluj kliknięcie inputu
+    document.body.appendChild(input);
+    input.click();
+}
+
+async function TEST_ProfilePic(files) {
+        if (!files.length) return;
+    
+        // Przygotuj dane formularza
+        const formData = new FormData();
+        formData.append('file', files[0]); // Dodaj pierwszy plik
+        //formData.append('folder', currentFolder.id); // Dodaj ID folderu
+        
+        try {
+            // Wyślij plik na serwer
+            await fetch('/api/user/profile-picture', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            });
+            //loadFolderContents(); // Odśwież widok
+        } catch (error) {
+            console.error('Błąd przesyłania:', error);
+            alert('Nie udało się przesłać pliku');
+        }
+    }
+
 function showPanel(type) {
     const panel = document.getElementById("editPanel");
     const label = document.getElementById("inputLabel");
