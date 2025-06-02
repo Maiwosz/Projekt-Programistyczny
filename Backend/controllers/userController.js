@@ -160,7 +160,8 @@ const upload = multer({
     limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
 });
 
-exports.uploadProfilePicture = async (req, res) => {
+//exports.uploadProfilePicture = async (req, res) => {
+exports.uploadProfilePicture = [ 
     upload.single('file'),
     async (req, res) => {
         try {
@@ -189,6 +190,7 @@ exports.uploadProfilePicture = async (req, res) => {
             });
             await file.save();
             res.status(201).json(file);
+            //res.status(201).json({message: "PROBLEM TUTUAJ"});
         } catch (error) {
             console.error('Szczeg�y b��du uploadu:', error);
             res.status(500).json({
@@ -196,5 +198,25 @@ exports.uploadProfilePicture = async (req, res) => {
                 details: error.message
             });
         }
+    }
+];
+
+const processMetadata = async (filePath) => {
+    try {
+        // Najpierw pr�bujemy odczyta� metadane za pomoc� exifr
+        const metadata = await exifr.parse(filePath, {
+            iptc: true,
+            xmp: true,
+            icc: true,
+            maxBufferSize: 30 * 1024 * 1024
+        });
+        
+        if (metadata) return metadata;
+        
+        // Je�li exifr nie zwr�ci� metadanych, pr�bujemy z exiftool
+        return await exiftool.read(filePath);
+    } catch (error) {
+        console.error('B��d przetwarzania metadanych:', error);
+        return {};
     }
 };

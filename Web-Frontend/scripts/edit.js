@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 //picturePlacement.textContent = "Brak picture";
                 picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg"
             } else {
-                picturePlacement.src = pictureRes.path;
+                picturePlacement.src = `/uploads/${pictureRes.path}`;
             }
 
         } catch (error) {
@@ -97,14 +97,17 @@ async function TEST_ProfilePic(files) {
         
         try {
             // Wyślij plik na serwer
-            await fetch('/api/user/profile-picture', {
+            const response = await fetch('/api/user/profile-picture', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: formData
             });
-            //loadFolderContents(); // Odśwież widok
+            const pictureRes = await response.json();
+            const picturePlacement = document.getElementById("picture");
+            picturePlacement.src = `/uploads/${pictureRes.path}`;
+            //console.log(pictureRes);
         } catch (error) {
             console.error('Błąd przesyłania:', error);
             alert('Nie udało się przesłać pliku');
