@@ -128,7 +128,7 @@ exports.updateCurrentUserPassword = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(req.user.userId);
         if (!user) {
             return res.status(404).json({ error: 'Użytkownik nie istnieje' });
         }

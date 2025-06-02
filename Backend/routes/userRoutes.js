@@ -15,7 +15,7 @@ router.put('/login', userController.updateCurrentUserLogin);
 router.put('/profile-picture', userController.updateCurrentUserProfilePicture);
 router.put('/password', userController.updateCurrentUserPassword);
 
-router.delete('/:id', userController.deleteUser);
+router.delete('/', userController.deleteUser);
 
 
 module.exports = router;

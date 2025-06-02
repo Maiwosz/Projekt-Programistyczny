@@ -251,6 +251,23 @@ async function editPassword (e) {
     }
 }
 
+async function removeUser() {
+    if (!confirm('Czy na pewno chcesz usunąć konto?')) return;
+    const token = localStorage.getItem('token');
+    try {
+        await fetch(`/api/user`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+    } catch (error) {
+        console.error('Błąd usuwania:', error);
+        alert('Nie udało się usunąć konta');
+    }
+}
+
 function closePanel() {
     document.getElementById("editPanel").classList.remove("active");
     const text1 = document.getElementById("mainInput");
