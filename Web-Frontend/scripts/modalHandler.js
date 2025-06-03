@@ -109,21 +109,25 @@ function renderFileModal(file, fileTags = []) {
 }
 
 export async function saveMetadata(event) {
-    event.preventDefault(); // Blokuj domyślną akcję formularza
+    event.preventDefault();
 
-    // Sprawdź czy mamy ID pliku
     if (!window.currentFileId) {
         alert('Błąd: brak ID pliku');
         return;
     }
 
-    // Przygotuj dane metadanych z formularza
     const form = document.getElementById('metadataForm');
     const formData = new FormData(form);
-    const metadata = Object.fromEntries(formData.entries());
+    const metadata = {};
+    
+    // Filtruj puste wartości i przygotuj dane
+    for (let [key, value] of formData.entries()) {
+        if (value.trim()) {
+            metadata[key] = value.trim();
+        }
+    }
 
     try {
-        // Wyślij zaktualizowane metadane
         const response = await fetch(`/api/files/${window.currentFileId}/metadata`, {
             method: 'PUT',
             headers: {
@@ -133,8 +137,12 @@ export async function saveMetadata(event) {
             body: JSON.stringify(metadata)
         });
 
-        if (!response.ok) throw new Error('Błąd zapisu metadanych');
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.details || 'Błąd zapisu metadanych');
+        }
 
+        const result = await response.json();
         closeFileModal();
         alert('Metadane zostały zaktualizowane');
     } catch (error) {

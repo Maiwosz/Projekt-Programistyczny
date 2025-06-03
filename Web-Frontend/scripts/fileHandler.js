@@ -79,17 +79,16 @@ async function handleMultipleFiles(files) {
 }
 
 export async function deleteFile(fileId) {
-    if (!confirm('Usunąć ten plik?')) return;
+    if (!confirm('Przenieść plik do kosza?')) return;
 
     try {
-        // Wyślij żądanie DELETE do API
         await fetch(`/api/files/${fileId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
-        loadFolderContents(); // Odśwież listę plików
+        loadFolderContents();
     } catch (error) {
         console.error('Błąd usuwania:', error);
         alert('Nie udało się usunąć pliku');

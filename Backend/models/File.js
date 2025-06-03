@@ -16,7 +16,18 @@ const FileSchema = new mongoose.Schema({
     googleDriveId: { type: String },
     syncedFromDrive: { type: Boolean, default: false },
     syncedToDrive: { type: Boolean, default: false },
-    lastSyncDate: { type: Date }
+    lastSyncDate: { type: Date },
+    
+    // Pola dla obsługi soft delete i synchronizacji usuwania
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: { type: Date },
+    deletedBy: { type: String, enum: ['user', 'sync'] }, // Kto usunął plik
+	restoredFromTrash: { type: Boolean, default: false },
+    restoredAt: { type: Date },
+    
+    // Hash pliku do wykrywania zmian
+    fileHash: { type: String }, // MD5 hash dla wykrywania modyfikacji
+    lastModified: { type: Date } // Ostatnia modyfikacja pliku
 });
 
 module.exports = mongoose.model('File', FileSchema);

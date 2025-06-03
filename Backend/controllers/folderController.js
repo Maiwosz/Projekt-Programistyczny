@@ -113,7 +113,8 @@ exports.getFolderContents = async (req, res) => {
         const [files, subfolders] = await Promise.all([
             File.find({
                 user: req.user.userId,
-                folder: folderId
+                folder: folderId,
+                isDeleted: { $ne: true }
             }),
             Folder.find({
                 user: req.user.userId,

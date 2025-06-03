@@ -22,14 +22,34 @@ const SyncPairSchema = new mongoose.Schema({
         filesTransferred: { type: Number, default: 0 },
         lastError: String
     },
-    // Nowe pola dla konfiguracji synchronizacji
     syncSubfolders: { type: Boolean, default: true }, // Czy synchronizować podfoldery
     fileFilters: {
         allowedExtensions: [String], // np. ['.jpg', '.png']
         excludedExtensions: [String], // np. ['.tmp', '.log']
         maxFileSize: { type: Number }, // w bajtach
         minFileSize: { type: Number }  // w bajtach
-    }
+    },
+    autoSync: {
+        enabled: { type: Boolean, default: false },
+        intervalMinutes: { type: Number, default: 60 }, // Co ile minut synchronizować
+        lastAutoSync: { type: Date },
+        nextAutoSync: { type: Date }
+    },
+    deleteSync: {
+        enabled: { type: Boolean, default: true }, // Czy synchronizować usuwanie
+        deleteDirection: { 
+            type: String, 
+            enum: ['bidirectional', 'to-external', 'from-external'], 
+            default: 'bidirectional' 
+        }
+    },
+    deletedFiles: [{
+        fileId: String, // ID pliku w naszej bazie lub Google Drive ID
+        fileName: String,
+        deletedAt: { type: Date, default: Date.now },
+        deletedFrom: { type: String, enum: ['local', 'external'] },
+        processed: { type: Boolean, default: false }
+    }]
 });
 
 // Indeks unikalności - jeden folder może być zsynchronizowany tylko z jednym folderem zewnętrznym danego providera
