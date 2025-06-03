@@ -31,22 +31,50 @@
             <div id="layout">
                 <!-- Sidebar z drzewem folderów -->
                 <div id="sidebar">
-                    <div class="sidebar-header">
-                        <span style="margin-right:15px;"> Foldery</span>
-                    </div>
+                    <h2 class="sidebar-header">Foldery</h2>
                     <div id="folderTree">
                         <!-- Tutaj będzie dynamicznie wczytywane drzewo folderów -->
                     </div>
+                    <hr class="simple">
+                    <h2 class="sidebar-header">Tagi</h2>
+                    <div class="tag-management">
+                        <div class="tag-form">
+                            <input type="text" id="newTagName" placeholder="Nazwa tagu">
+                            <button onclick="createTag()">Dodaj tag</button>
+                        </div>
+                        <div class="tags-list">
+                            <h3 style="font-size: 16px;">Dostępne tagi</h3>
+                            <ul id="tagsList">
+                                <!-- Tutaj będą wyświetlane tagi -->
+                            </ul>
+                        </div>
+                    </div>
+                    
                 </div>
                 <div class="main-content">
                     <div class="header">
                         <h2>Twoje pliki</h2>
                         <div class="upload-section">
-                            <button onclick="triggerFileInput(false)">Dodaj plik</button>
-                            <button onclick="triggerFileInput(true)">Dodaj wiele</button>
+                            <button onclick="triggerFileInput(true)">Dodaj</button>
                             <button onclick="showCreateFolderModal()">Nowy folder</button>
 							<button onclick="showTrashModal()">Kosz</button>
                         </div>
+                    </div>
+                    <!-- Sekcja tagów -->
+                    <div class = "search">
+                        <h3>Wyszukaj</h3>
+                        <p> Tag: </p>
+                        <select id="tagFilterSelector">
+                            <option value="">-- Wybierz tag --</option>
+                        </select>
+                        <p> Typ: </p>
+                        <select id="typeFilterSelector">
+                            <option value="">-- Wybierz typ --</option>
+                        </select>
+                        <p> Nazwa: </p>
+                        <input type="search" id="nameFilterSelector" placeholder="Wpisz nazwę pliku lub folderu">
+
+                        <button onclick="filterFilesByTag()">Pokaż pliki</button>
                     </div>
                     <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px;">
                         <div class="breadcrumbs"> Ścieżka: </div>
@@ -63,30 +91,6 @@
                         <div class="items-list" id="itemsList">
                             <!-- Tutaj będą dynamicznie wczytywane pliki -->
                         </div>
-                    </div>
-
-                    <!-- Sekcja tagów -->
-                    <div class="section">
-                        <h2>Zarządzanie tagami</h2>
-                        <div class="tag-management">
-                            <div class="tag-form">
-                                <input type="text" id="newTagName" placeholder="Nazwa tagu">
-                                <button onclick="createTag()">Dodaj tag</button>
-                            </div>
-                            <div class="tags-list">
-                                <h3>Dostępne tagi</h3>
-                                <ul id="tagsList">
-                                    <!-- Tutaj będą wyświetlane tagi -->
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="section">
-                        <h3>Przeglądaj pliki według tagu</h3>
-                        <select id="tagFilterSelector" multiple size = "6">
-                            <option value="">-- Wybierz tag --</option>
-                        </select>
-                        <button onclick="filterFilesByTag()">Pokaż pliki</button>
                     </div>
                 </div>
             </div>

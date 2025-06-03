@@ -1,7 +1,9 @@
 /* ========== OGÓLNE STYLE ========== */
+
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
+    margin: 0px;
+    padding: 0px;
     background: #f0f2f5;
 }
 
@@ -12,7 +14,7 @@ body {
 
 #layout {
     display: flex;
-    height: 100%;
+    height: 80dvh;
 }
 
 /* ========== SEKCJE STRONY ========== */
@@ -25,6 +27,8 @@ body {
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: 90dvb;
+    overflow-y: auto;
 }
 
 .main-content {
@@ -83,10 +87,19 @@ button:hover {
     opacity: 0;
 }
 
+/*=========== WYSZUKIWARKA ============ */
+
+.search {
+    display: flex; 
+    flex-direction: row;
+    align-items: center; 
+    gap: 10px; 
+}
+
 /*=========== DRZEWO FOLDERÓW ============ */
 
 #sidebar {
-    width: 144px;
+    width: 160px;
     background: #f5f5f5;
     border-right: 1px solid #ddd;
     overflow-y: auto;
@@ -100,8 +113,12 @@ button:hover {
     display:flex;
     font-weight: bold;
     margin-bottom: 1rem;
+    margin-top: 0;
     flex-direction: row;
     justify-content: space-between;
+    text-align: left;
+    font-size: 20px;
+    width: 100%;
 }
 
 #folderTree ul {
@@ -130,6 +147,15 @@ button:hover {
 .active {
     font-weight: bold;
     color:rgb(36, 36, 47);
+}
+
+hr.simple {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 15px 0;
+  display: block;
+  width: 100%;
+  align-self: flex-start;
 }
 
 /* ========== LISTA PLIKÓW I FOLDERÓW ========== */
