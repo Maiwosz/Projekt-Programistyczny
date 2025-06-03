@@ -22,7 +22,7 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const https = require('https');
 const http = require('http');
-const fs = require('fs');
+
 const AutoSyncScheduler = require('./services/sync/AutoSyncScheduler');
 
 // Obsługa niewyłapanych błędów
