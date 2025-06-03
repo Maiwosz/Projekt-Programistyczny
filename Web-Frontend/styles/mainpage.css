@@ -96,7 +96,7 @@ button:hover {
     gap: 10px; 
 }
 
-/*=========== DRZEWO FOLDERÓW ============ */
+/*=========== SIDEBAR ============ */
 
 #sidebar {
     width: 160px;
@@ -107,6 +107,7 @@ button:hover {
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow-x: auto;
 }
 
 #sidebar .sidebar-header {
@@ -119,20 +120,6 @@ button:hover {
     text-align: left;
     font-size: 20px;
     width: 100%;
-}
-
-#folderTree ul {
-    list-style-type: none;
-    padding-left: 1rem;
-}
-
-#folderTree li {
-    cursor: pointer;
-    padding: 4px 0;
-}
-
-#folderTree li:hover {
-    text-decoration: underline;
 }
 
 .folder {
@@ -156,6 +143,42 @@ hr.simple {
   display: block;
   width: 100%;
   align-self: flex-start;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;             
+  margin-bottom: 6px;
+}
+
+#tagsList {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+#tagsList .tag-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tagButton {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    background-color: #007bff;
+    color: #333;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 10px;
+    line-height: 1;
 }
 
 /* ========== LISTA PLIKÓW I FOLDERÓW ========== */

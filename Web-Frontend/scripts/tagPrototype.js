@@ -35,8 +35,9 @@ export function renderTagsList() {
         const li = document.createElement('li');
         li.className = 'tag-item';
         li.innerHTML = `
-            <span>${tag.name}</span>
             <button class="tagButton" onclick="deleteTag('${tag._id}')">🗑️</button>
+            <span>${tag.name}</span>
+            
         `;
         tagsList.appendChild(li);
     });
