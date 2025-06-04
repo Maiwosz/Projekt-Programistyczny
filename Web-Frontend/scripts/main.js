@@ -8,7 +8,7 @@ export var userTags = [];
 
 // Importy funkcji z poszczególnych modułów
 import { loadFolderContents, enterFolder, navigateToIndex, buildPathTo } from './folderNavigation.js';
-import { updateBreadcrumbs, updateTree, saveState, getFileIcon, formatFileSize, renderItems } from './uiComponents.js';
+import { updateBreadcrumbs, updateTree, saveState, getFileIcon, formatFileSize, renderItems, setupDropdown } from './uiComponents.js';
 import { triggerFileInput, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
@@ -17,7 +17,7 @@ import { showSyncModal, closeSyncModal } from './syncUi.js';
 import { startFolderSync, disconnectProvider } from './syncCore.js';
 import { authorizeGoogleDrive, checkGoogleDriveConnection, handleAuthCallback } from './googleDriveSync.js';
 import { loadUserTags, renderTagsList, createTag, deleteTag, renderFileTags, populateTagSelector, addTagToFile, removeTagFromFile, populateTagFilterSelector } from './tagPrototype.js';
-import { populateTypeFilterSelector, populateTypeFilterSelectorMultiple, getSelectedFileTypes, setSelectedFileTypes, filterFiles,  filterFilesByTag, filterFilesByType, filterFilesByName} from './filterPrototype.js';
+import { populateTypeFilterSelector, populateTypeFilterSelectorMultiple, getSelectedFileTypes, setSelectedFileTypes, filterFiles, filterFilesByTag, filterFilesByType, filterFilesByName } from './filterPrototype.js';
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -79,6 +79,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateBreadcrumbs();
     updateTree();
     populateTypeFilterSelector();
+    // Setup dropdownów
+    setupDropdown('typeFilterSelector');
+    setupDropdown('tagFilterSelector');
 });
 
 // ========== FUNKCJE POMOCNICZE AUTORYZACJI ==========

@@ -76,6 +76,7 @@ export async function createTag() {
         console.error('Błąd:', error);
         alert(error.message);
     }
+    populateTagFilterSelector();//dodaje nowy tag do filtrowania
 }
 
 // Function to delete a tag
@@ -223,14 +224,17 @@ export async function removeTagFromFile(tagId) {
 }
 
 export function populateTagFilterSelector() {
-    const tagFilter = document.getElementById('tagFilterSelector');
+    const tagFilter = document.getElementById('tagDropdown-content');
     if (!tagFilter) return;
 
-    tagFilter.innerHTML = '<option value="">-- Wybierz tag --</option>';
+    tagFilter.innerHTML = '';
     userTags.forEach(tag => {
-        const option = document.createElement('option');
-        option.value = tag._id;
-        option.textContent = tag.name;
+        const option = document.createElement('label');
+        //option.value = tag._id;
+        //option.textContent = tag.name;
+        option.innerHTML = `
+        <input type="checkbox" value="${tag._id}" name="types"> ${tag.name}
+        `
         tagFilter.appendChild(option);
     });
 }

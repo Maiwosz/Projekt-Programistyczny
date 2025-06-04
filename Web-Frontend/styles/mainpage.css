@@ -87,6 +87,46 @@ button:hover {
     opacity: 0;
 }
 
+.dropdown {
+    position: relative;
+    display: inline-block;
+    margin-right: 20px;
+  }
+
+  .dropdown-button {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    user-select: none;
+    min-width: 160px;
+    background-color: white;
+  }
+
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    min-width: 160px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+
+  .dropdown-content.show {
+    display: block;
+  }
+
+  .dropdown-content label {
+    display: block;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+
+  .dropdown-content label:hover {
+    background-color: #f0f0f0;
+  }
+
 /*=========== WYSZUKIWARKA ============ */
 
 .search {

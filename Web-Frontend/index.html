@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="./styles/styles.css">
     <link rel="stylesheet" href="./styles/sync.css">
     <link rel="stylesheet" href="./styles/mainpage.css">
-	<link rel="stylesheet" href="./styles/trash.css">
+    <link rel="stylesheet" href="./styles/trash.css">
     <!-- Skrypt autoryzacyjny musi być dodany jako pierwszy -->
     <script src="./scripts/auth.js"></script>
     <!-- Moduły aplikacji -->
@@ -49,7 +49,7 @@
                             </ul>
                         </div>
                     </div>
-                    
+
                 </div>
                 <div class="main-content">
                     <div class="header">
@@ -57,20 +57,26 @@
                         <div class="upload-section">
                             <button onclick="triggerFileInput(true)">Dodaj</button>
                             <button onclick="showCreateFolderModal()">Nowy folder</button>
-							<button onclick="showTrashModal()">Kosz</button>
+                            <button onclick="showTrashModal()">Kosz</button>
                         </div>
                     </div>
                     <!-- Sekcja tagów -->
-                    <div class = "search">
+                    <div class="search">
                         <h3>Wyszukaj</h3>
                         <p> Tag: </p>
-                        <select id="tagFilterSelector">
-                            <option value="">-- Wybierz tag --</option>
-                        </select>
+                        <div class="dropdown" id="tagFilterSelector">
+                            <div class="dropdown-button" tabindex="0">Wybierz tagi ▼</div>
+                            <div class="dropdown-content" id="tagDropdown-content">
+                                <!-- Tu będą checkboxy -->
+                            </div>
+                        </div>
                         <p> Typ: </p>
-                        <select id="typeFilterSelector">
-                            <option value="">-- Wybierz typ --</option>
-                        </select>
+                        <div class="dropdown" id="typeFilterSelector">
+                            <div class="dropdown-button" tabindex="0">Wybierz typy ▼</div>
+                            <div class="dropdown-content" id="typeDropdown-content">
+                                <!-- Tu będą checkboxy -->
+                            </div>
+                        </div>
                         <p> Nazwa: </p>
                         <input type="search" id="nameFilterSelector" placeholder="Wpisz nazwę pliku lub folderu">
 
@@ -152,48 +158,48 @@
         </div>
 
         <!-- Modal do synchronizacji folderu -->
-		<div id="syncModal" class="modal">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h3>Synchronizacja folderu: <span id="syncFolderName"></span></h3>
-					<input type="hidden" id="syncFolderId">
-				</div>
-				
-				<div id="syncStatusInfo" class="sync-status" style="display: none;">
-					<!-- Tutaj będzie wyświetlany status synchronizacji -->
-				</div>
-				
-				<div id="syncOptions" class="sync-options">
-					<!-- Tutaj będą wyświetlane opcje synchronizacji -->
-				</div>
-				
-				<div style="margin-top: 20px; text-align: right;">
-					<button onclick="closeSyncModal()" class="btn-secondary">Zamknij</button>
-				</div>
-			</div>
-		</div>
-        
+        <div id="syncModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Synchronizacja folderu: <span id="syncFolderName"></span></h3>
+                    <input type="hidden" id="syncFolderId">
+                </div>
+
+                <div id="syncStatusInfo" class="sync-status" style="display: none;">
+                    <!-- Tutaj będzie wyświetlany status synchronizacji -->
+                </div>
+
+                <div id="syncOptions" class="sync-options">
+                    <!-- Tutaj będą wyświetlane opcje synchronizacji -->
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeSyncModal()" class="btn-secondary">Zamknij</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal kosza -->
-		<div id="trashModal" class="modal" style="max-width: 900px;">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h3>Kosz</h3>
-					<button onclick="closeTrashModal()" class="close-button">&times;</button>
-				</div>
-				
-				<div class="trash-actions" style="margin-bottom: 20px;">
-					<button onclick="emptyTrash()" class="btn-danger">Opróżnij kosz</button>
-				</div>
-				
-				<div id="trashItems" class="items-list">
-					<!-- Tutaj będą wyświetlane usunięte pliki -->
-				</div>
-				
-				<div style="margin-top: 20px; text-align: right;">
-					<button onclick="closeTrashModal()" class="btn-secondary">Zamknij</button>
-				</div>
-			</div>
-		</div>
+        <div id="trashModal" class="modal" style="max-width: 900px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Kosz</h3>
+                    <button onclick="closeTrashModal()" class="close-button">&times;</button>
+                </div>
+
+                <div class="trash-actions" style="margin-bottom: 20px;">
+                    <button onclick="emptyTrash()" class="btn-danger">Opróżnij kosz</button>
+                </div>
+
+                <div id="trashItems" class="items-list">
+                    <!-- Tutaj będą wyświetlane usunięte pliki -->
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeTrashModal()" class="btn-secondary">Zamknij</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Podgląd obrazka -->
         <div id="image-view-id" class="image-view">

@@ -1,8 +1,7 @@
 export function populateTypeFilterSelector(categories = null) {
-    const typeSelector = document.getElementById('typeFilterSelector');
-    typeSelector.innerHTML = '<option value="">Wszystkie typy</option>';
+    const typeSelector = document.getElementById('typeDropdown-content');
+    typeSelector.innerHTML = ''; // czyścimy przed dodaniem
 
-    // Define available file types with display names
     const fileTypes = [
         { value: 'image', label: 'Obrazy' },
         { value: 'document', label: 'Dokumenty' },
@@ -11,7 +10,6 @@ export function populateTypeFilterSelector(categories = null) {
         { value: 'other', label: 'Inne' }
     ];
 
-    // If categories data is provided (from API), use it to show counts
     if (categories && Array.isArray(categories)) {
         const categoryMap = {};
         categories.forEach(cat => {
@@ -20,27 +18,24 @@ export function populateTypeFilterSelector(categories = null) {
 
         fileTypes.forEach(type => {
             const count = categoryMap[type.value] || 0;
-            if (count > 0) { // Only show types that have files
-                const option = document.createElement('option');
-                option.value = type.value;
-                option.textContent = `${type.label} (${count})`;
-                typeSelector.appendChild(option);
+            if (count > 0) {
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" value="${type.value}" name="types"> ${type.label} (${count})`;
+                typeSelector.appendChild(label);
             }
         });
     } else {
-        // Fallback: show all types without counts
         fileTypes.forEach(type => {
-            const option = document.createElement('option');
-            option.value = type.value;
-            option.textContent = type.label;
-            typeSelector.appendChild(option);
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="checkbox" value="${type.value}" name="types"> ${type.label}`;
+            typeSelector.appendChild(label);
         });
     }
 }
 
 // Alternative function to populate with multiple selection support
 export function populateTypeFilterSelectorMultiple(categories = null) {
-    const typeSelector = document.getElementById('typeFilterSelector');
+    const typeSelector = document.getElementById('typeDropdown-content');
     
     // Clear existing options except the first "all types" option
     typeSelector.innerHTML = '';
@@ -64,7 +59,7 @@ export function populateTypeFilterSelectorMultiple(categories = null) {
         fileTypes.forEach(type => {
             const count = categoryMap[type.value] || 0;
             if (count > 0) { // Only show types that have files
-                const option = document.createElement('option');
+                const option = document.createElement('label');
                 option.value = type.value;
                 option.textContent = `${type.label} (${count})`;
                 typeSelector.appendChild(option);
@@ -73,7 +68,7 @@ export function populateTypeFilterSelectorMultiple(categories = null) {
     } else {
         // Fallback: show all types without counts
         fileTypes.forEach(type => {
-            const option = document.createElement('option');
+            const option = document.createElement('label');
             option.value = type.value;
             option.textContent = type.label;
             typeSelector.appendChild(option);
