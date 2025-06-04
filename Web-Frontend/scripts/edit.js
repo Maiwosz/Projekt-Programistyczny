@@ -77,7 +77,7 @@ function triggerFileInput() {
     // Obsłuż zmianę wybranych plików
     input.addEventListener('change', (e) => {
         
-        TEST_ProfilePic(e.target.files);
+        upload_ProfilePic(e.target.files);
         
         document.body.removeChild(input); // Posprzątaj po sobie
     });
@@ -87,13 +87,12 @@ function triggerFileInput() {
     input.click();
 }
 
-async function TEST_ProfilePic(files) {
+async function upload_ProfilePic(files) {
         if (!files.length) return;
     
         // Przygotuj dane formularza
         const formData = new FormData();
-        formData.append('file', files[0]); // Dodaj pierwszy plik
-        //formData.append('folder', currentFolder.id); // Dodaj ID folderu
+        formData.append('file', files[0]); 
         
         try {
             // Wyślij plik na serwer
@@ -107,7 +106,6 @@ async function TEST_ProfilePic(files) {
             const pictureRes = await response.json();
             const picturePlacement = document.getElementById("picture");
             picturePlacement.src = `/uploads/${pictureRes.path}`;
-            //console.log(pictureRes);
         } catch (error) {
             console.error('Błąd przesyłania:', error);
             alert('Nie udało się przesłać pliku');
@@ -280,4 +278,5 @@ function closePanel() {
 function open_mainpage() {
     window.location.pathname = '/index.html';
 }
+
 
