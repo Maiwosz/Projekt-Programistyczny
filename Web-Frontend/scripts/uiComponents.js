@@ -235,12 +235,16 @@ export function setupDropdown(dropdownId) {
     function updateButtonText() {
         const checkboxes = content.querySelectorAll('input[type="checkbox"]');
         const selected = Array.from(checkboxes).filter(chk => chk.checked);
+
+        const labelSpan = button.querySelector('.label');
+
         if (selected.length === 0) {
-            button.textContent = button.dataset.placeholder || "Wybierz opcje ▼";
+            const labelSpan = button.querySelector('.label');
+            button.dataset.placeholder = labelSpan ? labelSpan.textContent : "Wybierz opcje";
         } else if (selected.length === 1) {
-            button.textContent = selected[0].parentElement.textContent.trim() + " ▼";
+            labelSpan.textContent = selected[0].parentElement.textContent.trim();
         } else {
-            button.textContent = `${selected.length} wybrane ▼`;
+            labelSpan.textContent = `${selected.length} wybrane`;
         }
     }
 

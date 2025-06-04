@@ -20,13 +20,14 @@ body {
 /* ========== SEKCJE STRONY ========== */
 .section {
     display: grid;
-    grid-template-columns: 144px 1fr; /*<---*/
+    grid-template-columns: 144px 1fr;
+    /*<---*/
     gap: 15px;
     background: white;
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     height: 90dvb;
     overflow-y: auto;
 }
@@ -52,7 +53,8 @@ body {
 }
 
 /* ========== PRZYCISKI I FORMULARZE ========== */
-button, .button {
+button,
+.button {
     background: #007bff;
     color: white;
     border: none;
@@ -89,20 +91,40 @@ button:hover {
 
 .dropdown {
     position: relative;
-    display: inline-block;
-    margin-right: 20px;
-  }
+    display: block;
+    margin-right: 10px;
+}
 
-  .dropdown-button {
-    padding: 8px 12px;
+.dropdown-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 5px;
     border: 1px solid #ccc;
-    cursor: pointer;
-    user-select: none;
-    min-width: 160px;
     background-color: white;
-  }
+    min-width: 150px;
+    max-width: 200px;
+    cursor: pointer;
+}
 
-  .dropdown-content {
+.dropdown-button .arrow {
+    font-size: 0.8rem;
+    color: #666;
+    padding-left: 10px;
+    min-width: 16px;
+    text-align: right;
+    align-self:flex-end;
+}
+
+.dropdown-button .label {
+    flex: 1;
+    margin-right: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.dropdown-content {
     display: none;
     position: absolute;
     background: white;
@@ -111,29 +133,59 @@ button:hover {
     max-height: 200px;
     overflow-y: auto;
     z-index: 1000;
-  }
+    align-items: flex-start;
+    flex-direction: column;
+}
 
-  .dropdown-content.show {
-    display: block;
-  }
+.dropdown-content.show {
+    display: flex;
+}
 
-  .dropdown-content label {
-    display: block;
+.dropdown-content label {
+    display: flex;
+    align-items: center;
     padding: 6px 10px;
     cursor: pointer;
-  }
+}
 
-  .dropdown-content label:hover {
+.dropdown-content input[type="checkbox"] {
+    display: inline-block;
+    justify-content: center;
+    align-self: center;
+    padding: 6px 10px;
+    cursor: pointer;
+    margin: 5px;
+}
+
+.dropdown-content label:hover {
     background-color: #f0f0f0;
-  }
+}
 
 /*=========== WYSZUKIWARKA ============ */
 
 .search {
-    display: flex; 
+    display: flex;
     flex-direction: row;
-    align-items: center; 
-    gap: 10px; 
+    align-items: center;
+    gap: 10px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 0px 10px;
+}
+
+.search input[type="search"]{
+    max-height: 35px;
+    max-width: 300px;
+    min-width: 200px;
+    align-self: center;
+    margin-top: 15px;
+}
+
+.search button{
+    max-height: 35px;
+    max-width: 100px;
+    align-self: center;
 }
 
 /*=========== SIDEBAR ============ */
@@ -151,7 +203,7 @@ button:hover {
 }
 
 #sidebar .sidebar-header {
-    display:flex;
+    display: flex;
     font-weight: bold;
     margin-bottom: 1rem;
     margin-top: 0;
@@ -173,36 +225,36 @@ button:hover {
 
 .active {
     font-weight: bold;
-    color:rgb(36, 36, 47);
+    color: rgb(36, 36, 47);
 }
 
 hr.simple {
-  border: none;
-  border-top: 1px solid #ddd;
-  margin: 15px 0;
-  display: block;
-  width: 100%;
-  align-self: flex-start;
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 15px 0;
+    display: block;
+    width: 100%;
+    align-self: flex-start;
 }
 
 .tag-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;             
-  margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
 }
 
 #tagsList {
-  list-style: none;
-  padding-left: 0;
-  margin: 0;
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
 }
 
 #tagsList .tag-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
 }
 
 .tagButton {
@@ -227,7 +279,7 @@ hr.simple {
     grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
     grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
-    
+
 }
 
 .item-card {
@@ -240,7 +292,7 @@ hr.simple {
 
 .item-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .item-actions {
@@ -266,7 +318,7 @@ hr.simple {
     left: 130px;
     top: 132px;
     padding: 8px;
-    
+
 }
 
 #itemsList {
@@ -347,7 +399,7 @@ hr.simple {
     background: white;
     padding: 25px;
     border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     min-width: 300px;
     overflow: auto;
@@ -364,7 +416,7 @@ hr.simple {
 /* Divide modal to two columns when screen width > 900px */
 .modalContentDivide {
     display: grid;
-    grid-template-columns: 1fr 1fr; 
+    grid-template-columns: 1fr 1fr;
     gap: 20px;
 }
 
@@ -375,7 +427,7 @@ hr.simple {
 }
 
 #metadataFields {
-    max-height: 400px; 
+    max-height: 400px;
     overflow-y: scroll;
 }
 
@@ -390,7 +442,8 @@ hr.simple {
 
     .modal {
         overflow: scroll;
-        max-height: calc(100vh - 200px); /*Dostosowywanie wysokości modalu*/
+        max-height: calc(100vh - 200px);
+        /*Dostosowywanie wysokości modalu*/
     }
 
     #fileModal {
@@ -422,7 +475,7 @@ hr.simple {
 }
 
 #filePreviewLarge {
-    max-height: 400px; 
+    max-height: 400px;
     overflow: auto;
     transition: 0.25s;
 }
@@ -431,7 +484,7 @@ hr.simple {
     transition: 0.25s;
     /* opacity: 0.7; */
     scale: 1.07 1.07;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     cursor: pointer;
 }
 
@@ -452,10 +505,13 @@ hr.simple {
 
 /* ============= Image view ============= */
 .image-view {
-    display: none; /* Hidden by default */
-    background-color: rgba(0,0,0,0.8); /* Black backround with opacity */
+    display: none;
+    /* Hidden by default */
+    background-color: rgba(0, 0, 0, 0.8);
+    /* Black backround with opacity */
     position: fixed;
-    z-index: 1100; /* Put image on top */
+    z-index: 1100;
+    /* Put image on top */
     padding-top: 1rem;
     left: 0;
     top: 0;
@@ -484,7 +540,8 @@ hr.simple {
     z-index: 100;
 }
 
-.close-button:hover, .close-button:focus {
+.close-button:hover,
+.close-button:focus {
     color: gray;
     cursor: pointer;
     text-decoration: none;
@@ -497,8 +554,13 @@ hr.simple {
 }
 
 @keyframes zoomin {
-    from {transform:scale(0)}
-    to {transform:scale(1)}
+    from {
+        transform: scale(0)
+    }
+
+    to {
+        transform: scale(1)
+    }
 }
 
 /* Adjust elements when screen width < 800px */
@@ -514,6 +576,6 @@ hr.simple {
 
     .upload-section {
         flex-wrap: wrap;
-    }  
+    }
 
 }
