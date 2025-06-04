@@ -105,6 +105,7 @@ button:hover {
     min-width: 150px;
     max-width: 200px;
     cursor: pointer;
+    border-radius: 5px;
 }
 
 .dropdown-button .arrow {
@@ -113,7 +114,7 @@ button:hover {
     padding-left: 10px;
     min-width: 16px;
     text-align: right;
-    align-self:flex-end;
+    align-self: flex-end;
 }
 
 .dropdown-button .label {
@@ -177,7 +178,7 @@ button:hover {
     padding: 0px 10px;
 }
 
-.search input[type="search"]{
+.search input[type="search"] {
     max-height: 35px;
     max-width: 300px;
     min-width: 200px;
@@ -185,7 +186,7 @@ button:hover {
     margin-top: 15px;
 }
 
-.search button{
+.search button {
     max-height: 35px;
     max-width: 100px;
     align-self: center;
@@ -505,9 +506,10 @@ hr.simple {
 .empty-info {
     margin: 6px;
 }
+
 /* ============= Image tags ============= */
 
-.file-tags-section{
+.file-tags-section {
     margin: 20px 0 10px 0;
     text-align: left;
     padding: 0;
@@ -519,7 +521,7 @@ hr.simple {
     border: none;
 }
 
-.tags-list{
+.tags-list {
     margin: 0 0 0 5px;
     padding: 0;
 }
@@ -570,11 +572,13 @@ hr.simple {
     justify-content: center;
 }
 
-.add-tag-to-file #tagSelector{
+.add-tag-to-file #tagSelector {
     margin: 0 5px 0 0;
     padding: 7px 2px;
     width: 100%;
+    border-radius: 5px;
 }
+
 /* ============= Image view ============= */
 .image-view {
     display: none;
@@ -596,8 +600,19 @@ hr.simple {
 .image-zoom {
     margin: auto;
     display: block;
+    max-width: 100vw;
+    max-height: 100vh;
+    width: auto;
+    height: auto;
+    transition: all 0.3s ease;
+    cursor: zoom-in;
+}
+
+.image-zoom.closeup {
     max-width: 1080px;
     width: 100%;
+    max-height: max-content;
+    cursor: zoom-out;
 }
 
 /* Close button */

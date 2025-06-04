@@ -235,6 +235,10 @@ window.close_img_view = function () {
     imgView.style.display = "none";
 };
 
+window.toggleImgCloseup = function (img, zoomClass = 'closeup'){
+   img.classList.toggle(zoomClass);
+}
+
 // Dodatkowe funkcje
 window.open_profile_edit = function () {
     window.location.pathname = '/EditProfilePage.html';
