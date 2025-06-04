@@ -88,8 +88,9 @@ export function renderItems(data) {
         html += `
         <div class="item-card">
             <div class="item-actions">
-                <button onclick="deleteFile('${file._id}')" title="Usuń" class="item-button">🗑️</button>
                 <button onclick="downloadFile('${file._id}')" title="Pobierz" class="item-download-item">⬇️</button>
+                <button onclick="renameFile('${file._id}')" title="Zmień nazwę" class="item-button">✏️</button>
+                <button onclick="deleteFile('${file._id}')" title="Usuń" class="item-button">🗑️</button>
             </div>
             <!-- Obszar klikalny z różną zawartością dla obrazków -->
             <div style="text-align: center;" onclick="showFileDetails('${file._id}')" class="file-clickable">

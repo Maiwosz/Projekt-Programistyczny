@@ -88,6 +88,7 @@
                             <p><strong>Typ:</strong> <span id="fileType"></span></p>
                             <p><strong>Rozmiar:</strong> <span id="fileSize"></span></p>
                             <p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
+                            <span class="close-button" onclick="closeFileModal()" style="top: -20px; right: 20px;">&times;</span>
                         </div>
                     </div>
                     
@@ -98,7 +99,6 @@
                             <div id="metadataFields"></div>
                             <div style="margin-top: 15px; display: flex; gap: 10px;">
                                 <button type="button" onclick="saveMetadata(event)">Zapisz zmiany</button>
-                                <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
                             </div>
                         </form>
                     </div>

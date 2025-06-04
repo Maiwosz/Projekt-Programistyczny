@@ -167,7 +167,8 @@ button:hover {
 }
 
 .item-download-item {
-    position: absolute;
+    position: relative;
+    left: 88px;
     top: 132px;
     padding: 8px;
 }
@@ -177,7 +178,6 @@ button:hover {
     left: 130px;
     top: 132px;
     padding: 8px;
-    
 }
 
 #itemsList {
@@ -242,10 +242,14 @@ button:hover {
 }
 
 .file-name {
+    display: block;
     word-break: break-word;
+    text-overflow: ellipsis;
+    overflow: hidden;
     font-size: 0.9em;
     text-align: center;
-    line-height: 1.4;
+    max-height: 2.6rem;
+    line-height: 1.2rem;
 }
 
 /* ========== MODAL ========== */
@@ -388,6 +392,7 @@ button:hover {
     position: absolute;
     top: 1rem;
     right: 3rem;
+    height: 0.5rem;
     color: #f8f9fa;
     font-size: 64px;
     text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;

@@ -8,7 +8,7 @@ export let innerFolders = new Map();
 // Importy funkcji z poszczególnych modułów
 import { loadFolderContents, enterFolder, navigateToIndex, buildPathTo } from './folderNavigation.js';
 import { updateBreadcrumbs, updateTree, saveState, getFileIcon, formatFileSize, renderItems } from './uiComponents.js';
-import { triggerFileInput, deleteFile } from './fileHandler.js';
+import { triggerFileInput, renameFile, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
 import { showTrashModal, closeTrashModal, restoreFile, permanentDeleteFile, emptyTrash } from './trashHandler.js';
@@ -148,6 +148,7 @@ window.renderItems = renderItems;
 
 // Funkcje obsługi plików
 window.triggerFileInput = triggerFileInput;
+window.renameFile = renameFile;
 window.deleteFile = deleteFile;
 
 // Funkcje obsługi folderów

@@ -127,7 +127,7 @@ export async function saveMetadata(event) {
         }
 
         const result = await response.json();
-        closeFileModal();
+        // closeFileModal();
         alert('Metadane zostały zaktualizowane');
     } catch (error) {
         console.error('Błąd:', error);

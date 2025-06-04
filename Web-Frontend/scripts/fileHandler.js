@@ -78,6 +78,29 @@ async function handleMultipleFiles(files) {
     }
 }
 
+export async function renameFile(fileId) {
+    // Pobierz nową nazwę od użytkownika
+    // const newName = prompt('Nowa nazwa pliku:');
+    // if (!newName) return;
+
+    // try {
+    //     // Wyślij żądanie zmiany nazwy do API
+    //     await fetch(`/api/files/${fileId}`, {
+    //         method: 'PUT',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //             'Authorization': `Bearer ${localStorage.getItem('token')}`
+    //         },
+    //         body: JSON.stringify({ newName })
+    //     });
+    //     loadFolderContents(); // Odśwież listę folderów
+    // } catch (error) {
+    //     console.error('Błąd zmiany nazwy:', error);
+    //     alert('Nie udało się zmienić nazwy');
+    // }
+    console.error('Tutaj zmiana nazwy pliku...');
+}
+
 export async function deleteFile(fileId) {
     if (!confirm('Przenieść plik do kosza?')) return;
 
