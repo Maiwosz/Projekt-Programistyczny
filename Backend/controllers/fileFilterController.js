@@ -1,6 +1,7 @@
 const File = require('../models/File');
 const Tag = require('../models/Tag');
 const FileTag = require('../models/FileTag');
+const logToFile = require('../utils/logger');
 
 /**
  * Filter files by multiple criteria: tags, file type (category), and name
@@ -15,6 +16,9 @@ const FileTag = require('../models/FileTag');
  */
 exports.filterFiles = async (req, res) => {
     try {
+
+        logToFile(req.)
+
         const {
             tagIds,
             categories,
