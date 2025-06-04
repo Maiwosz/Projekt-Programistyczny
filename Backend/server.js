@@ -69,7 +69,8 @@ const routes = [
     { path: '/api/user', file: './routes/userRoutes' },
     { path: '/api/config', file: './routes/configRoutes' },
     { path: '/api/sync', file: './routes/syncRoutes' },
-    { path: '/api/tags', file: './routes/tagRoutes' }
+    { path: '/api/tags', file: './routes/tagRoutes' },
+    { path: '/api/filter', file: './routes/fileFilterRoutes' }
 ];
 
 routes.forEach(route => {

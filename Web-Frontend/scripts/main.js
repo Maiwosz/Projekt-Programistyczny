@@ -1,7 +1,7 @@
 // ========== KONFIGURACJA GŁÓWNA ==========
 // Główne zmienne stanu aplikacji
-export let currentFolder = { id: null, name: 'Główny' }; 
-export let folderStack = []; 
+export let currentFolder = { id: null, name: 'Główny' };
+export let folderStack = [];
 export let currentFileId = null; // już nieużywane?
 export let innerFolders = new Map();
 export var userTags = [];
@@ -16,33 +16,34 @@ import { showTrashModal, closeTrashModal, restoreFile, permanentDeleteFile, empt
 import { showSyncModal, closeSyncModal } from './syncUi.js';
 import { startFolderSync, disconnectProvider } from './syncCore.js';
 import { authorizeGoogleDrive, checkGoogleDriveConnection, handleAuthCallback } from './googleDriveSync.js';
-import { loadUserTags,  renderTagsList, createTag, deleteTag, renderFileTags, populateTagSelector, addTagToFile, removeTagFromFile, populateTagFilterSelector, filterFilesByTag } from './tagPrototype.js';
+import { loadUserTags, renderTagsList, createTag, deleteTag, renderFileTags, populateTagSelector, addTagToFile, removeTagFromFile, populateTagFilterSelector } from './tagPrototype.js';
+import { populateTypeFilterSelector, populateTypeFilterSelectorMultiple, getSelectedFileTypes, setSelectedFileTypes, filterFiles,  filterFilesByTag, filterFilesByType, filterFilesByName} from './filterPrototype.js';
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', async () => {
     // Sprawdź czy użytkownik jest zalogowany
     const token = localStorage.getItem('token');
     if (!token) return; // Nie wykonuj dalszego kodu jeśli nie ma tokenu
-    
+
     // NOWE - Sprawdź czy to callback po autoryzacji Google Drive
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('code') && urlParams.has('state')) {
         console.log('Detected Google Drive callback');
-        
+
         try {
             const result = await handleAuthCallback();
-            
+
             if (result.success) {
                 // Pokaż komunikat o sukcesie
                 showAuthSuccessMessage();
-                
+
                 // Odśwież modalne okno synchronizacji jeśli jest otwarte
                 const syncModal = document.getElementById('syncModal');
                 if (syncModal && syncModal.style.display === 'block') {
                     // Przeładuj dane synchronizacji
                     const { loadAvailableProviders } = await import('./syncCore.js');
                     await loadAvailableProviders();
-                    
+
                     // Odśwież interfejs
                     const syncUi = await import('./syncUi.js');
                     // Możesz dodać funkcję odświeżania interfejsu
@@ -55,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             showAuthErrorMessage(error.message);
         }
     }
-  
+
     // Sprawdź czy istnieje zapisany stan w localStorage
     const savedState = localStorage.getItem('folderState');
     if (savedState) {
@@ -71,12 +72,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             localStorage.removeItem('folderState'); // Usuń niepoprawny stan
         }
     }
-    
+
     // Załaduj zawartość folderu i zaktualizuj okruszki
     loadFolderContents();
     loadUserTags();
     updateBreadcrumbs();
     updateTree();
+    populateTypeFilterSelector();
 });
 
 // ========== FUNKCJE POMOCNICZE AUTORYZACJI ==========
@@ -84,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 function showAuthSuccessMessage() {
     // Sprawdź czy istnieje element do wyświetlania komunikatów
     let messageElement = document.getElementById('authMessage');
-    
+
     if (!messageElement) {
         // Utwórz element jeśli nie istnieje
         messageElement = document.createElement('div');
@@ -92,7 +94,7 @@ function showAuthSuccessMessage() {
         messageElement.className = 'auth-message success';
         document.body.insertBefore(messageElement, document.body.firstChild);
     }
-    
+
     messageElement.innerHTML = `
         <div class="auth-message-content">
             <span class="auth-message-icon">✅</span>
@@ -100,10 +102,10 @@ function showAuthSuccessMessage() {
             <button class="auth-message-close" onclick="closeAuthMessage()">×</button>
         </div>
     `;
-    
+
     messageElement.className = 'auth-message success';
     messageElement.style.display = 'block';
-    
+
     // Automatycznie ukryj po 5 sekundach
     setTimeout(() => {
         closeAuthMessage();
@@ -112,14 +114,14 @@ function showAuthSuccessMessage() {
 
 function showAuthErrorMessage(error) {
     let messageElement = document.getElementById('authMessage');
-    
+
     if (!messageElement) {
         messageElement = document.createElement('div');
         messageElement.id = 'authMessage';
         messageElement.className = 'auth-message error';
         document.body.insertBefore(messageElement, document.body.firstChild);
     }
-    
+
     messageElement.innerHTML = `
         <div class="auth-message-content">
             <span class="auth-message-icon">❌</span>
@@ -127,12 +129,12 @@ function showAuthErrorMessage(error) {
             <button class="auth-message-close" onclick="closeAuthMessage()">×</button>
         </div>
     `;
-    
+
     messageElement.className = 'auth-message error';
     messageElement.style.display = 'block';
 }
 
-window.closeAuthMessage = function() {
+window.closeAuthMessage = function () {
     const messageElement = document.getElementById('authMessage');
     if (messageElement) {
         messageElement.style.display = 'none';
@@ -180,7 +182,7 @@ window.permanentDeleteFile = permanentDeleteFile;
 window.emptyTrash = emptyTrash;
 
 
-window.disconnectSync = async function(provider) {
+window.disconnectSync = async function (provider) {
     try {
         await disconnectProvider(provider);
     } catch (error) {
@@ -199,13 +201,24 @@ window.populateTagSelector = populateTagSelector;
 window.addTagToFile = addTagToFile;
 window.removeTagFromFile = removeTagFromFile;
 window.populateTagFilterSelector = populateTagFilterSelector;
+//window.filterFilesByTag = filterFilesByTag;
+
+// FILTRY
+
+window.populateTypeFilterSelector = populateTypeFilterSelector;
+window.populateTypeFilterSelectorMultiple = populateTypeFilterSelectorMultiple;
+window.getSelectedFileTypes = getSelectedFileTypes;
+window.setSelectedFileTypes = setSelectedFileTypes;
+window.filterFiles = filterFiles;
 window.filterFilesByTag = filterFilesByTag;
+window.filterFilesByType = filterFilesByType;
+window.filterFilesByName = filterFilesByName;
 
 // Funkcje UI
-window.view_image = function(image_preview_src) {
+window.view_image = function (image_preview_src) {
     // Get modal for image view
     var imgView = document.getElementById("image-view-id");
-    
+
     // Get destination for image from preview
     var imgFromView = document.getElementById("image-zoom-id");
 
@@ -213,19 +226,19 @@ window.view_image = function(image_preview_src) {
     imgFromView.src = image_preview_src;
 };
 
-window.close_img_view = function() {
+window.close_img_view = function () {
     // Get modal for image view
     var imgView = document.getElementById("image-view-id");
     imgView.style.display = "none";
 };
 
 // Dodatkowe funkcje
-window.open_profile_edit = function() {
+window.open_profile_edit = function () {
     window.location.pathname = '/EditProfilePage.html';
 };
 
 // Funkcja pomocnicza dla usuwania par synchronizacji (dla kompatybilności wstecznej)
-window.removeSyncPair = async function(provider, syncPairId) {
+window.removeSyncPair = async function (provider, syncPairId) {
     try {
         const { removeSyncPair } = await import('./syncCore.js');
         await removeSyncPair(provider, syncPairId);
@@ -235,14 +248,14 @@ window.removeSyncPair = async function(provider, syncPairId) {
     }
 };
 
-window.logout = function() {
+window.logout = function () {
     localStorage.removeItem('token');
-    
+
     // Usuń stan zalogowania FB przed przekierowaniem
     if (window.FB) {
-        FB.getLoginStatus(function(response) {
+        FB.getLoginStatus(function (response) {
             if (response && response.status === 'connected') {
-                FB.logout(function() {
+                FB.logout(function () {
                     console.log('Wylogowano z Facebook');
                     window.location.href = '/index.html';
                 });

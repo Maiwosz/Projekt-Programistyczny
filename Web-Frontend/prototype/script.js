@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFolderContents();
     updateBreadcrumbs();
     loadUserTags();
+    
 });
 
 // ========== FUNKCJE POMOCNICZE ==========
