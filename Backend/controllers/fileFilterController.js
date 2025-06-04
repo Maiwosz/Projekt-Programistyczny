@@ -17,8 +17,6 @@ const logToFile = require('../utils/logger');
 exports.filterFiles = async (req, res) => {
     try {
 
-        logToFile(req.)
-
         const {
             tagIds,
             categories,
