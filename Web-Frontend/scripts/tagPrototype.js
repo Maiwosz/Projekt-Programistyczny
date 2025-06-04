@@ -105,7 +105,7 @@ export function renderFileTags(fileTags) {
     fileTagsList.innerHTML = '';
 
     if (fileTags.length === 0) {
-        fileTagsList.innerHTML = '<p>Brak przypisanych tagów</p>';
+        fileTagsList.innerHTML = '<p style="margin: 5px 0 0 0;">Brak przypisanych tagów</p>';
         return;
     }
 
@@ -117,7 +117,7 @@ export function renderFileTags(fileTags) {
         li.className = 'file-tag-item';
         li.innerHTML = `
             <span>${tag.name}</span>
-            <button onclick="removeTagFromFile('${tag._id}')">Usuń</button>
+            <button onclick="removeTagFromFile('${tag._id}')">✖</button>
         `;
         tagsList.appendChild(li);
     });

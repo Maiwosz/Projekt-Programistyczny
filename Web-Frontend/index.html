@@ -131,7 +131,23 @@
                             <p><strong>Rozmiar:</strong> <span id="fileSize"></span></p>
                             <p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
                         </div>
+                        <hr class="simple">
+                        <!-- Sekcja tagów pliku -->
+                    <div class="file-tags-section">
+                        <h3>Tagi pliku:</h3>
+                        <div class="file-tags-list" id="fileTagsList" style="margin-bottom: 10px;">
+                            <!-- Tutaj będą wyświetlane tagi pliku -->
+                        </div>
+                        <div class="add-tag-to-file">
+                            <select id="tagSelector">
+                                <option value="">Wybierz tag</option>
+                                <!-- Opcje będą dodawane dynamicznie -->
+                            </select>
+                            <button type="button" onclick="addTagToFile()">Dodaj tag</button>
+                        </div>
                     </div>
+                    </div>
+                    
 
                     <!-- Prawa kolumna - metadane -->
                     <div>
@@ -144,20 +160,6 @@
                                     style="background: #6c757d;">Anuluj</button>
                             </div>
                         </form>
-                    </div>
-                    <!-- Sekcja tagów pliku -->
-                    <div class="file-tags-section" style="margin-top: 20px;">
-                        <h3>Tagi pliku</h3>
-                        <div class="file-tags-list" id="fileTagsList" style="margin-bottom: 10px;">
-                            <!-- Tutaj będą wyświetlane tagi pliku -->
-                        </div>
-                        <div class="add-tag-to-file">
-                            <select id="tagSelector">
-                                <option value="">Wybierz tag</option>
-                                <!-- Opcje będą dodawane dynamicznie -->
-                            </select>
-                            <button type="button" onclick="addTagToFile()">Dodaj tag</button>
-                        </div>
                     </div>
                 </div>
             </div>
