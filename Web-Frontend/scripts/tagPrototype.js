@@ -36,7 +36,7 @@ export function renderTagsList() {
         li.className = 'tag-item';
         li.innerHTML = `
             <span>${tag.name}</span>
-            <button onclick="deleteTag('${tag._id}')">Usuń</button>
+            <button class="tagButton" onclick="deleteTag('${tag._id}')">🗑️</button>
         `;
         tagsList.appendChild(li);
     });
