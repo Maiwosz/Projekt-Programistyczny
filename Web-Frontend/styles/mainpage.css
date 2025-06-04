@@ -315,6 +315,10 @@ button:hover {
     #metadataFields {
         max-height: 200px;
     }
+
+    #filePreviewLarge {
+        margin-top: 36px;
+    }
 }
 
 /* ========== MODAL FILE ========== */
@@ -387,6 +391,24 @@ button:hover {
     width: 100%;
 }
 
+/* Close button but for file modal */
+.close-button-modal {
+    position: absolute;
+    right: 20px;
+    top: -20px;
+    height: 0.5rem;
+    color: #444444;
+    font-size: 64px;
+    transition: 0.25s;
+    z-index: 100;
+}
+
+.close-button-modal:hover, .close-button-modal:focus {
+    color: #222222;
+    cursor: pointer;
+    text-decoration: none;
+}
+
 /* Close button */
 .close-button {
     position: absolute;
@@ -395,7 +417,8 @@ button:hover {
     height: 0.5rem;
     color: #f8f9fa;
     font-size: 64px;
-    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+    /* text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black; */
+    text-shadow: 1px 1px 5px black;
     transition: 0.25s;
     z-index: 100;
 }
