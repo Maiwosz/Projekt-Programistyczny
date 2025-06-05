@@ -43,6 +43,30 @@ export async function showFileDetails(fileId) {
     }
 }
 
+async function setAsProfilePic(fileId) {
+    const token = localStorage.getItem('token');
+
+    try {
+        const response = await fetch('/api/user/profile-picture', {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}`,
+                       'Content-Type': 'application/json'  },
+            body: JSON.stringify({fileId: fileId})
+        });
+        
+        if (response.ok) {
+            const picRes = await response.json();
+            alert(picRes.message);
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Nieznany błąd');
+        }
+
+    } catch (error) {
+        console.error('Błąd zmiany zdjęcia profilowego:', error);
+    }
+}
+
 function renderFileModal(file, fileTags = []) {
     const modal = document.getElementById('fileModal');
     const preview = document.getElementById('filePreviewLarge');
@@ -81,6 +105,7 @@ function renderFileModal(file, fileTags = []) {
     document.getElementById('fileType').textContent = file.mimetype;
     document.getElementById('fileSize').textContent = formatFileSize(file.size);
     document.getElementById('fileDate').textContent = new Date(file.createdAt).toLocaleString();
+    document.getElementById('isProfilePic').onclick = () => setAsProfilePic(file._id);
 
     // Obsłuż metadane
     const metadataFields = document.getElementById('metadataFields');

@@ -14,7 +14,8 @@ const FileSchema = new mongoose.Schema({
     folder: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null },
     createdAt: { type: Date, default: Date.now },
     metadata: { type: Object, default: {} },
-    
+    isProfilePicture: {type: Boolean, default: false},
+
     // Uproszczony system mapowania do klientów
     clientMappings: [{
         client: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },

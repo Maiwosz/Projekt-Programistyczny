@@ -41,9 +41,76 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
+    const loadPicture = async () => {
+        try {
+            const response = await fetch('/api/user/profile-picture', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const pictureRes = await response.json();
+            const picturePlacement = document.getElementById("picture");
+            //picturePlacement. = pictureRes.picture;
+            console.log(pictureRes);
+            if(pictureRes.path == null ) {
+                //picturePlacement.textContent = "Brak picture";
+                picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg"
+            } else {
+                picturePlacement.src = `/uploads/${pictureRes.path}`;
+            }
+
+        } catch (error) {
+            console.error('Błąd pobierania zdjecia profilowego:', error);
+        }
+    };
+
+    await loadPicture();
     await loadLogin();
     await loadEmail();
 });
+
+function triggerFileInput() {
+    // Utwórz dynamiczny input plikowy
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = false; // Konfiguruj wielokrotny wybór
+    input.style.display = 'none';
+
+    // Obsłuż zmianę wybranych plików
+    input.addEventListener('change', (e) => {
+        
+        upload_ProfilePic(e.target.files);
+        
+        document.body.removeChild(input); // Posprzątaj po sobie
+    });
+
+    // Symuluj kliknięcie inputu
+    document.body.appendChild(input);
+    input.click();
+}
+
+async function upload_ProfilePic(files) {
+        if (!files.length) return;
+    
+        // Przygotuj dane formularza
+        const formData = new FormData();
+        formData.append('file', files[0]); 
+        
+        try {
+            // Wyślij plik na serwer
+            const response = await fetch('/api/user/profile-picture', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: formData
+            });
+            const pictureRes = await response.json();
+            const picturePlacement = document.getElementById("picture");
+            picturePlacement.src = `/uploads/${pictureRes.path}`;
+        } catch (error) {
+            console.error('Błąd przesyłania:', error);
+            alert('Nie udało się przesłać pliku');
+        }
+    }
 
 function showPanel(type) {
     const panel = document.getElementById("editPanel");
@@ -182,6 +249,23 @@ async function editPassword (e) {
     }
 }
 
+async function removeUser() {
+    if (!confirm('Czy na pewno chcesz usunąć konto?')) return;
+    const token = localStorage.getItem('token');
+    try {
+        await fetch(`/api/user`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+    } catch (error) {
+        console.error('Błąd usuwania:', error);
+        alert('Nie udało się usunąć konta');
+    }
+}
+
 function closePanel() {
     document.getElementById("editPanel").classList.remove("active");
     const text1 = document.getElementById("mainInput");
@@ -194,4 +278,5 @@ function closePanel() {
 function open_mainpage() {
     window.location.pathname = '/index.html';
 }
+
 
