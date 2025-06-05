@@ -36,7 +36,7 @@ export function populateTypeFilterSelector(categories = null) {
 // Alternative function to populate with multiple selection support
 export function populateTypeFilterSelectorMultiple(categories = null) {
     const typeSelector = document.getElementById('typeDropdown-content');
-    
+
     // Clear existing options except the first "all types" option
     typeSelector.innerHTML = '';
 
@@ -59,19 +59,17 @@ export function populateTypeFilterSelectorMultiple(categories = null) {
         fileTypes.forEach(type => {
             const count = categoryMap[type.value] || 0;
             if (count > 0) { // Only show types that have files
-                const option = document.createElement('label');
-                option.value = type.value;
-                option.textContent = `${type.label} (${count})`;
-                typeSelector.appendChild(option);
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" value="${type.value}" name="types"> ${type.label} (${count})`;
+                typeSelector.appendChild(label);
             }
         });
     } else {
         // Fallback: show all types without counts
         fileTypes.forEach(type => {
-            const option = document.createElement('label');
-            option.value = type.value;
-            option.textContent = type.label;
-            typeSelector.appendChild(option);
+            const label = document.createElement('label');
+            label.innerHTML = `<input type="checkbox" value="${type.value}" name="types"> ${type.label}`;
+            typeSelector.appendChild(label);
         });
     }
 }
@@ -89,7 +87,7 @@ export function getSelectedFileTypes() {
 // Function to set selected types
 export function setSelectedFileTypes(types) {
     const typeSelector = document.getElementById('typeFilterSelector');
-    
+
     if (typeSelector.multiple) {
         // For multiple selection
         Array.from(typeSelector.options).forEach(option => {
@@ -109,13 +107,21 @@ export async function filterFiles() {
     const nameInput = document.getElementById('nameFilterSelector');
 
     // Get selected tags
-    const selectedTags = tagSelector ? 
-        Array.from(tagSelector.selectedOptions).map(option => option.value).filter(Boolean) : [];
-    
+    const tagContent = tagSelector.querySelector('.dropdown-content');
+    const selectedTags = tagContent ?
+        Array.from(tagContent.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(checkbox => checkbox.value)
+            .filter(Boolean)
+        : [];
+
     // Get selected types
-    const selectedTypes = typeSelector ? 
-        Array.from(typeSelector.selectedOptions).map(option => option.value).filter(Boolean) : [];
-    
+    const typeContent = typeSelector.querySelector('.dropdown-content');
+    const selectedTypes = typeContent ?
+        Array.from(typeContent.querySelectorAll('input[type="checkbox"]:checked'))
+            .map(checkbox => checkbox.value)
+            .filter(Boolean)
+        : [];
+
     // Get name filter
     const nameFilter = nameInput ? nameInput.value.trim() : '';
 
@@ -128,15 +134,15 @@ export async function filterFiles() {
     try {
         // Build query parameters
         const query = new URLSearchParams();
-        
+
         if (selectedTags.length > 0) {
             query.append('tagIds', selectedTags.join(','));
         }
-        
+
         if (selectedTypes.length > 0) {
             query.append('categories', selectedTypes.join(','));
         }
-        
+
         if (nameFilter) {
             query.append('name', nameFilter);
         }

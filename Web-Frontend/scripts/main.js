@@ -78,11 +78,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadUserTags();
     updateBreadcrumbs();
     updateTree();
-    populateTypeFilterSelector();
+    populateTypeFilterSelectorMultiple();
     // Setup dropdownów
     setupDropdown('typeFilterSelector');
     setupDropdown('tagFilterSelector');
-    populateTypeFilterSelectorMultiple();
+    
 });
 
 // ========== FUNKCJE POMOCNICZE AUTORYZACJI ==========
