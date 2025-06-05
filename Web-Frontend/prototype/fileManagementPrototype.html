@@ -26,6 +26,23 @@
                 <!-- Tutaj będą dynamicznie wczytywane pliki i foldery -->
             </div>
         </div>
+        
+        <!-- Sekcja tagów -->
+        <div class="section">
+            <h2>Zarządzanie tagami</h2>
+            <div class="tag-management">
+                <div class="tag-form">
+                    <input type="text" id="newTagName" placeholder="Nazwa tagu">
+                    <button onclick="createTag()">Dodaj tag</button>
+                </div>
+                <div class="tags-list">
+                    <h3>Dostępne tagi</h3>
+                    <ul id="tagsList">
+                        <!-- Tutaj będą wyświetlane tagi -->
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal do tworzenia folderu -->
@@ -63,6 +80,21 @@
 							<button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
 						</div>
 					</form>
+                    
+                    <!-- Sekcja tagów pliku -->
+                    <div class="file-tags-section" style="margin-top: 20px;">
+                        <h3>Tagi pliku</h3>
+                        <div class="file-tags-list" id="fileTagsList" style="margin-bottom: 10px;">
+                            <!-- Tutaj będą wyświetlane tagi pliku -->
+                        </div>
+                        <div class="add-tag-to-file">
+                            <select id="tagSelector">
+                                <option value="">Wybierz tag</option>
+                                <!-- Opcje będą dodawane dynamicznie -->
+                            </select>
+                            <button type="button" onclick="addTagToFile()">Dodaj tag</button>
+                        </div>
+                    </div>
 				</div>
 			</div>
 		</div>

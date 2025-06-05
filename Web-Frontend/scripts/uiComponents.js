@@ -137,8 +137,8 @@ export function formatFileSize(bytes) {
 function renderTree(parentFolder = null, depth = 0) {
     const folders = innerFolders.get(parentFolder) || [];
     const container = document.createElement("div");
-    
-    if(parentFolder === null) {
+
+    if (parentFolder === null) {
         const isActive = null === currentFolder.id;
         const inCurrentPath = true; // Folder Główny jest folderem nadrzędnym każdego folderu
 
@@ -146,7 +146,7 @@ function renderTree(parentFolder = null, depth = 0) {
         folderDiv.className = "folder" + (isActive ? " active" : "");
         folderDiv.textContent = 'Główny';
         folderDiv.style.marginLeft = `${depth * 20}px`;
-        folderDiv.onclick = () => {window.navigateToIndex(0);}
+        folderDiv.onclick = () => { window.navigateToIndex(0); }
         container.appendChild(folderDiv);
     }
 
@@ -157,7 +157,7 @@ function renderTree(parentFolder = null, depth = 0) {
         const folderDiv = document.createElement("div");
         folderDiv.className = "folder" + (isActive ? " active" : "");
         folderDiv.textContent = folder.name;
-        folderDiv.style.marginLeft = `${(depth+1) * 20}px`;
+        folderDiv.style.marginLeft = `${(depth + 1) * 20}px`;
 
         folderDiv.onclick = () => {
             const indexInStack = folderStack.findIndex(f => f.id === folder.id);
@@ -173,7 +173,7 @@ function renderTree(parentFolder = null, depth = 0) {
                     // Dodaj wszystkie foldery z ścieżki oprócz ostatniego
                     const pathWithoutLast = fullPath.slice(0, -1);
                     pathWithoutLast.forEach(item => folderStack.push(item));
-                    
+
                     // Ustaw aktualny folder na ostatni element ścieżki
                     currentFolder.id = fullPath[fullPath.length - 1].id;
                     currentFolder.name = fullPath[fullPath.length - 1].name;
@@ -202,3 +202,69 @@ export function updateTree() {
     treeContainer.innerHTML = '';
     treeContainer.appendChild(renderTree());
 }
+
+export function updateSyncIndicator(folderId, isSync) {
+    const folderCards = document.querySelectorAll(`[data-folder-id="${folderId}"]`);
+    folderCards.forEach(card => {
+        const indicator = card.querySelector('.sync-indicator');
+        if (isSync && !indicator) {
+            const syncEl = document.createElement('p');
+            syncEl.className = 'sync-indicator';
+            syncEl.textContent = '🔄 Synchronizowany';
+            card.querySelector('.file-name').appendChild(syncEl);
+        } else if (!isSync && indicator) {
+            indicator.remove();
+        }
+    });
+}
+
+export function setupDropdown(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    const button = dropdown.querySelector('.dropdown-button');
+    const content = dropdown.querySelector('.dropdown-content');
+
+    button.addEventListener('click', () => {
+        const isOpen = content.classList.contains('show');
+        closeAllDropdowns();
+        if (!isOpen) {
+            content.classList.add('show');
+        }
+    });
+
+    function updateButtonText() {
+        const checkboxes = content.querySelectorAll('input[type="checkbox"]');
+        const selected = Array.from(checkboxes).filter(chk => chk.checked);
+        const labelSpan = button.querySelector('.label');
+
+        if (selected.length === 0) {
+            labelSpan.textContent = button.dataset.placeholder.replace('▼', '').trim() || "Wybierz opcje";
+        } else if (selected.length === 1) {
+            labelSpan.textContent = selected[0].parentElement.textContent.trim();
+        } else {
+            labelSpan.textContent = `${selected.length} wybrane`;
+        }
+    }
+
+    // Delegacja eventu zamiast podpinania do każdego checkboxa osobno
+    content.addEventListener('change', (event) => {
+        if (event.target.matches('input[type="checkbox"]')) {
+            updateButtonText();
+        }
+    });
+
+    button.dataset.placeholder = button.textContent;
+    updateButtonText();
+}
+
+function closeAllDropdowns() {
+    document.querySelectorAll('.dropdown-content.show').forEach(dropdown => {
+        dropdown.classList.remove('show');
+    });
+}
+
+document.addEventListener('click', (event) => {
+    if (!event.target.closest('.dropdown')) {
+        closeAllDropdowns();
+    }
+});
+

@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Style aplikacji -->
     <link rel="stylesheet" href="./styles/styles.css">
-	<link rel="stylesheet" href="./styles/sync.css">
+    <link rel="stylesheet" href="./styles/sync.css">
     <link rel="stylesheet" href="./styles/mainpage.css">
-	<link rel="stylesheet" href="./styles/trash.css">
+    <link rel="stylesheet" href="./styles/trash.css">
     <!-- Skrypt autoryzacyjny musi być dodany jako pierwszy -->
     <script src="./scripts/auth.js"></script>
     <!-- Moduły aplikacji -->
     <script type="module" src="./scripts/main.js"></script>
 </head>
+
 <body>
     <!-- Sekcja widoczna TYLKO po zalogowaniu - cała zawartość mainpage.html -->
     <div class="logged-in" style="display: none;">
@@ -29,27 +31,67 @@
             <div id="layout">
                 <!-- Sidebar z drzewem folderów -->
                 <div id="sidebar">
-                    <div class="sidebar-header">
-                        <span style="margin-right:15px;"> Foldery</span>
-                    </div>
+                    <h2 class="sidebar-header">Foldery</h2>
                     <div id="folderTree">
                         <!-- Tutaj będzie dynamicznie wczytywane drzewo folderów -->
                     </div>
+                    <hr class="simple">
+                    <h2 class="sidebar-header">Tagi</h2>
+                    <div class="tag-management">
+                        <div class="tag-form">
+                            <input type="text" id="newTagName" placeholder="Nazwa tagu">
+                            <button onclick="createTag()">Dodaj tag</button>
+                        </div>
+                        <div class="tags-list">
+                            <h3 style="font-size: 16px;">Dostępne tagi</h3>
+                            <ul id="tagsList">
+                                <!-- Tutaj będą wyświetlane tagi -->
+                            </ul>
+                        </div>
+                    </div>
+
                 </div>
                 <div class="main-content">
                     <div class="header">
                         <h2>Twoje pliki</h2>
                         <div class="upload-section">
-                            <button onclick="triggerFileInput(false)">Dodaj plik</button>
-                            <button onclick="triggerFileInput(true)">Dodaj wiele</button>
+                            <button onclick="triggerFileInput(true)">Dodaj</button>
                             <button onclick="showCreateFolderModal()">Nowy folder</button>
-							<button onclick="showTrashModal()">Kosz</button>
+                            <button onclick="showTrashModal()">Kosz</button>
                         </div>
+                    </div>
+                    <!-- Sekcja tagów -->
+                    <div class="search">
+                        <h3>Wyszukaj</h3>
+                        <p> Tag: </p>
+                        <div class="dropdown" id="tagFilterSelector">
+                            <div class="dropdown-button" tabindex="0">
+                                <span class="label">Wybierz tagi</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="dropdown-content" id="tagDropdown-content">
+                                <!-- Tu będą checkboxy -->
+                            </div>
+                        </div>
+                        <p> Typ: </p>
+                        <div class="dropdown" id="typeFilterSelector">
+                            <div class="dropdown-button" tabindex="0">
+                                <span class="label">Wybierz typy</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="dropdown-content" id="typeDropdown-content">
+                                <!-- Tu będą checkboxy -->
+                            </div>
+                        </div>
+                        <p> Nazwa: </p>
+                        <input type="search" id="nameFilterSelector" placeholder="Wpisz nazwę pliku lub folderu">
+
+                        <button onclick="filterFiles()">Pokaż pliki</button>
                     </div>
                     <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px;">
                         <div class="breadcrumbs"> Ścieżka: </div>
                         <div class="breadcrumbs" id="breadcrumbs">
-                            
+
                         </div>
                     </div>
 
@@ -75,7 +117,7 @@
                 <button onclick="closeFolderModal()" style="background: #6c757d;">Anuluj</button>
             </div>
         </div>
-        
+
         <!-- Modal do podglądu pliku i metadanych -->
         <div id="fileModal" class="modal" style="max-width: 800px;">
             <div id="modalContent">
@@ -90,8 +132,24 @@
                             <p><strong>Rozmiar:</strong> <span id="fileSize"></span></p>
                             <p><strong>Data dodania:</strong> <span id="fileDate"></span></p>
                         </div>
+                        <hr class="simple">
+                        <!-- Sekcja tagów pliku -->
+                    <div class="file-tags-section">
+                        <h3>Tagi pliku:</h3>
+                        <div class="file-tags-list" id="fileTagsList" style="margin-bottom: 10px;">
+                            <!-- Tutaj będą wyświetlane tagi pliku -->
+                        </div>
+                        <div class="add-tag-to-file">
+                            <select id="tagSelector">
+                                <option value="">Wybierz tag</option>
+                                <!-- Opcje będą dodawane dynamicznie -->
+                            </select>
+                            <button type="button" onclick="addTagToFile()">Dodaj tag</button>
+                        </div>
+                    </div>
                     </div>
                     
+
                     <!-- Prawa kolumna - metadane -->
                     <div>
                         <h3 style="margin-top: 0;">Metadane</h3>
@@ -275,19 +333,64 @@
 			</div>
 		</div>
 
+        <!-- Modal do synchronizacji folderu -->
+        <div id="syncModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Synchronizacja folderu: <span id="syncFolderName"></span></h3>
+                    <input type="hidden" id="syncFolderId">
+                </div>
+
+                <div id="syncStatusInfo" class="sync-status" style="display: none;">
+                    <!-- Tutaj będzie wyświetlany status synchronizacji -->
+                </div>
+
+                <div id="syncOptions" class="sync-options">
+                    <!-- Tutaj będą wyświetlane opcje synchronizacji -->
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeSyncModal()" class="btn-secondary">Zamknij</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal kosza -->
+        <div id="trashModal" class="modal" style="max-width: 900px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Kosz</h3>
+                    <button onclick="closeTrashModal()" class="close-button">&times;</button>
+                </div>
+
+                <div class="trash-actions" style="margin-bottom: 20px;">
+                    <button onclick="emptyTrash()" class="btn-danger">Opróżnij kosz</button>
+                </div>
+
+                <div id="trashItems" class="items-list">
+                    <!-- Tutaj będą wyświetlane usunięte pliki -->
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeTrashModal()" class="btn-secondary">Zamknij</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Podgląd obrazka -->
         <div id="image-view-id" class="image-view">
             <span class="close-button" onclick="close_img_view()">&times;</span>
-            <img id="image-zoom-id" class="image-zoom">
+            <img id="image-zoom-id" class="image-zoom" onclick="toggleImgCloseup(this)">
         </div>
     </div>
-    
+
     <!-- Sekcja widoczna TYLKO dla niezalogowanych - zawartość aktualnego index.html -->
     <div class="logged-out" style="display: none;">
         <h1>Witaj gościu!</h1>
         <!-- Linki do logowania i rejestracji -->
-        <a href="/login.html">Zaloguj się</a> | 
+        <a href="/login.html">Zaloguj się</a> |
         <a href="/register.html">Zarejestruj</a>
     </div>
 </body>
+
 </html>
