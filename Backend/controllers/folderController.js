@@ -2,6 +2,7 @@ const Folder = require('../models/Folder');
 const File = require('../models/File');
 const path = require('path');
 const fs = require('fs');
+const SyncService = require('../services/SyncService');
 
 exports.createFolder = async (req, res) => {
     try {
@@ -74,6 +75,12 @@ exports.deleteFolder = async (req, res) => {
                 });
             }
 
+            try {
+                await SyncService.removeSyncFolder(req.user.userId, id);
+            } catch (error) {
+                console.warn('Błąd usuwania synchronizacji folderu:', error.message);
+            }
+
             await Folder.findByIdAndDelete(id);
             return res.json({ message: 'Folder usunięty' });
         } else {
@@ -81,6 +88,12 @@ exports.deleteFolder = async (req, res) => {
                 const subfolders = await Folder.find({ parent: folderId, user: req.user.userId });
                 for (const subfolder of subfolders) {
                     await deleteFolderRecursive(subfolder._id);
+                }
+
+                try {
+                    await SyncService.removeSyncFolder(req.user.userId, folderId);
+                } catch (error) {
+                    console.warn('Błąd usuwania synchronizacji subfolderu:', error.message);
                 }
 
                 const files = await File.find({ folder: folderId, user: req.user.userId });

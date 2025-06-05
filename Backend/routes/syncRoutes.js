@@ -3,38 +3,41 @@ const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const syncController = require('../controllers/syncController');
 
-// Endpoint callback NIE wymaga autoryzacji - musi być przed middleware!
-router.get('/:provider/callback', syncController.handleAuthCallback);
-
-// Wszystkie pozostałe endpointy wymagają autoryzacji
+// Wszystkie endpointy wymagają autoryzacji
 router.use(authMiddleware);
 
-// Pobierz aktywnych providerów użytkownika
-router.get('/providers', syncController.getActiveProviders);
+// === ZARZĄDZANIE KLIENTAMI ===
 
-// Endpointy dla konkretnego providera
-router.get('/:provider/folders', syncController.getExternalFolders);
-router.get('/:provider/connection', syncController.checkConnection);
-router.get('/:provider/auth-url', syncController.getAuthUrl);
-router.delete('/:provider/disconnect', syncController.disconnectProvider);
+// Rejestracja i zarządzanie klientami
+router.post('/clients', syncController.registerClient);
+router.get('/clients', syncController.getClients);
+router.delete('/clients/:clientId', syncController.deactivateClient);
 
-// Zarządzanie parami synchronizacji
-router.get('/pairs', syncController.getSyncPairs);
-router.post('/:provider/pairs', syncController.createSyncPair);
-router.delete('/:provider/pairs/:syncPairId', syncController.removeSyncPair);
-router.get('/pairs/:syncPairId', syncController.getSyncPairDetails);
+// Aktualizacja aktywności klienta
+router.put('/clients/:clientId/activity', syncController.updateClientLastSeen);
 
-// Synchronizacja
-router.post('/:provider/sync-all', syncController.syncAllPairs);
-router.post('/:provider/pairs/:syncPairId/sync', syncController.syncFolder);
+// === ZARZĄDZANIE FOLDERAMI SYNCHRONIZACJI ===
 
-// Automatyczna synchronizacja
-router.get('/auto-sync/status', syncController.getAutoSyncStatus);
-router.post('/pairs/:syncPairId/auto-sync/enable', syncController.enableAutoSync);
-router.post('/pairs/:syncPairId/auto-sync/disable', syncController.disableAutoSync);
-router.put('/pairs/:syncPairId/auto-sync/interval', syncController.updateAutoSyncInterval);
+// CRUD dla folderów synchronizacji
+router.post('/folders', syncController.createSyncFolder);
+router.get('/folders', syncController.getSyncFolders);
+router.delete('/folders/:folderId', syncController.removeSyncFolder);
 
-// Ustawienia par synchronizacji
-router.put('/pairs/:syncPairId/settings', syncController.updateSyncPairSettings);
+// Synchronizacja dla konkretnego folderu
+router.get('/folders/:folderId/sync', syncController.getSyncFoldersForFolder);
+
+// === OPERACJE NA PLIKACH ===
+
+// Pobieranie plików do synchronizacji
+router.get('/folders/:folderId/files/:clientId', syncController.getFilesForSync);
+
+// Synchronizacja plików z klienta
+router.post('/files/sync/:clientId', syncController.syncFileFromClient);
+
+// Batch synchronizacja wielu plików
+router.post('/files/batch-sync/:clientId', syncController.batchSyncFiles);
+
+// Sprawdzanie statusu synchronizacji
+router.post('/folders/:folderId/sync-status/:clientId', syncController.checkSyncStatus);
 
 module.exports = router;

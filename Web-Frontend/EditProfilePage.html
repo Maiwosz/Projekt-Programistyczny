@@ -3,8 +3,10 @@
 <head>
     <title>Edycja profilu</title>
     <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/googleDrive.css">
     <script src="/scripts/edit.js"></script>
     <script src="/scripts/auth.js"></script>
+	<script src="/scripts/googleDrive.js"></script>
 </head> 
 <body class="editBody">
     <div id="editPanel" class="changePanel">
@@ -43,13 +45,23 @@
                     <div class="divEdit">Email:</div>
                     <span class="spanEdit" id="email"></span>
                     <button class="buttonZmien" onclick="showPanel('email')">Zmień</button>                  
-                                    
                 </div>
                 <div class="editContainerData">
                     <div class="divEdit">Login:</div>
                     <span class="spanEdit" id="login"></span>
                     <button class="buttonZmien" onclick="showPanel('login')">Zmień</button> 
                 </div>
+                
+                <!-- Sekcja Google Drive -->
+                <div class="editContainerData gdrive-section">
+                    <div class="divEdit">Google Drive:</div>
+                    <div class="gdrive-status-container">
+                        <span class="spanEdit gdrive-status-text" id="gdriveStatus">Niepołączono</span>
+                        <span class="gdrive-status-indicator" id="gdriveIndicator">○</span>
+                    </div>
+                    <button class="buttonZmien" onclick="showGoogleDriveModal()" id="gdriveButton">Konfiguruj</button>
+                </div>
+                
                 <div class="editContainerButtons2">
                     <button class="buttonEditPage" onclick="showPanel('haslo')">Zmień hasło</button>
                     <button class="buttonEditPage">Usuń konto</button>
@@ -57,11 +69,129 @@
             </div> 
         </div>
     </div>
+    
     <div class="logged-out">
         <p>Zaloguj się aby uzyskać dostęp</p>
         <a href="/login.html">Zaloguj</a>
     </div>
 
-
+    <!-- Modal Google Drive -->
+    <div id="googleDriveModal" class="modal gdrive-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Google Drive</h3>
+                <button onclick="closeGoogleDriveModal()" class="close-button">&times;</button>
+            </div>
+            
+            <!-- Sekcja gdy nie połączono -->
+            <div id="gdrive-disconnected" class="gdrive-section" style="display: none;">
+                <div class="gdrive-info">
+                    <p>Połącz swoje konto z Google Drive, aby synchronizować pliki automatycznie.</p>
+                    <div class="gdrive-benefits">
+                        <h4>Korzyści z połączenia:</h4>
+                        <ul>
+                            <li>Automatyczna synchronizacja plików</li>
+                            <li>Backup w chmurze</li>
+                            <li>Dostęp z dowolnego urządzenia</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="gdrive-actions">
+                    <button onclick="connectGoogleDrive()" class="buttonEditPage btn-primary">
+                        Połącz z Google Drive
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Sekcja gdy połączono -->
+            <div id="gdrive-connected" class="gdrive-section" style="display: none;">
+                <div class="gdrive-status">
+                    <div class="connection-info">
+                        <h4>Status połączenia</h4>
+                        <div class="info-row">
+                            <strong>Konto:</strong> <span id="gdrive-email">-</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Nazwa połączenia:</strong> <span id="gdrive-name">-</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Ostatnia synchronizacja:</strong> <span id="gdrive-last-sync">-</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Status:</strong> <span id="gdrive-status" class="status-indicator">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sync-stats">
+                        <h4>Statystyki</h4>
+                        <div class="info-row">
+                            <strong>Pliki zsynchronizowane:</strong> <span id="gdrive-total-files">0</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Rozmiar danych:</strong> <span id="gdrive-total-size">0 B</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Pliki wysłane:</strong> <span id="gdrive-uploaded">0</span>
+                        </div>
+                        <div class="info-row">
+                            <strong>Pliki pobrane:</strong> <span id="gdrive-downloaded">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sync-settings">
+                    <h4>Ustawienia synchronizacji</h4>
+                    <div class="setting-row">
+                        <label class="setting-label">
+                            <input type="checkbox" id="auto-sync-enabled"> 
+                            Automatyczna synchronizacja
+                        </label>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <label class="setting-label" for="sync-interval">Interwał synchronizacji (minuty):</label>
+                        <input type="number" id="sync-interval" min="1" max="1440" value="5" class="setting-input">
+                    </div>
+                    
+                    <div class="setting-row">
+                        <label class="setting-label" for="sync-direction">Kierunek synchronizacji:</label>
+                        <select id="sync-direction" class="setting-select">
+                            <option value="bidirectional">Dwukierunkowa</option>
+                            <option value="upload-only">Tylko wysyłanie</option>
+                            <option value="download-only">Tylko pobieranie</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-row">
+                        <label class="setting-label" for="max-file-size">Maksymalny rozmiar pliku (MB):</label>
+                        <input type="number" id="max-file-size" min="1" max="1000" value="100" class="setting-input">
+                    </div>
+                </div>
+                
+                <div class="gdrive-actions">
+                    <button onclick="saveGoogleDriveSettings()" class="buttonEditPage btn-primary">
+                        Zapisz ustawienia
+                    </button>
+                    <button onclick="triggerManualSync()" class="buttonEditPage btn-secondary">
+                        Synchronizuj teraz
+                    </button>
+                    <button onclick="disconnectGoogleDrive()" class="buttonEditPage btn-danger">
+                        Odłącz Google Drive
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Loading state -->
+            <div id="gdrive-loading" class="gdrive-section loading-section" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Ładowanie...</p>
+            </div>
+            
+            <div class="modal-footer">
+                <button onclick="closeGoogleDriveModal()" class="buttonEditPage btn-secondary">Zamknij</button>
+            </div>
+        </div>
+    </div>
 </body>                                             
 </html>

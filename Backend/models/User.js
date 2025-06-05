@@ -12,15 +12,20 @@ const UserSchema = new mongoose.Schema({
         ref: 'File'
     },
     profilePictureUrl: String,
-    googleDriveTokens: {
-        access_token: String,
-        refresh_token: String,
-        scope: String,
-        token_type: String,
-        expiry_date: Number
+    
+    // Globalne ustawienia synchronizacji użytkownika
+    syncSettings: {
+        maxClients: { type: Number, default: 10 }, // Max liczba klientów
+        globalAutoSync: { type: Boolean, default: false },
+        conflictResolution: {
+            type: String,
+            enum: ['newest-wins', 'manual', 'keep-both'],
+            default: 'newest-wins'
+        }
     },
-    googleDriveEnabled: { type: Boolean, default: false },
-    lastDriveSyncDate: { type: Date }
+    
+    createdAt: { type: Date, default: Date.now },
+    lastActivity: { type: Date, default: Date.now }
 });
 
 UserSchema.pre('save', async function (next) {

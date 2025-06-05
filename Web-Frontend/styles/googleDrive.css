@@ -1,0 +1,559 @@
+/* ========== PODSTAWOWE STYLE MODALA ========== */
+.modal {
+    display: none; /* Domyślnie ukryty */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    background-color: #ffffff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: hidden;
+}
+
+/* ========== GOOGLE DRIVE STYLES ========== */
+/* Używamy prefiksów .gdrive- i .modal.gdrive-modal aby uniknąć konfliktów */
+
+/* ========== SEKCJA GOOGLE DRIVE W PROFILU ========== */
+.gdrive-section {
+    /* Usuń problemy ze scrollem */
+    overflow: visible;
+}
+
+.gdrive-status-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden; /* Zapobiega problemom z layoutem */
+}
+
+.gdrive-status-text {
+    /* Dziedziczenie z .spanEdit */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gdrive-status-indicator {
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+    flex-shrink: 0; /* Nie pozwól na zmniejszanie */
+}
+
+.gdrive-status-indicator.connected {
+    color: #28a745; /* Zielony dla połączenia */
+}
+
+.gdrive-status-indicator.disconnected {
+    color: #dc3545; /* Czerwony dla braku połączenia */
+}
+
+/* ========== MODAL GOOGLE DRIVE ========== */
+.modal.gdrive-modal {
+    /* Podstawowe pozycjonowanie modala */
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.gdrive-modal .modal-content {
+    background-color: #ffffff;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 800px;
+    width: 90%;
+    max-height: 85vh;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.gdrive-modal .modal-content {
+    height: auto; /* Zmienione z 100% */
+    min-height: 300px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+    overflow: hidden;
+}
+
+.gdrive-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e9ecef;
+    flex-shrink: 0;
+}
+
+.gdrive-modal .modal-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.gdrive-modal .close-button {
+    background: none;
+    border: none;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.gdrive-modal .close-button:hover {
+    background: #f8f9fa;
+    color: #333;
+    transform: rotate(90deg);
+}
+
+/* ========== SEKCJE MODALA ========== */
+.gdrive-section {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-bottom: 20px;
+}
+
+/* Sekcja rozłączona */
+.gdrive-modal #gdrive-disconnected .gdrive-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff;
+}
+
+.gdrive-modal #gdrive-disconnected .gdrive-info p {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.gdrive-modal .gdrive-benefits h4 {
+    color: #2c3e50;
+    margin: 0 0 10px 0;
+    font-size: 18px;
+}
+
+.gdrive-modal .gdrive-benefits ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #495057;
+}
+
+.gdrive-modal .gdrive-benefits li {
+    margin-bottom: 5px;
+    line-height: 1.4;
+}
+
+/* Sekcja połączona */
+.gdrive-modal #gdrive-connected {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.gdrive-modal .gdrive-status {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.gdrive-modal .connection-info,
+.gdrive-modal .sync-stats {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.gdrive-modal .connection-info h4,
+.gdrive-modal .sync-stats h4,
+.gdrive-modal .sync-settings h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+}
+
+.gdrive-modal .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 5px 0;
+}
+
+.gdrive-modal .info-row:last-child {
+    margin-bottom: 0;
+}
+
+.gdrive-modal .info-row strong {
+    color: #495057;
+    font-weight: 600;
+}
+
+.gdrive-modal .info-row span {
+    color: #6c757d;
+    font-weight: normal;
+}
+
+.gdrive-modal .status-indicator.connected {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.gdrive-modal .status-indicator.disconnected {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Ustawienia synchronizacji */
+.gdrive-modal .sync-settings {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+}
+
+.gdrive-modal .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.gdrive-modal .setting-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.gdrive-modal .setting-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #495057;
+    font-weight: 500;
+    cursor: pointer;
+    flex: 1;
+}
+
+.gdrive-modal .setting-label input[type="checkbox"] {
+    margin: 0;
+    width: auto;
+    padding: 0;
+    cursor: pointer;
+}
+
+.gdrive-modal .setting-input,
+.gdrive-modal .setting-select {
+    width: 120px;
+    padding: 6px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+    color: #495057;
+}
+
+.gdrive-modal .setting-input:focus,
+.gdrive-modal .setting-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Akcje */
+.gdrive-modal .gdrive-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #e9ecef;
+}
+
+.gdrive-modal .gdrive-actions button {
+    min-width: 140px;
+    padding: 10px 20px;
+    font-weight: 500;
+    font-size: 14px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.gdrive-modal .btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.gdrive-modal .btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.gdrive-modal .btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.gdrive-modal .btn-secondary:hover {
+    background: #545b62;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+.gdrive-modal .btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.gdrive-modal .btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Loading state */
+.gdrive-modal #gdrive-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+    min-height: 200px;
+}
+
+.gdrive-modal .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: gdrive-spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes gdrive-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.gdrive-modal #gdrive-loading p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 16px;
+}
+
+/* Stopka modala */
+.gdrive-modal .modal-footer {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+/* ========== RESPONSYWNOŚĆ ========== */
+@media (max-width: 900px) {
+    .gdrive-modal .gdrive-status {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .gdrive-modal .setting-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    
+    .gdrive-modal .setting-label {
+        justify-content: flex-start;
+    }
+    
+    .gdrive-modal .setting-input,
+    .gdrive-modal .setting-select {
+        width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .modal.gdrive-modal {
+        width: 95%;
+        max-width: none;
+        margin: 10px;
+        max-height: 90vh;
+    }
+    
+    .gdrive-modal .modal-content {
+        padding: 15px;
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        margin: 20px auto;
+        max-height: calc(100vh - 40px);
+    }
+    
+    .gdrive-modal .modal-header h3 {
+        font-size: 20px;
+    }
+    
+    .gdrive-modal .gdrive-actions {
+        flex-direction: column;
+    }
+    
+    .gdrive-modal .gdrive-actions button {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .gdrive-modal .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .gdrive-modal .connection-info,
+    .gdrive-modal .sync-stats,
+    .gdrive-modal .sync-settings {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 400px) {
+    .gdrive-modal .modal-content {
+        padding: 10px;
+        margin: 10px;
+        max-height: calc(100vh - 20px);
+    }
+    
+    .gdrive-modal .connection-info,
+    .gdrive-modal .sync-stats,
+    .gdrive-modal .sync-settings {
+        padding: 10px;
+    }
+    
+    .gdrive-modal .modal-header {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+    }
+}
+
+/* ========== ANIMACJE ========== */
+.gdrive-modal.show {
+    animation: gdrive-modal-appear 0.3s ease-out;
+}
+
+@keyframes gdrive-modal-appear {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+/* Hover effects dla info-row */
+.gdrive-modal .info-row:hover {
+    background: rgba(0, 123, 255, 0.05);
+    border-radius: 4px;
+    padding: 8px 5px;
+    margin: -3px 0 7px 0;
+    transition: all 0.2s ease;
+}
+
+/* Focus states dla lepszej dostępności */
+.gdrive-modal .close-button:focus,
+.gdrive-modal button:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+/* Zapobieganie konfliktom z istniejącymi stylami */
+.gdrive-modal * {
+    box-sizing: border-box;
+}
+
+.gdrive-modal input:not([type="checkbox"]) {
+    /* Nadpisanie globalnych stylów input tylko w modalу Google Drive */
+    width: auto;
+    margin-bottom: 0;
+}
+
+.gdrive-modal button {
+    /* Nadpisanie globalnych stylów button tylko w modalu Google Drive */
+    width: auto;
+}
+
+/* ========== POPRAWKA DLA SEKCJI GOOGLE DRIVE W PROFILU ========== */
+.editContainerData.gdrive-section {
+    /* Usunięcie scrollowania i naprawienie layoutu */
+    overflow: visible;
+    height: auto;
+    max-height: none;
+}
+
+.editContainerData.gdrive-section .gdrive-status-container {
+    max-width: 375px; /* Takie samo jak .spanEdit */
+    overflow: hidden;
+}
+
+/* Zamknięcie modala przy kliknięciu w tło */
+.modal.gdrive-modal {
+    cursor: pointer;
+}
+
+.gdrive-modal .modal-content {
+    cursor: default;
+}

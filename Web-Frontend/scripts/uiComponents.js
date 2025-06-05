@@ -69,8 +69,6 @@ export function renderItems(data) {
                     ${folder.name}
                     <!-- Opcjonalny opis folderu -->
                     ${folder.description ? `<p class="folder-description">${folder.description}</p>` : ''}
-                    <!-- Wskaźnik synchronizacji, jeśli folder jest synchronizowany -->
-                    ${folder.googleDriveId ? '<p class="sync-indicator">🔄 Google Drive</p>' : ''}
                 </div>
             </div>
         </div>`;
@@ -200,19 +198,4 @@ export function updateTree() {
     const treeContainer = document.getElementById("folderTree");
     treeContainer.innerHTML = '';
     treeContainer.appendChild(renderTree());
-}
-
-export function updateSyncIndicator(folderId, isSync) {
-    const folderCards = document.querySelectorAll(`[data-folder-id="${folderId}"]`);
-    folderCards.forEach(card => {
-        const indicator = card.querySelector('.sync-indicator');
-        if (isSync && !indicator) {
-            const syncEl = document.createElement('p');
-            syncEl.className = 'sync-indicator';
-            syncEl.textContent = '🔄 Synchronizowany';
-            card.querySelector('.file-name').appendChild(syncEl);
-        } else if (!isSync && indicator) {
-            indicator.remove();
-        }
-    });
 }

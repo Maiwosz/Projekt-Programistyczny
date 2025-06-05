@@ -6,6 +6,7 @@ const exifr = require('exifr');
 const { exiftool } = require('exiftool-vendored');
 const mongoose = require('mongoose');
 const { generateFileHash, getFileStats, getCategoryFromMimeType } = require('../utils/fileUtils');
+const SyncService = require('../services/SyncService');
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -52,6 +53,11 @@ exports.uploadFile = [
             });
             
             await file.save();
+            
+            if (folderId) {
+                await SyncService.markFolderForSync(req.user.userId, folderId);
+            }
+            
             res.status(201).json(file);
         } catch (error) {
             console.error('Szczegó³y b³êdu uploadu:', error);
@@ -100,6 +106,12 @@ exports.uploadMultipleFiles = [
                 })
             );
 
+            // DODANE: Oznacz folder do synchronizacji jeœli pliki zosta³y dodane do zsynchronizowanego folderu
+            const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder) ? req.body.folder : null;
+            if (folderId) {
+                await SyncService.markFolderForSync(req.user.userId, folderId);
+            }
+
             res.status(201).json(files);
         } catch (error) {
             console.error('B³¹d przesy³ania wielu plików:', error);
@@ -134,28 +146,28 @@ exports.deleteFile = async (req, res) => {
     try {
         const { permanent } = req.query;
         let file;
-		if (permanent === 'true') {
-			// Dla trwa³ego usuwania szukaj wœród usuniêtych plików
-			file = await File.findOne({ 
-				_id: req.params.id, 
-				user: req.user.userId,
-				isDeleted: true
-			});
-		} else {
-			// Dla soft delete szukaj wœród aktywnych plików
-			file = await File.findOne({ 
-				_id: req.params.id, 
-				user: req.user.userId,
-				isDeleted: { $ne: true }
-			});
-		}
+        
+        if (permanent === 'true') {
+            file = await File.findOne({ 
+                _id: req.params.id, 
+                user: req.user.userId,
+                isDeleted: true
+            });
+        } else {
+            file = await File.findOne({ 
+                _id: req.params.id, 
+                user: req.user.userId,
+                isDeleted: { $ne: true }
+            });
+        }
         
         if (!file) {
             return res.status(404).json({ error: 'Plik nie znaleziony' });
         }
 
+        const folderId = file.folder; // Zapisz ID folderu przed usuniêciem
+
         if (permanent === 'true') {
-            // Trwa³e usuniêcie - usuñ plik z dysku i bazê danych
             const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
 
             try {
@@ -171,13 +183,17 @@ exports.deleteFile = async (req, res) => {
             await File.findByIdAndDelete(req.params.id);
             res.json({ message: 'Plik trwale usuniêty', permanent: true });
         } else {
-            // Soft delete - oznacz jako usuniêty
             file.isDeleted = true;
             file.deletedAt = new Date();
             file.deletedBy = 'user';
             await file.save();
             
             res.json({ message: 'Plik przeniesiony do kosza', permanent: false });
+        }
+
+        // DODANE: Oznacz folder do synchronizacji po usuniêciu pliku
+        if (folderId) {
+            await SyncService.markFolderForSync(req.user.userId, folderId);
         }
     } catch (error) {
         console.error('B³¹d usuwania pliku:', error);
@@ -203,9 +219,14 @@ exports.restoreFile = async (req, res) => {
         file.restoredFromTrash = true;
         file.restoredAt = new Date();
         
-        file.syncedToDrive = false; // Bêdzie wymaga³ ponownego uploadu
+        file.syncedToDrive = false;
         file.lastSyncDate = null;
         await file.save();
+
+        // DODANE: Oznacz folder do synchronizacji po przywróceniu pliku
+        if (file.folder) {
+            await SyncService.markFolderForSync(req.user.userId, file.folder);
+        }
         
         res.json({ message: 'Plik przywrócony z kosza', file });
     } catch (error) {
@@ -313,7 +334,6 @@ exports.updateFileMetadata = async (req, res) => {
 
         const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
         
-        // SprawdŸ czy plik istnieje na dysku
         try {
             await fs.promises.access(filePath, fs.constants.F_OK);
         } catch (err) {
@@ -321,26 +341,25 @@ exports.updateFileMetadata = async (req, res) => {
         }
 
         try {
-            // Aktualizacja metadanych w fizycznym pliku
             console.log('Aktualizacja metadanych pliku:', filePath);
             console.log('Nowe metadane:', req.body);
             
-            // U¿ywamy exiftool do zapisu metadanych w pliku
             await exiftool.write(filePath, req.body);
-            
-            // Odczytujemy zaktualizowane metadane
             const updatedMetadata = await exiftool.read(filePath);
             console.log('Zaktualizowane metadane:', updatedMetadata);
             
-            // Generuj nowy hash po zmianie metadanych
             const newFileHash = await generateFileHash(filePath);
             const fileStats = await getFileStats(filePath);
             
-            // Aktualizujemy rekord w bazie danych
             file.metadata = updatedMetadata;
             file.fileHash = newFileHash;
             file.lastModified = fileStats.lastModified;
             await file.save();
+
+            // DODANE: Oznacz folder do synchronizacji po aktualizacji metadanych
+            if (file.folder) {
+                await SyncService.markFolderForSync(req.user.userId, file.folder);
+            }
             
             res.json({ 
                 message: 'Metadane zaktualizowane pomyœlnie',

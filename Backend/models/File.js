@@ -5,6 +5,7 @@ const FileSchema = new mongoose.Schema({
     path: { type: String, required: true },
     originalName: { type: String, required: true },
     mimetype: { type: String, required: true },
+    size: { type: Number }, // Rozmiar w bajtach
     category: {
         type: String,
         enum: ['image', 'document', 'audio', 'video', 'other'],
@@ -13,21 +14,29 @@ const FileSchema = new mongoose.Schema({
     folder: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null },
     createdAt: { type: Date, default: Date.now },
     metadata: { type: Object, default: {} },
-    googleDriveId: { type: String },
-    syncedFromDrive: { type: Boolean, default: false },
-    syncedToDrive: { type: Boolean, default: false },
-    lastSyncDate: { type: Date },
     
-    // Pola dla obsługi soft delete i synchronizacji usuwania
+    // Uproszczony system mapowania do klientów
+    clientMappings: [{
+        client: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
+        clientFileId: String, // ID pliku u klienta (np. Google Drive ID, ścieżka lokalna)
+        clientFileName: String, // Nazwa pliku u klienta (może się różnić)
+        clientPath: String, // Pełna ścieżka u klienta
+        lastSyncDate: { type: Date }
+    }],
+    
+    // Podstawowy soft delete
     isDeleted: { type: Boolean, default: false },
     deletedAt: { type: Date },
-    deletedBy: { type: String, enum: ['user', 'sync'] }, // Kto usunął plik
-	restoredFromTrash: { type: Boolean, default: false },
-    restoredAt: { type: Date },
     
-    // Hash pliku do wykrywania zmian
-    fileHash: { type: String }, // MD5 hash dla wykrywania modyfikacji
-    lastModified: { type: Date } // Ostatnia modyfikacja pliku
+    // Informacje o modyfikacji
+    fileHash: { type: String }, // Hash dla wykrywania zmian
+    lastModified: { type: Date, default: Date.now }
 });
+
+// Indeksy dla wydajności
+FileSchema.index({ user: 1, folder: 1 });
+FileSchema.index({ user: 1, isDeleted: 1 });
+FileSchema.index({ 'clientMappings.client': 1 });
+FileSchema.index({ fileHash: 1 });
 
 module.exports = mongoose.model('File', FileSchema);

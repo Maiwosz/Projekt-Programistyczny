@@ -6,7 +6,6 @@ const connectDB = require('./config/db');
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
-const AutoSyncScheduler = require('./services/sync/AutoSyncScheduler');
 
 // Obsługa niewyłapanych błędów
 process.on('uncaughtException', (error) => {
@@ -51,7 +50,8 @@ const routes = [
     { path: '/api/folders', file: './routes/folderRoutes' },
     { path: '/api/user', file: './routes/userRoutes' },
     { path: '/api/config', file: './routes/configRoutes' },
-    { path: '/api/sync', file: './routes/syncRoutes' }
+    { path: '/api/sync', file: './routes/syncRoutes' },
+	{ path: '/api/google-drive', file: './routes/googleDriveRoutes' }
 ];
 
 routes.forEach(route => {
@@ -115,10 +115,6 @@ async function startServer() {
         // Inicjalizacja bazy danych
         await initializeDatabase();
 		
-		// Uruchomienie AutoSyncScheduler
-		console.log('Uruchamianie AutoSyncScheduler...');
-        AutoSyncScheduler.start();
-		
 		// Graceful shutdown - zatrzymaj scheduler przy zamykaniu aplikacji
         process.on('SIGTERM', () => {
             console.log('Otrzymano SIGTERM, zatrzymywanie AutoSyncScheduler...');
@@ -172,7 +168,6 @@ async function startServer() {
 
     } catch (error) {
         console.error('✗ Błąd uruchamiania serwera:', error);
-		AutoSyncScheduler.stop();
         process.exit(1);
     }
 }

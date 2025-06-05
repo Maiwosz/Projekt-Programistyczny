@@ -12,9 +12,9 @@ import { triggerFileInput, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
 import { showTrashModal, closeTrashModal, restoreFile, permanentDeleteFile, emptyTrash } from './trashHandler.js';
-import { showSyncModal, closeSyncModal } from './syncUi.js';
-import { startFolderSync, disconnectProvider } from './syncCore.js';
-import { authorizeGoogleDrive, checkGoogleDriveConnection, handleAuthCallback } from './googleDriveSync.js';
+import { showSyncModal, closeSyncModal, showSyncDetails, closeSyncDetailsModal,saveSyncChanges,deleteSyncConfig } from './syncModal.js';
+import { showCreateSyncModal, closeCreateSyncModal, createSyncConfiguration, loadGoogleDriveFolders, selectDriveFolder, openDriveFolder, goBackInDrive } from './createSyncModal.js';
+
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -77,6 +77,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ========== FUNKCJE POMOCNICZE AUTORYZACJI ==========
+
+// Dodaj funkcję handleAuthCallback jeśli nie istnieje w innych plikach
+async function handleAuthCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const state = urlParams.get('state');
+    
+    try {
+        const response = await fetch('/api/auth/google/callback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ code, state })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Błąd podczas autoryzacji');
+        }
+        
+        const result = await response.json();
+        
+        // Wyczyść URL z parametrów callback
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        return { success: true, result };
+        
+    } catch (error) {
+        console.error('Auth callback error:', error);
+        return { success: false, error: error.message };
+    }
+}
 
 function showAuthSuccessMessage() {
     // Sprawdź czy istnieje element do wyświetlania komunikatów
@@ -162,13 +195,6 @@ window.showFileDetails = showFileDetails;
 window.saveMetadata = saveMetadata;
 window.closeFileModal = closeFileModal;
 
-// Funkcje synchronizacji
-window.showSyncModal = showSyncModal;
-window.closeSyncModal = closeSyncModal;
-window.startFolderSync = startFolderSync;
-window.authorizeGoogleDrive = authorizeGoogleDrive;
-window.disconnectProvider = disconnectProvider;
-
 // Funkcje obsługi kosza
 window.showTrashModal = showTrashModal;
 window.closeTrashModal = closeTrashModal;
@@ -176,10 +202,43 @@ window.restoreFile = restoreFile;
 window.permanentDeleteFile = permanentDeleteFile;
 window.emptyTrash = emptyTrash;
 
+// Funkcje obsługi synchronizacji
+window.showSyncModal = showSyncModal;
+window.closeSyncModal = closeSyncModal;
+window.showSyncDetails = showSyncDetails;
+window.closeSyncDetailsModal = closeSyncDetailsModal;
+window.saveSyncChanges = saveSyncChanges;
+window.deleteSyncConfig = deleteSyncConfig;
 
+// Funkcje tworzenia synchronizacji
+window.showCreateSyncModal = showCreateSyncModal;
+window.closeCreateSyncModal = closeCreateSyncModal;
+window.createSyncConfiguration = createSyncConfiguration;
+window.loadGoogleDriveFolders = loadGoogleDriveFolders;
+window.selectDriveFolder = selectDriveFolder;
+window.openDriveFolder = openDriveFolder;
+window.goBackInDrive = goBackInDrive;
+
+// Funkcja disconnectSync - sprawdź czy istnieje disconnectProvider w innych plikach
 window.disconnectSync = async function(provider) {
     try {
-        await disconnectProvider(provider);
+        // Sprawdź czy funkcja disconnectProvider istnieje
+        if (typeof disconnectProvider === 'function') {
+            await disconnectProvider(provider);
+        } else {
+            console.warn('disconnectProvider function not found');
+            // Możesz dodać alternatywną implementację lub wywołanie API
+            const response = await fetch(`/api/sync/disconnect/${provider}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Błąd podczas rozłączania providera');
+            }
+        }
     } catch (error) {
         console.error('Disconnect error:', error);
         throw error;
@@ -209,17 +268,6 @@ window.open_profile_edit = function() {
     window.location.pathname = '/EditProfilePage.html';
 };
 
-// Funkcja pomocnicza dla usuwania par synchronizacji (dla kompatybilności wstecznej)
-window.removeSyncPair = async function(provider, syncPairId) {
-    try {
-        const { removeSyncPair } = await import('./syncCore.js');
-        await removeSyncPair(provider, syncPairId);
-    } catch (error) {
-        console.error('Remove sync pair error:', error);
-        throw error;
-    }
-};
-
 window.logout = function() {
     localStorage.removeItem('token');
     
@@ -238,4 +286,8 @@ window.logout = function() {
     } else {
         window.location.href = '/index.html';
     }
+};
+
+window.addGoogleDriveSync = function(folderId, folderName) {
+    showCreateSyncModal(folderId, folderName);
 };
