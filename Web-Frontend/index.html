@@ -82,6 +82,7 @@
                 <div class="modalContentDivide">
                     <!-- Lewa kolumna - podgląd -->
                     <div>
+                        <span class="close-button-modal" onclick="closeFileModal()">&times;</span>
                         <div id="filePreviewLarge"></div>
                         <div id="fileInfo" style="margin-top: 15px;">
                             <p><strong>Nazwa:</strong> <span id="fileName"></span></p>
@@ -98,7 +99,6 @@
                             <div id="metadataFields"></div>
                             <div style="margin-top: 15px; display: flex; gap: 10px;">
                                 <button type="button" onclick="saveMetadata(event)">Zapisz zmiany</button>
-                                <button type="button" onclick="closeFileModal()" style="background: #6c757d;">Anuluj</button>
                             </div>
                         </form>
                     </div>

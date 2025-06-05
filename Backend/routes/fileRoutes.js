@@ -16,4 +16,6 @@ router.delete('/trash/empty', authMiddleware, fileController.emptyTrash);
 router.get('/:id/integrity', authMiddleware, fileController.checkFileIntegrity);
 router.put('/:id/hash', authMiddleware, fileController.updateFileHash);
 
+router.put('/:id', authMiddleware, fileController.renameFile);
+
 module.exports = router;

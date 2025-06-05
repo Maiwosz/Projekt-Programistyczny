@@ -138,6 +138,7 @@ button:hover {
     grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
     grid-template-rows: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
+    
 }
 
 .item-card {
@@ -156,13 +157,35 @@ button:hover {
 .item-actions {
     position: absolute;
     top: 5px;
-    right: 5px;
+    right: 10px;
     display: flex;
-    gap: 5px;
+    gap: 8px;
+}
+
+.item-button {
+    padding: 8px;
+}
+
+.item-download-item {
+    position: relative;
+    left: 88px;
+    top: 132px;
+    padding: 8px;
+}
+
+.item-download-folder {
+    position: relative;
+    left: 130px;
+    top: 132px;
+    padding: 8px;
+}
+
+#itemsList {
+    border-radius: 6px;
+    background-color: #fafafa;
 }
 
 #dirsList {
-    /* border: 4px solid #eeeeee; */
     border-radius: 6px;
     background-color: #fafafa;
 }
@@ -219,10 +242,14 @@ button:hover {
 }
 
 .file-name {
+    display: block;
     word-break: break-word;
+    text-overflow: ellipsis;
+    overflow: hidden;
     font-size: 0.9em;
     text-align: center;
-    line-height: 1.4;
+    max-height: 2.6rem;
+    line-height: 1.2rem;
 }
 
 /* ========== MODAL ========== */
@@ -288,6 +315,10 @@ button:hover {
     #metadataFields {
         max-height: 200px;
     }
+
+    #filePreviewLarge {
+        margin-top: 36px;
+    }
 }
 
 /* ========== MODAL FILE ========== */
@@ -334,11 +365,9 @@ button:hover {
     max-height: 400px;
 }
 
-
 .empty-info {
-    margin-left: 10px;
+    margin: 6px;
 }
-
 
 /* ============= Image view ============= */
 .image-view {
@@ -362,14 +391,34 @@ button:hover {
     width: 100%;
 }
 
+/* Close button but for file modal */
+.close-button-modal {
+    position: absolute;
+    right: 20px;
+    top: -20px;
+    height: 0.5rem;
+    color: #444444;
+    font-size: 64px;
+    transition: 0.25s;
+    z-index: 100;
+}
+
+.close-button-modal:hover, .close-button-modal:focus {
+    color: #222222;
+    cursor: pointer;
+    text-decoration: none;
+}
+
 /* Close button */
 .close-button {
     position: absolute;
     top: 1rem;
     right: 3rem;
+    height: 0.5rem;
     color: #f8f9fa;
     font-size: 64px;
-    text-shadow: -2px -2px 0 black, 2px -2px 0 black, -2px 2px 0 black, 2px 2px 0 black;
+    /* text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black; */
+    text-shadow: 1px 1px 5px black;
     transition: 0.25s;
     z-index: 100;
 }

@@ -57,9 +57,10 @@ export function renderItems(data) {
         <div class="item-card" data-folder-id="${folder._id}">
             <div class="item-actions">
                 <!-- Przyciski akcji z funkcjami obsługi zdarzeń -->
-                <button onclick="renameFolder('${folder._id}')" title="Zmień nazwę">✏️</button>
-                <button onclick="deleteFolder('${folder._id}')" title="Usuń">🗑️</button>
-                <button onclick="showSyncModal('${folder._id}', '${folder.name.replace(/'/g, "\\'")}')" title="Synchronizacja">🔄</button>
+                <button onclick="downloadFolder('${folder._id}')" title="Pobierz" class="item-download-folder">⬇️</button>
+                <button class="item-button" onclick="renameFolder('${folder._id}')" title="Zmień nazwę">✏️</button>
+                <button class="item-button" onclick="showSyncModal('${folder._id}', '${folder.name.replace(/'/g, "\\'")}')" title="Synchronizacja">🔄</button>
+                <button class="item-button" onclick="deleteFolder('${folder._id}')" title="Usuń">🗑️</button>
             </div>
             <!-- Obszar klikalny z dynamicznie wstrzykniętymi danymi -->
             <div onclick="enterFolder('${folder._id}', '${folder.name.replace(/'/g, "\\'")}')" 
@@ -85,7 +86,9 @@ export function renderItems(data) {
         html += `
         <div class="item-card">
             <div class="item-actions">
-                <button onclick="deleteFile('${file._id}')" title="Usuń">🗑️</button>
+                <button onclick="downloadFile('${file._id}')" title="Pobierz" class="item-download-item">⬇️</button>
+                <button onclick="renameFile('${file._id}')" title="Zmień nazwę" class="item-button">✏️</button>
+                <button onclick="deleteFile('${file._id}')" title="Usuń" class="item-button">🗑️</button>
             </div>
             <!-- Obszar klikalny z różną zawartością dla obrazków -->
             <div style="text-align: center;" onclick="showFileDetails('${file._id}')" class="file-clickable">

@@ -60,9 +60,9 @@ exports.uploadFile = [
             
             res.status(201).json(file);
         } catch (error) {
-            console.error('Szczegó³y b³êdu uploadu:', error);
+            console.error('Szczegï¿½y bï¿½ï¿½du uploadu:', error);
             res.status(500).json({
-                error: 'B³¹d przesy³ania pliku',
+                error: 'Bï¿½ï¿½d przesyï¿½ania pliku',
                 details: error.message
             });
         }
@@ -74,7 +74,7 @@ exports.uploadMultipleFiles = [
     async (req, res) => {
         try {
             if (!req.files || req.files.length === 0) {
-                return res.status(400).json({ error: 'Brak przes³anych plików' });
+                return res.status(400).json({ error: 'Brak przesï¿½anych plikï¿½w' });
             }
 
             const files = await Promise.all(
@@ -114,9 +114,9 @@ exports.uploadMultipleFiles = [
 
             res.status(201).json(files);
         } catch (error) {
-            console.error('B³¹d przesy³ania wielu plików:', error);
+            console.error('Bï¿½ï¿½d przesyï¿½ania wielu plikï¿½w:', error);
             res.status(500).json({
-                error: 'B³¹d przesy³ania plików',
+                error: 'Bï¿½ï¿½d przesyï¿½ania plikï¿½w',
                 details: error.message
             });
         }
@@ -128,7 +128,7 @@ exports.getUserFiles = async (req, res) => {
         const includeDeleted = req.query.includeDeleted === 'true';
         const filter = { user: req.user.userId };
         
-        // ZMIANA: Zawsze wykluczaj usuniête pliki z g³ównego widoku
+        // ZMIANA: Zawsze wykluczaj usuniï¿½te pliki z gï¿½ï¿½wnego widoku
         filter.isDeleted = { $ne: true };
 
         const files = await File.find(filter)
@@ -137,8 +137,8 @@ exports.getUserFiles = async (req, res) => {
             
         res.json(files);
     } catch (error) {
-        console.error('B³¹d pobierania plików:', error);
-        res.status(500).json({ error: 'B³¹d pobierania plików' });
+        console.error('Bï¿½ï¿½d pobierania plikï¿½w:', error);
+        res.status(500).json({ error: 'Bï¿½ï¿½d pobierania plikï¿½w' });
     }
 };
 
@@ -181,7 +181,7 @@ exports.deleteFile = async (req, res) => {
             }
 
             await File.findByIdAndDelete(req.params.id);
-            res.json({ message: 'Plik trwale usuniêty', permanent: true });
+            res.json({ message: 'Plik trwale usuniï¿½ty', permanent: true });
         } else {
             file.isDeleted = true;
             file.deletedAt = new Date();
@@ -196,8 +196,8 @@ exports.deleteFile = async (req, res) => {
             await SyncService.markFolderForSync(req.user.userId, folderId);
         }
     } catch (error) {
-        console.error('B³¹d usuwania pliku:', error);
-        res.status(500).json({ error: 'B³¹d serwera' });
+        console.error('Bï¿½ï¿½d usuwania pliku:', error);
+        res.status(500).json({ error: 'Bï¿½ï¿½d serwera' });
     }
 };
 
@@ -218,7 +218,6 @@ exports.restoreFile = async (req, res) => {
         file.deletedBy = null;
         file.restoredFromTrash = true;
         file.restoredAt = new Date();
-        
         file.syncedToDrive = false;
         file.lastSyncDate = null;
         await file.save();
@@ -228,10 +227,10 @@ exports.restoreFile = async (req, res) => {
             await SyncService.markFolderForSync(req.user.userId, file.folder);
         }
         
-        res.json({ message: 'Plik przywrócony z kosza', file });
+        res.json({ message: 'Plik przywrï¿½cony z kosza', file });
     } catch (error) {
-        console.error('B³¹d przywracania pliku:', error);
-        res.status(500).json({ error: 'B³¹d przywracania pliku' });
+        console.error('Bï¿½ï¿½d przywracania pliku:', error);
+        res.status(500).json({ error: 'Bï¿½ï¿½d przywracania pliku' });
     }
 };
 
@@ -246,8 +245,8 @@ exports.getDeletedFiles = async (req, res) => {
         
         res.json(deletedFiles);
     } catch (error) {
-        console.error('B³¹d pobierania usuniêtych plików:', error);
-        res.status(500).json({ error: 'B³¹d pobierania usuniêtych plików' });
+        console.error('Bï¿½ï¿½d pobierania usuniï¿½tych plikï¿½w:', error);
+        res.status(500).json({ error: 'Bï¿½ï¿½d pobierania usuniï¿½tych plikï¿½w' });
     }
 };
 
@@ -258,7 +257,7 @@ exports.emptyTrash = async (req, res) => {
             isDeleted: true
         });
 
-        // Usuñ fizyczne pliki z dysku
+        // Usuï¿½ fizyczne pliki z dysku
         for (const file of deletedFiles) {
             const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
             try {
@@ -266,24 +265,24 @@ exports.emptyTrash = async (req, res) => {
                 await fs.promises.unlink(filePath);
             } catch (err) {
                 if (err.code !== 'ENOENT') {
-                    console.warn('B³¹d usuwania pliku z dysku:', err);
+                    console.warn('Bï¿½ï¿½d usuwania pliku z dysku:', err);
                 }
             }
         }
 
-        // Usuñ rekordy z bazy danych
+        // Usuï¿½ rekordy z bazy danych
         const result = await File.deleteMany({ 
             user: req.user.userId,
             isDeleted: true
         });
 
         res.json({ 
-            message: 'Kosz zosta³ opró¿niony',
+            message: 'Kosz zostaï¿½ oprï¿½niony',
             deletedCount: result.deletedCount
         });
     } catch (error) {
-        console.error('B³¹d opró¿niania kosza:', error);
-        res.status(500).json({ error: 'B³¹d opró¿niania kosza' });
+        console.error('Bï¿½ï¿½d oprï¿½niania kosza:', error);
+        res.status(500).json({ error: 'Bï¿½ï¿½d oprï¿½niania kosza' });
     }
 };
 
@@ -299,22 +298,22 @@ exports.getFileMetadata = async (req, res) => {
 
         if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
 
-        // Pobierz aktualny rozmiar pliku z systemu plików
+        // Pobierz aktualny rozmiar pliku z systemu plikï¿½w
         const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
         try {
             const stats = await fs.promises.stat(filePath);
             file.size = stats.size;
             file.currentLastModified = stats.mtime;
         } catch (err) {
-            console.warn('Nie mo¿na odczytaæ rozmiaru pliku:', err);
+            console.warn('Nie moï¿½na odczytaï¿½ rozmiaru pliku:', err);
             file.size = 0;
             file.currentLastModified = null;
         }
 
         res.json(file);
     } catch (error) {
-        console.error('B³¹d pobierania metadanych:', error);
-        res.status(500).json({ error: 'B³¹d pobierania metadanych' });
+        console.error('Bï¿½ï¿½d pobierania metadanych:', error);
+        res.status(500).json({ error: 'Bï¿½ï¿½d pobierania metadanych' });
     }
 };
 
@@ -329,7 +328,7 @@ exports.updateFileMetadata = async (req, res) => {
         if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
 
         if (!file.mimetype.startsWith('image/')) {
-            return res.status(400).json({ error: 'Metadane dostêpne tylko dla obrazów' });
+            return res.status(400).json({ error: 'Metadane dostï¿½pne tylko dla obrazï¿½w' });
         }
 
         const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
@@ -362,22 +361,22 @@ exports.updateFileMetadata = async (req, res) => {
             }
             
             res.json({ 
-                message: 'Metadane zaktualizowane pomyœlnie',
+                message: 'Metadane zaktualizowane pomyï¿½lnie',
                 metadata: updatedMetadata,
                 fileHash: newFileHash,
                 lastModified: fileStats.lastModified
             });
         } catch (error) {
-            console.error('B³¹d podczas aktualizacji metadanych pliku:', error);
+            console.error('Bï¿½ï¿½d podczas aktualizacji metadanych pliku:', error);
             return res.status(500).json({ 
-                error: 'Nie uda³o siê zaktualizowaæ metadanych pliku',
+                error: 'Nie udaï¿½o siï¿½ zaktualizowaï¿½ metadanych pliku',
                 details: error.message 
             });
         }
     } catch (error) {
-        console.error('Szczegó³y b³êdu:', error);
+        console.error('Szczegï¿½y bï¿½ï¿½du:', error);
         res.status(500).json({
-            error: 'B³¹d aktualizacji metadanych',
+            error: 'Bï¿½ï¿½d aktualizacji metadanych',
             details: error.message
         });
     }
@@ -421,8 +420,8 @@ exports.checkFileIntegrity = async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('B³¹d sprawdzania integralnoœci pliku:', error);
-        res.status(500).json({ error: 'B³¹d sprawdzania integralnoœci pliku' });
+        console.error('Bï¿½ï¿½d sprawdzania integralnoï¿½ci pliku:', error);
+        res.status(500).json({ error: 'Bï¿½ï¿½d sprawdzania integralnoï¿½ci pliku' });
     }
 };
 
@@ -456,14 +455,14 @@ exports.updateFileHash = async (req, res) => {
             return res.status(404).json({ error: 'Plik nie istnieje na serwerze' });
         }
     } catch (error) {
-        console.error('B³¹d aktualizacji hash pliku:', error);
-        res.status(500).json({ error: 'B³¹d aktualizacji hash pliku' });
+        console.error('Bï¿½ï¿½d aktualizacji hash pliku:', error);
+        res.status(500).json({ error: 'Bï¿½ï¿½d aktualizacji hash pliku' });
     }
 };
 
 const processMetadata = async (filePath) => {
     try {
-        // Najpierw próbujemy odczytaæ metadane za pomoc¹ exifr
+        // Najpierw prï¿½bujemy odczytaï¿½ metadane za pomocï¿½ exifr
         const metadata = await exifr.parse(filePath, {
             iptc: true,
             xmp: true,
@@ -473,11 +472,32 @@ const processMetadata = async (filePath) => {
         
         if (metadata) return metadata;
         
-        // Jeœli exifr nie zwróci³ metadanych, próbujemy z exiftool
+        // Jeï¿½li exifr nie zwrï¿½ciï¿½ metadanych, prï¿½bujemy z exiftool
         return await exiftool.read(filePath);
     } catch (error) {
-        console.error('B³¹d przetwarzania metadanych:', error);
+        console.error('Bï¿½ï¿½d przetwarzania metadanych:', error);
         return {};
+    }
+};
+
+exports.renameFile = async (req, res) => {
+    try {
+        const { newName } = req.body;
+
+        const file = await File.findOne({ 
+            _id: req.params.id
+        });
+
+        if (!file) {
+            return res.status(404).json({ error: 'Plik nie znaleziony' });
+        }
+
+        file.originalName = newName;
+        await file.save();
+        
+        res.status(200).json(file);
+    } catch (error) {
+        res.status(500).json({ error: 'BÅ‚Ä…d zmiany nazwy pliku' });
     }
 };
 
