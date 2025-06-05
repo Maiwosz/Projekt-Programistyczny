@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadUserTags();
     updateBreadcrumbs();
     updateTree();
-    populateTypeFilterSelector();
+    populateTypeFilterSelectorMultiple();
 });
 
 // ========== FUNKCJE POMOCNICZE AUTORYZACJI ==========

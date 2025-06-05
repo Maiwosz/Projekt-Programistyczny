@@ -225,7 +225,9 @@ export function populateTagFilterSelector() {
     const tagFilter = document.getElementById('tagFilterSelector');
     if (!tagFilter) return;
 
-    tagFilter.innerHTML = '<option value="">-- Wybierz tag --</option>';
+    // Clear all options for multiple select
+    tagFilter.innerHTML = '';
+    
     userTags.forEach(tag => {
         const option = document.createElement('option');
         option.value = tag._id;
