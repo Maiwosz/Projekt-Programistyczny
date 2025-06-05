@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Setup dropdownów
     setupDropdown('typeFilterSelector');
     setupDropdown('tagFilterSelector');
+    populateTypeFilterSelectorMultiple();
 });
 
 // ========== FUNKCJE POMOCNICZE AUTORYZACJI ==========
