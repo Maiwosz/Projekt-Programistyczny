@@ -9,7 +9,7 @@ export var userTags = [];
 // Importy funkcji z poszczególnych modułów
 import { loadFolderContents, enterFolder, navigateToIndex, buildPathTo } from './folderNavigation.js';
 import { updateBreadcrumbs, updateTree, saveState, getFileIcon, formatFileSize, renderItems, setupDropdown } from './uiComponents.js';
-import { triggerFileInput, deleteFile } from './fileHandler.js';
+import { triggerFileInput, renameFile, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
 import { showTrashModal, closeTrashModal, restoreFile, permanentDeleteFile, emptyTrash } from './trashHandler.js';
@@ -228,6 +228,29 @@ window.selectDriveFolder = selectDriveFolder;
 window.openDriveFolder = openDriveFolder;
 window.goBackInDrive = goBackInDrive;
 
+// TAGI
+window.loadUserTags = loadUserTags;
+window.renderTagsList = renderTagsList;
+window.createTag = createTag;
+window.deleteTag = deleteTag;
+window.renderFileTags = renderFileTags;
+window.populateTagSelector = populateTagSelector;
+window.addTagToFile = addTagToFile;
+window.removeTagFromFile = removeTagFromFile;
+window.populateTagFilterSelector = populateTagFilterSelector;
+//window.filterFilesByTag = filterFilesByTag;
+
+// FILTRY
+
+window.populateTypeFilterSelector = populateTypeFilterSelector;
+window.populateTypeFilterSelectorMultiple = populateTypeFilterSelectorMultiple;
+window.getSelectedFileTypes = getSelectedFileTypes;
+window.setSelectedFileTypes = setSelectedFileTypes;
+window.filterFiles = filterFiles;
+window.filterFilesByTag = filterFilesByTag;
+window.filterFilesByType = filterFilesByType;
+window.filterFilesByName = filterFilesByName;
+
 // Funkcja disconnectSync - sprawdź czy istnieje disconnectProvider w innych plikach
 window.disconnectSync = async function(provider) {
     try {
@@ -253,29 +276,6 @@ window.disconnectSync = async function(provider) {
         throw error;
     }
 };
-
-// TAGI
-window.loadUserTags = loadUserTags;
-window.renderTagsList = renderTagsList;
-window.createTag = createTag;
-window.deleteTag = deleteTag;
-window.renderFileTags = renderFileTags;
-window.populateTagSelector = populateTagSelector;
-window.addTagToFile = addTagToFile;
-window.removeTagFromFile = removeTagFromFile;
-window.populateTagFilterSelector = populateTagFilterSelector;
-//window.filterFilesByTag = filterFilesByTag;
-
-// FILTRY
-
-window.populateTypeFilterSelector = populateTypeFilterSelector;
-window.populateTypeFilterSelectorMultiple = populateTypeFilterSelectorMultiple;
-window.getSelectedFileTypes = getSelectedFileTypes;
-window.setSelectedFileTypes = setSelectedFileTypes;
-window.filterFiles = filterFiles;
-window.filterFilesByTag = filterFilesByTag;
-window.filterFilesByType = filterFilesByType;
-window.filterFilesByName = filterFilesByName;
 
 // Funkcje UI
 window.view_image = function (image_preview_src) {

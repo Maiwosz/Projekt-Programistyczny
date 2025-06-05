@@ -22,7 +22,6 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const https = require('https');
 const http = require('http');
-const fs = require('fs');
 
 // Obsługa niewyłapanych błędów
 process.on('uncaughtException', (error) => {
@@ -68,7 +67,7 @@ const routes = [
     { path: '/api/user', file: './routes/userRoutes' },
     { path: '/api/config', file: './routes/configRoutes' },
     { path: '/api/sync', file: './routes/syncRoutes' },
-	{ path: '/api/google-drive', file: './routes/googleDriveRoutes' }
+	{ path: '/api/google-drive', file: './routes/googleDriveRoutes' },
     { path: '/api/tags', file: './routes/tagRoutes' },
     { path: '/api/filter', file: './routes/fileFilterRoutes' }
 ];
