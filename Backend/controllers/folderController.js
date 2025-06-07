@@ -1,142 +1,122 @@
-const Folder = require('../models/Folder');
-const File = require('../models/File');
-const path = require('path');
-const fs = require('fs');
-const SyncService = require('../services/SyncService');
+const FolderService = require('../services/FolderService');
 
 exports.createFolder = async (req, res) => {
     try {
-        const { name, description, parent } = req.body;
-
-        if (parent) {
-            const parentFolder = await Folder.findOne({ _id: parent, user: req.user.userId });
-            if (!parentFolder) {
-                return res.status(404).json({ error: 'Folder nadrzędny nie istnieje' });
-            }
-        }
-
-        const folder = new Folder({
-            user: req.user.userId,
-            name,
-            description,
-            parent: parent || null
-        });
-        await folder.save();
+        const folder = await FolderService.createFolder(req.user.userId, req.body);
         res.status(201).json(folder);
-    } catch (err) {
-        res.status(500).json({ error: 'Błąd tworzenia folderu' });
+    } catch (error) {
+        console.error('Błąd tworzenia folderu:', error);
+        res.status(400).json({ error: error.message });
     }
 };
 
 exports.getFolders = async (req, res) => {
     try {
-        const folders = await Folder.find({ user: req.user.userId });
+        const { 
+            parent, 
+            search, 
+            sortBy, 
+            sortOrder, 
+            limit, 
+            skip, 
+            populate 
+        } = req.query;
+        
+        const options = {};
+        
+        if (parent !== undefined) options.parent = parent || null;
+        if (search) options.search = search;
+        if (sortBy) options.sortBy = sortBy;
+        if (sortOrder) options.sortOrder = sortOrder;
+        if (limit) options.limit = limit;
+        if (skip) options.skip = skip;
+        if (populate) options.populate = populate.split(',');
+        
+        const folders = await FolderService.getUserFolders(req.user.userId, options);
         res.json(folders);
-    } catch (err) {
+    } catch (error) {
+        console.error('Błąd pobierania folderów:', error);
         res.status(500).json({ error: 'Błąd pobierania folderów' });
     }
 };
 
 exports.renameFolder = async (req, res) => {
-    const { id } = req.params;
-    const { newName } = req.body;
-
     try {
-        const folder = await Folder.findById(id);
-        if (!folder) {
-            return res.status(404).json({ error: 'Folder nie znaleziony' });
+        const { id } = req.params;
+        const { newName } = req.body;
+        
+        if (!newName || newName.trim() === '') {
+            return res.status(400).json({ error: 'Nowa nazwa jest wymagana' });
         }
-
-        folder.name = newName;
-        await folder.save();
-        res.status(200).json(folder);
+        
+        const folder = await FolderService.renameFolder(req.user.userId, id, newName);
+        res.json(folder);
     } catch (error) {
-        res.status(500).json({ error: 'Błąd zmiany nazwy folderu' });
+        console.error('Błąd zmiany nazwy folderu:', error);
+        
+        if (error.message.includes('nie znaleziony')) {
+            return res.status(404).json({ error: error.message });
+        }
+        
+        res.status(400).json({ error: error.message });
     }
 };
 
 exports.deleteFolder = async (req, res) => {
     try {
         const { id } = req.params;
-        const { force } = req.query;
-
-        const folder = await Folder.findOne({ _id: id, user: req.user.userId });
-        if (!folder) return res.status(404).json({ error: 'Folder nie znaleziony' });
-
-        if (!force) {
-            const [filesCount, subfoldersCount] = await Promise.all([
-                File.countDocuments({ folder: id, user: req.user.userId }),
-                Folder.countDocuments({ parent: id, user: req.user.userId })
-            ]);
-
-            if (filesCount > 0 || subfoldersCount > 0) {
-                return res.status(400).json({
-                    error: 'Folder nie jest pusty. Użyj parametru force=true, aby usunąć rekurencyjnie.'
-                });
-            }
-
-            try {
-                await SyncService.removeSyncFolder(req.user.userId, id);
-            } catch (error) {
-                console.warn('Błąd usuwania synchronizacji folderu:', error.message);
-            }
-
-            await Folder.findByIdAndDelete(id);
-            return res.json({ message: 'Folder usunięty' });
-        } else {
-            const deleteFolderRecursive = async (folderId) => {
-                const subfolders = await Folder.find({ parent: folderId, user: req.user.userId });
-                for (const subfolder of subfolders) {
-                    await deleteFolderRecursive(subfolder._id);
-                }
-
-                try {
-                    await SyncService.removeSyncFolder(req.user.userId, folderId);
-                } catch (error) {
-                    console.warn('Błąd usuwania synchronizacji subfolderu:', error.message);
-                }
-
-                const files = await File.find({ folder: folderId, user: req.user.userId });
-                for (const file of files) {
-                    const filePath = path.join(__dirname, '../../../uploads', file.path);
-                    try {
-                        await fs.promises.unlink(filePath);
-                    } catch (err) {
-                        if (err.code !== 'ENOENT') throw err;
-                    }
-                    await File.findByIdAndDelete(file._id);
-                }
-
-                await Folder.findByIdAndDelete(folderId);
-            };
-
-            await deleteFolderRecursive(id);
-            res.json({ message: 'Folder i jego zawartość usunięte' });
+        const { force, permanent } = req.query;
+        
+        const options = {
+            force: force === 'true',
+            permanent: permanent === 'true'
+        };
+        
+        const result = await FolderService.deleteFolder(req.user.userId, id, options);
+        res.json(result);
+    } catch (error) {
+        console.error('Błąd usuwania folderu:', error);
+        
+        if (error.message.includes('nie znaleziony')) {
+            return res.status(404).json({ error: error.message });
         }
-    } catch (err) {
-        console.error(err);
+        
+        if (error.message.includes('nie jest pusty')) {
+            return res.status(400).json({ error: error.message });
+        }
+        
         res.status(500).json({ error: 'Błąd usuwania folderu' });
     }
 };
 
 exports.getFolderContents = async (req, res) => {
     try {
-        const folderId = req.params.id || null;
-
-        const [files, subfolders] = await Promise.all([
-            File.find({
-                user: req.user.userId,
-                folder: folderId,
-                isDeleted: { $ne: true }
-            }),
-            Folder.find({
-                user: req.user.userId,
-                parent: folderId
-            })
-        ]);
-
-        res.json({ files, subfolders });
-    } catch (err) {
+        const { id } = req.params;
+        const { 
+            includeFiles = 'true', 
+            includeSubfolders = 'true',
+            sortBy,
+            sortOrder,
+            search,
+            fileTypes
+        } = req.query;
+        
+        const folderId = id === 'root' ? null : id;
+        
+        const options = {
+            includeFiles: includeFiles === 'true',
+            includeSubfolders: includeSubfolders === 'true'
+        };
+        
+        if (sortBy) options.sortBy = sortBy;
+        if (sortOrder) options.sortOrder = sortOrder;
+        if (search) options.search = search;
+        if (fileTypes) options.fileTypes = fileTypes.split(',');
+        
+        const contents = await FolderService.getFolderContents(req.user.userId, folderId, options);
+        res.json(contents);
+    } catch (error) {
+        console.error('Błąd pobierania zawartości folderu:', error);
         res.status(500).json({ error: 'Błąd pobierania zawartości folderu' });
     }
 };

@@ -8,36 +8,62 @@ router.use(authMiddleware);
 
 // === ZARZĄDZANIE KLIENTAMI ===
 
-// Rejestracja i zarządzanie klientami
+// Rejestracja nowego klienta
 router.post('/clients', syncController.registerClient);
-router.get('/clients', syncController.getClients);
-router.delete('/clients/:clientId', syncController.deactivateClient);
 
-// Aktualizacja aktywności klienta
-router.put('/clients/:clientId/activity', syncController.updateClientLastSeen);
+// Pobieranie informacji o kliencie
+router.get('/clients/:clientId', syncController.getClient);
 
-// === ZARZĄDZANIE FOLDERAMI SYNCHRONIZACJI ===
+// Aktualizacja aktywności klienta (heartbeat)
+router.put('/clients/:clientId/activity', syncController.updateClientActivity);
 
-// CRUD dla folderów synchronizacji
-router.post('/folders', syncController.createSyncFolder);
-router.get('/folders', syncController.getSyncFolders);
+// === KONFIGURACJA SYNCHRONIZACJI FOLDERÓW ===
+
+// Dodanie folderu do synchronizacji
+router.post('/folders', syncController.addSyncFolder);
+
+// Usunięcie folderu z synchronizacji
 router.delete('/folders/:folderId', syncController.removeSyncFolder);
 
-// Synchronizacja dla konkretnego folderu
-router.get('/folders/:folderId/sync', syncController.getSyncFoldersForFolder);
+// === SYNCHRONIZACJA - GŁÓWNY INTERFEJS ===
 
-// === OPERACJE NA PLIKACH ===
+// Pobieranie stanu synchronizacji folderu dla klienta
+router.get('/folders/:folderId/state/:clientId', syncController.getFolderSyncState);
 
-// Pobieranie plików do synchronizacji
-router.get('/folders/:folderId/files/:clientId', syncController.getFilesForSync);
+// Potwierdzenie zakończenia synchronizacji
+router.post('/folders/:folderId/confirm/:clientId', syncController.confirmSyncCompleted);
 
-// Synchronizacja plików z klienta
-router.post('/files/sync/:clientId', syncController.syncFileFromClient);
+// === OPERACJE NA PLIKACH PODCZAS SYNCHRONIZACJI ===
 
-// Batch synchronizacja wielu plików
-router.post('/files/batch-sync/:clientId', syncController.batchSyncFiles);
+// Pobieranie pliku do synchronizacji (z zawartością)
+router.get('/files/:fileId/download/:clientId', syncController.downloadFileForSync);
 
-// Sprawdzanie statusu synchronizacji
-router.post('/folders/:folderId/sync-status/:clientId', syncController.checkSyncStatus);
+// Potwierdzenie pobrania pliku przez klienta
+router.post('/files/:fileId/confirm-download/:clientId', syncController.confirmFileDownloaded);
+
+// Potwierdzenie usunięcia pliku przez klienta
+router.post('/files/:fileId/confirm-delete/:clientId', syncController.confirmFileDeleted);
+
+// === OZNACZANIE PLIKÓW DO SYNCHRONIZACJI ===
+
+// Oznaczanie pojedynczego pliku do synchronizacji
+router.post('/files/:fileId/mark', syncController.markFileForSync);
+
+// Oznaczanie całego folderu do synchronizacji
+router.post('/folders/:folderId/mark', syncController.markFolderForSync);
+
+// === ZARZĄDZANIE SYNCHRONIZACJAMI FOLDERÓW - INTERFEJS WEBOWY ===
+
+// Pobieranie listy synchronizacji dla folderu
+router.get('/folders/:folderId/syncs', syncController.getFolderSyncs);
+
+// Pobieranie szczegółów konkretnej synchronizacji
+router.get('/folders/:folderId/syncs/:syncId', syncController.getSyncDetails);
+
+// Aktualizacja ustawień synchronizacji
+router.put('/folders/:folderId/syncs/:syncId', syncController.updateSyncSettings);
+
+// Usunięcie synchronizacji
+router.delete('/folders/:folderId/syncs/:syncId', syncController.deleteSyncFolder);
 
 module.exports = router;

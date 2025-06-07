@@ -1,39 +1,55 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
-const googleDriveController = require('../controllers/googleDriveController');
+const GoogleDriveController = require('../controllers/googleDriveController');
 
-// === ENDPOINTY BEZ AUTORYZACJI (muszą być PRZED middleware) ===
+// ZMIANA: Utwórz instancję kontrolera
+const googleDriveController = new GoogleDriveController();
 
-// Obsługa callback po autoryzacji (BEZ wymogu autoryzacji)
-router.post('/callback', googleDriveController.handleCallback);
-router.get('/callback', googleDriveController.handleCallback);
+// === ENDPOINTY BEZ AUTORYZACJI ===
+// Callback po autoryzacji Google (nie wymaga middleware autoryzacji)
+router.post('/callback', (req, res) => googleDriveController.handleCallback(req, res));
+router.get('/callback', (req, res) => googleDriveController.handleCallback(req, res));
 
-// === AUTORYZACJA (wymaga autoryzacji ale nie może być po middleware) ===
+// === AUTORYZACJA (wymaga autoryzacji użytkownika) ===
+// Pobierz URL do autoryzacji Google Drive
+router.get('/auth-url', authMiddleware, (req, res) => googleDriveController.getAuthUrl(req, res));
 
-// Pobierz URL do autoryzacji Google Drive (wymaga autoryzacji)
-router.get('/auth-url', authMiddleware, googleDriveController.getAuthUrl);
+// === ZARZĄDZANIE POŁĄCZENIEM ===
+// Status połączenia z Google Drive
+router.get('/status', authMiddleware, (req, res) => googleDriveController.getConnectionStatus(req, res));
 
-// === WSZYSTKIE POZOSTAŁE ENDPOINTY WYMAGAJĄ AUTORYZACJI ===
+// Rozłącz z Google Drive
+router.post('/disconnect', authMiddleware, (req, res) => googleDriveController.disconnect(req, res));
 
-// STATUS POŁĄCZENIA
-router.get('/status', authMiddleware, googleDriveController.getStatus);
-router.post('/disconnect', authMiddleware, googleDriveController.disconnect);
+// Diagnostyka połączenia
+router.get('/diagnostics', authMiddleware, (req, res) => googleDriveController.getDiagnostics(req, res));
 
-// OPERACJE NA FOLDERACH
-router.get('/folders', authMiddleware, googleDriveController.listFolders);
-router.post('/folders', authMiddleware, googleDriveController.createFolder);
+// === USTAWIENIA SYNCHRONIZACJI ===
+// Pobierz ustawienia synchronizacji
+router.get('/sync/settings', authMiddleware, (req, res) => googleDriveController.getSyncSettings(req, res));
 
-// SYNCHRONIZACJA - POPRAWIONE
-router.post('/sync/to-drive', authMiddleware, googleDriveController.syncFolderToDrive);
-router.post('/sync/from-drive', authMiddleware, googleDriveController.syncFolderFromDrive);
-router.post('/sync/full', authMiddleware, googleDriveController.fullSync);
-router.post('/sync', authMiddleware, googleDriveController.triggerManualSync);
+// Zaktualizuj ustawienia synchronizacji
+router.put('/sync/settings', authMiddleware, (req, res) => googleDriveController.updateSyncSettings(req, res));
 
-// USTAWIENIA
-router.get('/settings', authMiddleware, googleDriveController.getSettings);
-router.put('/settings', authMiddleware, googleDriveController.updateSettings);
+// === SYNCHRONIZACJA ===
+// Ręczna synchronizacja
+router.post('/sync/manual', authMiddleware, (req, res) => googleDriveController.triggerManualSync(req, res));
 
-router.post('/setup', authMiddleware, googleDriveController.setupGoogleDriveSync);
+// Włącz automatyczną synchronizację
+router.post('/sync/auto/start', authMiddleware, (req, res) => googleDriveController.startAutoSync(req, res));
+
+// Wyłącz automatyczną synchronizację
+router.post('/sync/auto/stop', authMiddleware, (req, res) => googleDriveController.stopAutoSync(req, res));
+
+// === OPERACJE NA FOLDERACH GOOGLE DRIVE ===
+// Lista folderów w Google Drive
+router.get('/folders', authMiddleware, (req, res) => googleDriveController.listDriveFolders(req, res));
+
+// Utwórz nowy folder w Google Drive
+router.post('/folders', authMiddleware, (req, res) => googleDriveController.createDriveFolder(req, res));
+
+// Utwórz synchronizację folderu z Google Drive
+router.post('/sync/folder', authMiddleware, (req, res) => googleDriveController.createSyncFolder(req, res));
 
 module.exports = router;

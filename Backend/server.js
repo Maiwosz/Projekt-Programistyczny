@@ -3,40 +3,45 @@ const path = require('path');
 
 const crashLogPath = path.join(__dirname, 'node_crash.log');
 
-process.on('uncaughtException', (err) => {
-  fs.appendFileSync(crashLogPath, `Uncaught Exception: ${err.stack || err}\n`);
-  process.exit(1);
+process.on('uncaughtException', (error) => {
+    const errorMessage = `[${new Date().toISOString()}] Uncaught Exception: ${error.stack || error}\n`;
+    console.error(errorMessage);
+    
+    try {
+        fs.appendFileSync(crashLogPath, errorMessage);
+    } catch (writeError) {
+        console.error('Nie można zapisać do pliku crash log:', writeError);
+    }
+    
+    process.exit(1);
 });
 
-process.on('unhandledRejection', (reason) => {
-  fs.appendFileSync(crashLogPath, `Unhandled Rejection: ${reason.stack || reason}\n`);
-  process.exit(1);
+process.on('unhandledRejection', (reason, promise) => {
+    const errorMessage = `[${new Date().toISOString()}] Unhandled Rejection at: ${promise}, reason: ${reason?.stack || reason}\n`;
+    console.error(errorMessage);
+    
+    try {
+        fs.appendFileSync(crashLogPath, errorMessage);
+    } catch (writeError) {
+        console.error('Nie można zapisać do pliku crash log:', writeError);
+    }
+    
+    process.exit(1);
 });
-
-
 
 require('dotenv').config();
 const express = require('express');
-
 const cors = require('cors');
 const connectDB = require('./config/db');
 const https = require('https');
 const http = require('http');
 
-// Obsługa niewyłapanych błędów
-process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-    process.exit(1);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    process.exit(1);
-});
+// Import Google Drive Service
+const GoogleDriveSyncService = require('./services/GoogleDriveSyncService');
+const GoogleDriveSchedulerService = require('./services/GoogleDriveSchedulerService');
 
 // Inicjalizacja aplikacji Express
 const app = express();
-
 
 // Połączenie z bazą z obsługą błędów
 async function initializeDatabase() {
@@ -49,6 +54,53 @@ async function initializeDatabase() {
     }
 }
 
+// Inicjalizacja Google Drive Service
+let googleDriveScheduler;
+
+async function initializeGoogleDriveService() {
+    try {
+        console.log('[STARTUP] Inicjalizacja Google Drive Service...');
+        
+        // POPRAWKA: Przekaż instancję GoogleDriveSyncService, nie klasę
+        googleDriveScheduler = new GoogleDriveSchedulerService(GoogleDriveSyncService);
+        
+        // Sprawdź czy scheduler został utworzony
+        if (!googleDriveScheduler) {
+            throw new Error('Nie można utworzyć GoogleDriveSchedulerService');
+        }
+        
+        // Inicjalizuj automatyczną synchronizację
+        const initResult = await googleDriveScheduler.initializeAutoSync();
+        
+        console.log(`✓ Google Drive Service zainicjalizowany - aktywnych synchronizacji: ${initResult.initialized}`);
+        
+        if (initResult.errors > 0) {
+            console.warn(`⚠ Błędy inicjalizacji: ${initResult.errors} z ${initResult.total}`);
+        }
+        
+        // POPRAWKA: Dodaj endpoint do monitorowania zdrowia
+        app.get('/api/sync/health', async (req, res) => {
+            try {
+                const health = await googleDriveScheduler.healthCheck();
+                res.json(health);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
+        
+        return initResult;
+        
+    } catch (error) {
+        console.error('✗ Błąd inicjalizacji Google Drive Service:', error);
+        console.error('Stack trace:', error.stack);
+        
+        // POPRAWKA: Nie przerywaj działania aplikacji, ale zaloguj błąd
+        // Aplikacja może działać bez Google Drive
+        return { initialized: 0, errors: 1, error: error.message };
+    }
+}
+
+
 // Middleware
 app.use(express.json());
 app.use(cors());
@@ -57,9 +109,16 @@ app.use((req, res, next) => {
     next();
 });
 
+// Middleware do ustawiania JSON dla API endpoints
+app.use('/api', (req, res, next) => {
+    // Ustaw domyślny Content-Type na JSON dla wszystkich odpowiedzi API
+    res.setHeader('Content-Type', 'application/json');
+    next();
+});
+
 // Sprawdzanie istnienia plików routów przed ich załadowaniem
 const routes = [
-    { path: '/api', file: './routes/authRoutes' },
+    { path: '/api/auth', file: './routes/authRoutes' },
     { path: '/api/auth', file: './routes/googleAuthRoutes' },
     { path: '/api/auth', file: './routes/facebookAuthRoutes' },
     { path: '/api/files', file: './routes/fileRoutes' },
@@ -67,7 +126,7 @@ const routes = [
     { path: '/api/user', file: './routes/userRoutes' },
     { path: '/api/config', file: './routes/configRoutes' },
     { path: '/api/sync', file: './routes/syncRoutes' },
-	{ path: '/api/google-drive', file: './routes/googleDriveRoutes' },
+    { path: '/api/google-drive', file: './routes/googleDriveRoutes' },
     { path: '/api/tags', file: './routes/tagRoutes' },
     { path: '/api/filter', file: './routes/fileFilterRoutes' }
 ];
@@ -132,21 +191,51 @@ async function startServer() {
     try {
         // Inicjalizacja bazy danych
         await initializeDatabase();
-		
-		// Graceful shutdown - zatrzymaj scheduler przy zamykaniu aplikacji
-        process.on('SIGTERM', () => {
-            console.log('Otrzymano SIGTERM, zatrzymywanie AutoSyncScheduler...');
-            AutoSyncScheduler.stop();
-            process.exit(0);
-        });
+        
+        // POPRAWKA: Inicjalizacja Google Drive Service z lepszą obsługą błędów
+        const driveServiceResult = await initializeGoogleDriveService();
+        
+        if (driveServiceResult.error) {
+            console.warn('⚠ Aplikacja uruchomiona bez Google Drive Service');
+        }
 
-        process.on('SIGINT', () => {
-            console.log('Otrzymano SIGINT, zatrzymywanie AutoSyncScheduler...');
-            AutoSyncScheduler.stop();
-            process.exit(0);
-        });
+        // POPRAWKA: Graceful shutdown z timeout
+        const gracefulShutdown = async (signal) => {
+            console.log(`\n[SHUTDOWN] Otrzymano ${signal}, graceful shutdown...`);
+            
+            const shutdownTimeout = setTimeout(() => {
+                console.error('[SHUTDOWN] Timeout - wymuszam zamknięcie');
+                process.exit(1);
+            }, 10000); // 10 sekund timeout
+            
+            try {
+                if (googleDriveScheduler) {
+                    console.log('[SHUTDOWN] Zatrzymywanie Google Drive Service...');
+                    await googleDriveScheduler.shutdown();
+                    console.log('✓ Google Drive Service zatrzymany');
+                }
+                
+                clearTimeout(shutdownTimeout);
+                console.log('✓ Graceful shutdown zakończony');
+                process.exit(0);
+                
+            } catch (error) {
+                console.error('✗ Błąd podczas graceful shutdown:', error);
+                clearTimeout(shutdownTimeout);
+                process.exit(1);
+            }
+        };
 
-        // Uruchomienie serwera HTTP (przekierowanie na HTTPS)
+        process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+        process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+        // Uruchomienie serwerów HTTP/HTTPS...
+        // (reszta kodu uruchamiania serwerów pozostaje bez zmian)
+        
+        const HTTP_PORT = process.env.HTTP_PORT || 3000;
+        const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
+        
+        // HTTP redirect do HTTPS
         http.createServer((req, res) => {
             res.writeHead(301, { 'Location': `https://localhost:${HTTPS_PORT}${req.url}` });
             res.end();
@@ -159,15 +248,7 @@ async function startServer() {
         const certPath = './ssl/localhost+2.pem';
         
         if (!fs.existsSync(keyPath) || !fs.existsSync(certPath)) {
-            console.error('✗ Certyfikaty SSL nie istnieją:');
-            console.error(`   Key: ${keyPath} - ${fs.existsSync(keyPath) ? 'OK' : 'BRAK'}`);
-            console.error(`   Cert: ${certPath} - ${fs.existsSync(certPath) ? 'OK' : 'BRAK'}`);
-            console.log('\nAby wygenerować certyfikaty SSL, użyj mkcert:');
-            console.log('1. Zainstaluj mkcert: npm install -g mkcert');
-            console.log('2. Stwórz katalog ssl: mkdir ssl');
-            console.log('3. Wygeneruj certyfikaty: mkcert -key-file ssl/localhost+2-key.pem -cert-file ssl/localhost+2.pem localhost 127.0.0.1 ::1');
-            
-            // Uruchom tylko HTTP jeśli brak certyfikatów
+            console.error('✗ Certyfikaty SSL nie istnieją');
             console.log(`\n⚠ Uruchamiam tylko serwer HTTP na porcie ${HTTP_PORT}`);
             return;
         }
@@ -182,6 +263,13 @@ async function startServer() {
         https.createServer(httpsOptions, app).listen(HTTPS_PORT, () => {
             console.log(`✓ Serwer HTTPS działa na porcie ${HTTPS_PORT}`);
             console.log(`✓ Aplikacja dostępna pod: https://localhost:${HTTPS_PORT}`);
+            
+            // POPRAWKA: Wyświetl status Google Drive Service
+            if (googleDriveScheduler) {
+                const activeCount = googleDriveScheduler.getActiveSyncCount();
+                console.log(`✓ Google Drive - aktywnych synchronizacji: ${activeCount}`);
+                console.log(`✓ Health check: https://localhost:${HTTPS_PORT}/api/sync/health`);
+            }
         });
 
     } catch (error) {
@@ -191,4 +279,7 @@ async function startServer() {
 }
 
 // Uruchomienie serwera
-startServer();
+startServer().catch(error => {
+    console.error('✗ Krytyczny błąd aplikacji:', error);
+    process.exit(1);
+});

@@ -15,15 +15,6 @@ const FileSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     metadata: { type: Object, default: {} },
     isProfilePicture: {type: Boolean, default: false},
-
-    // Uproszczony system mapowania do klientów
-    clientMappings: [{
-        client: { type: mongoose.Schema.Types.ObjectId, ref: 'Client' },
-        clientFileId: String, // ID pliku u klienta (np. Google Drive ID, ścieżka lokalna)
-        clientFileName: String, // Nazwa pliku u klienta (może się różnić)
-        clientPath: String, // Pełna ścieżka u klienta
-        lastSyncDate: { type: Date }
-    }],
     
     // Podstawowy soft delete
     isDeleted: { type: Boolean, default: false },
@@ -37,7 +28,6 @@ const FileSchema = new mongoose.Schema({
 // Indeksy dla wydajności
 FileSchema.index({ user: 1, folder: 1 });
 FileSchema.index({ user: 1, isDeleted: 1 });
-FileSchema.index({ 'clientMappings.client': 1 });
 FileSchema.index({ fileHash: 1 });
 
 module.exports = mongoose.model('File', FileSchema);

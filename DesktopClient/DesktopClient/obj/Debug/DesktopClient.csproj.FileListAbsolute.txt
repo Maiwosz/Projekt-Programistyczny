@@ -1,0 +1,12 @@
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.csproj.AssemblyReference.cache
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.Properties.Resources.resources
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.csproj.GenerateResource.cache
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.csproj.CoreCompileInputs.cache
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\DesktopClient.exe.config
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\DesktopClient.exe
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\DesktopClient.pdb
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\Newtonsoft.Json.dll
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\Newtonsoft.Json.xml
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopC.3DF0E902.Up2Date
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.exe
+C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.pdb

@@ -1,467 +1,399 @@
-const GoogleDriveService = require('../services/GoogleDriveService');
+const GoogleDriveConnectionService = require('../services/GoogleDriveConnectionService');
+const GoogleDriveSyncService = require('../services/GoogleDriveSyncService');
+const GoogleDriveSchedulerService = require('../services/GoogleDriveSchedulerService');
 
 class GoogleDriveController {
+    
+    constructor() {
+        // Inicjalizuj scheduler z referencją do sync service
+        this.schedulerService = new GoogleDriveSchedulerService(GoogleDriveSyncService);
+    }
     
     // === AUTORYZACJA ===
     
     async getAuthUrl(req, res) {
         try {
-            const authUrl = GoogleDriveService.getAuthUrl(req.user.userId);
-            res.json({ authUrl });
+            const userId = req.user.userId;
+            const authUrl = GoogleDriveConnectionService.getAuthUrl(userId);
+            
+            res.json({
+                success: true,
+                authUrl: authUrl
+            });
         } catch (error) {
             console.error('Błąd generowania URL autoryzacji:', error);
-            res.status(500).json({ error: error.message });
+            res.status(500).json({
+                success: false,
+                message: 'Błąd generowania URL autoryzacji',
+                error: error.message
+            });
         }
     }
     
     async handleCallback(req, res) {
-		try {
-			const { code, state } = req.query;
-			const { connectionName } = req.body;
-			
-			if (!code) {
-				return res.redirect('/EditProfilePage.html?gdrive=error&msg=no_code');
-			}
-			
-			if (!state) {
-				return res.redirect('/EditProfilePage.html?gdrive=error&msg=no_state');
-			}
-			
-			const userId = state;
-			const driveClient = await GoogleDriveService.handleAuthCallback(code, userId, connectionName);
-			
-			// Przekieruj z powrotem na profil z informacją o sukcesie
-			res.redirect('/EditProfilePage.html?gdrive=success');
-			
-			// Automatyczne tworzenie klienta synchronizacji
-			const SyncService = require('../services/SyncService');
-			await SyncService.ensureGoogleDriveClient(userId);
-			
-		} catch (error) {
-			console.error('Błąd obsługi callback:', error);
-			res.redirect('/EditProfilePage.html?gdrive=error&msg=' + encodeURIComponent(error.message));
-		}
-	}
-    
-    // === STATUS POŁĄCZENIA ===
-    
-    async getStatus(req, res) {
         try {
-            const status = await GoogleDriveService.getConnectionStatus(req.user.userId);
-            res.json(status);
+            // Sprawdź zarówno query params jak i body
+            const code = req.query.code || req.body.code;
+            const userId = req.query.state || req.body.state;
+            const { connectionName } = req.body;
+            
+            if (!code || !userId) {
+                return res.redirect('/EditProfilePage.html?gdrive=error&msg=Brak wymaganych parametrów');
+            }
+            
+            const driveClient = await GoogleDriveConnectionService.handleAuthCallback(
+                code, 
+                userId, 
+                connectionName || 'Google Drive'
+            );
+            
+            res.redirect('/EditProfilePage.html?gdrive=success');
+            
         } catch (error) {
-            console.error('Błąd pobierania statusu:', error);
-            res.status(500).json({ error: error.message });
+            console.error('Błąd obsługi callback autoryzacji:', error);
+            res.redirect(`/EditProfilePage.html?gdrive=error&msg=${encodeURIComponent(error.message)}`);
+        }
+    }
+    
+    // === STATUS I ZARZĄDZANIE POŁĄCZENIEM ===
+    
+    async getConnectionStatus(req, res) {
+        try {
+            const userId = req.user.userId;
+            const status = await GoogleDriveConnectionService.getConnectionStatus(userId);
+            
+            res.json({
+                success: true,
+                status: status
+            });
+        } catch (error) {
+            console.error('Błąd pobierania statusu połączenia:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd pobierania statusu połączenia',
+                error: error.message
+            });
         }
     }
     
     async disconnect(req, res) {
         try {
-            const result = await GoogleDriveService.disconnect(req.user.userId);
-            res.json(result);
-        } catch (error) {
-            console.error('Błąd rozłączania:', error);
-            res.status(500).json({ error: error.message });
-        }
-    }
-    
-    // === OPERACJE NA FOLDERACH ===
-    
-    async listFolders(req, res) {
-        try {
-            const { parentId = 'root' } = req.query;
-            const folders = await GoogleDriveService.listDriveFolders(req.user.userId, parentId);
-            res.json({ folders });
-        } catch (error) {
-            console.error('Błąd pobierania folderów:', error);
-            res.status(500).json({ error: error.message });
-        }
-    }
-    
-    async createFolder(req, res) {
-        try {
-            const { name, parentId = 'root' } = req.body;
+            const userId = req.user.userId;
+            const result = await GoogleDriveConnectionService.disconnect(userId);
             
-            if (!name) {
-                return res.status(400).json({ error: 'Nazwa folderu jest wymagana' });
+            res.json({
+                success: true,
+                message: 'Rozłączono z Google Drive'
+            });
+        } catch (error) {
+            console.error('Błąd rozłączania z Google Drive:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd rozłączania z Google Drive',
+                error: error.message
+            });
+        }
+    }
+        
+    // === USTAWIENIA SYNCHRONIZACJI ===
+    
+    async getSyncSettings(req, res) {
+        try {
+            const userId = req.user.userId;
+            const status = await GoogleDriveConnectionService.getConnectionStatus(userId);
+            
+            if (!status.connected) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Brak połączenia z Google Drive'
+                });
             }
             
-            const folder = await GoogleDriveService.createDriveFolder(req.user.userId, name, parentId);
-            res.status(201).json({ folder });
+            res.json({
+                success: true,
+                syncSettings: status.syncSettings
+            });
         } catch (error) {
-            console.error('Błąd tworzenia folderu:', error);
-            res.status(500).json({ error: error.message });
+            console.error('Błąd pobierania ustawień synchronizacji:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd pobierania ustawień synchronizacji',
+                error: error.message
+            });
+        }
+    }
+    
+    async updateSyncSettings(req, res) {
+        try {
+            const userId = req.user.userId;
+            const settings = req.body;
+            
+            console.log('[CONTROLLER] Aktualizacja ustawień synchronizacji:', { userId, settings });
+            
+            // Walidacja podstawowych ustawień
+            if (settings.syncInterval && settings.syncInterval < 60000) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Interwał synchronizacji nie może być krótszy niż 1 minuta'
+                });
+            }
+            
+            // Sprawdź czy schedulerService istnieje
+            if (!this.schedulerService) {
+                console.error('[CONTROLLER] schedulerService nie został zainicjalizowany');
+                // Fallback - bezpośrednia aktualizacja ustawień
+                const updatedSettings = await GoogleDriveConnectionService.updateSyncSettings(userId, settings);
+                
+                return res.json({
+                    success: true,
+                    message: 'Ustawienia synchronizacji zaktualizowane',
+                    syncSettings: updatedSettings
+                });
+            }
+            
+            // Użyj schedulerService do aktualizacji ustawień (restart automatycznej synchronizacji)
+            const updatedSettings = await this.schedulerService.updateSyncSettings(userId, settings);
+            
+            res.json({
+                success: true,
+                message: 'Ustawienia synchronizacji zaktualizowane',
+                syncSettings: updatedSettings
+            });
+        } catch (error) {
+            console.error('Błąd aktualizacji ustawień synchronizacji:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd aktualizacji ustawień synchronizacji',
+                error: error.message
+            });
         }
     }
     
     // === SYNCHRONIZACJA ===
     
-    async syncFolderToDrive(req, res) {
+    async triggerManualSync(req, res) {
+        console.log('[CONTROLLER] Żądanie manualnej synchronizacji');
+        console.log('[CONTROLLER] User:', req.user);
+        console.log('[CONTROLLER] Body:', req.body);
+        
         try {
-            const { localFolderId, driveFolderId } = req.body;
+            const userId = req.user.userId;
+            const { folderId } = req.body;
             
-            if (!localFolderId || !driveFolderId) {
-                return res.status(400).json({ 
-                    error: 'localFolderId i driveFolderId są wymagane' 
+            console.log(`[CONTROLLER] Wywołanie manualnej synchronizacji - userId: ${userId}, folderId: ${folderId}`);
+            
+            if (!userId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Brak identyfikatora użytkownika'
                 });
             }
             
-            const result = await GoogleDriveService.syncFolderToDrive(
-                req.user.userId, 
-                localFolderId, 
-                driveFolderId
-            );
+            const result = await GoogleDriveSyncService.syncFolder(userId, folderId);
             
-            res.json(result);
-        } catch (error) {
-            console.error('Błąd synchronizacji do Drive:', error);
-            res.status(500).json({ error: error.message });
-        }
-    }
-    
-    async syncFolderFromDrive(req, res) {
-        try {
-            const { localFolderId, driveFolderId } = req.body;
-            
-            if (!localFolderId || !driveFolderId) {
-                return res.status(400).json({ 
-                    error: 'localFolderId i driveFolderId są wymagane' 
-                });
-            }
-            
-            const result = await GoogleDriveService.syncFromDrive(
-                req.user.userId, 
-                localFolderId, 
-                driveFolderId
-            );
-            
-            res.json(result);
-        } catch (error) {
-            console.error('Błąd synchronizacji z Drive:', error);
-            res.status(500).json({ error: error.message });
-        }
-    }
-    
-    async fullSync(req, res) {
-        try {
-            const { localFolderId, driveFolderId, direction = 'bidirectional' } = req.body;
-            
-            if (!localFolderId || !driveFolderId) {
-                return res.status(400).json({ 
-                    error: 'localFolderId i driveFolderId są wymagane' 
-                });
-            }
-            
-            const results = {};
-            
-            if (direction === 'bidirectional' || direction === 'to-drive') {
-                results.toDrive = await GoogleDriveService.syncFolderToDrive(
-                    req.user.userId, 
-                    localFolderId, 
-                    driveFolderId
-                );
-            }
-            
-            if (direction === 'bidirectional' || direction === 'from-drive') {
-                results.fromDrive = await GoogleDriveService.syncFromDrive(
-                    req.user.userId, 
-                    localFolderId, 
-                    driveFolderId
-                );
-            }
+            console.log('[CONTROLLER] Synchronizacja zakończona pomyślnie:', result);
             
             res.json({
                 success: true,
-                direction,
-                results
+                message: 'Synchronizacja zakończona pomyślnie',
+                data: result
             });
+            
         } catch (error) {
-            console.error('Błąd pełnej synchronizacji:', error);
-            res.status(500).json({ error: error.message });
+            console.error('[CONTROLLER] Błąd ręcznej synchronizacji:', error);
+            
+            res.status(500).json({
+                success: false,
+                message: 'Błąd ręcznej synchronizacji',
+                error: error.message,
+                details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            });
         }
     }
-	
-	async triggerManualSync(req, res) {
-		try {
-			const GoogleDriveClient = require('../models/GoogleDriveClient');
-			const Folder = require('../models/Folder');
-			
-			// Sprawdź połączenie z Google Drive
-			const driveClient = await GoogleDriveClient.findOne({ user: req.user.userId });
-			
-			if (!driveClient || !driveClient.status.isConnected) {
-				return res.status(400).json({ error: 'Google Drive nie jest połączony' });
-			}
-
-			// DEBUG: Sprawdź userId
-			console.log('Szukam folderów dla userId:', req.user.userId);
-			
-			// Znajdź foldery użytkownika - POPRAWIONE ZAPYTANIE
-			const userFolders = await Folder.find({ 
-				user: req.user.userId, 
-				isDeleted: { $ne: true } // Sprawdź czy isDeleted nie jest true
-			});
-			
-			console.log('Znalezione foldery:', userFolders.length); // DEBUG
-			
-			if (!userFolders || userFolders.length === 0) {
-				// Dodatkowe debugowanie
-				const allFolders = await Folder.find({ user: req.user.userId });
-				console.log('Wszystkie foldery użytkownika (włącznie z usuniętymi):', allFolders.length);
-				
-				return res.status(400).json({ 
-					error: 'Brak folderów do synchronizacji',
-					debug: {
-						userId: req.user.userId,
-						totalFolders: allFolders.length,
-						activeFolders: userFolders.length
-					}
-				});
-			}
-
-			// Użyj pierwszego dostępnego folderu
-			const targetFolder = userFolders[0];
-			console.log('Używam folderu:', targetFolder.name, 'ID:', targetFolder._id);
-
-			// Sprawdź czy istnieją ustawienia synchronizacji dla tego folderu
-			let driveFolderId = 'root'; // domyślnie root
-			
-			// Sprawdź czy folder ma już mapowanie do Google Drive
-			const SyncFolder = require('../models/SyncFolder');
-			const syncFolder = await SyncFolder.findOne({
-				user: req.user.userId,
-				folder: targetFolder._id
-			});
-			
-			if (syncFolder && syncFolder.clients) {
-				const googleDriveClient = syncFolder.clients.find(
-					client => client.clientId === 'google-drive'
-				);
-				if (googleDriveClient && googleDriveClient.clientFolderId) {
-					driveFolderId = googleDriveClient.clientFolderId;
-				}
-			}
-
-			console.log('Synchronizuję z folderem Google Drive:', driveFolderId);
-
-			// Wykonaj ręczną synchronizację (wymuszenie)
-			const GoogleDriveService = require('../services/GoogleDriveService');
-			const result = await GoogleDriveService.manualSyncFolder(
-				req.user.userId, 
-				targetFolder._id, 
-				driveFolderId
-			);
-
-			// Sprawdź czy synchronizacja została pominięta
-			if (result.skipped) {
-				let message = 'Synchronizacja została pominięta: ';
-				switch (result.reason) {
-					case 'not_connected':
-						message += 'Google Drive nie jest połączony';
-						break;
-					case 'auto_sync_disabled':
-						message += 'Automatyczna synchronizacja jest wyłączona';
-						break;
-					case 'sync_in_progress':
-						message += 'Synchronizacja już trwa';
-						break;
-					default:
-						message += result.reason || 'Nieznany powód';
-				}
-				
-				return res.json({
-					success: false,
-					skipped: true,
-					message: message,
-					reason: result.reason
-				});
-			}
-
-			res.json({
-				success: true,
-				message: 'Synchronizacja zakończona',
-				folder: {
-					name: targetFolder.name,
-					id: targetFolder._id
-				},
-				driveFolderId: driveFolderId,
-				result: result
-			});
-
-		} catch (error) {
-			console.error('Błąd ręcznej synchronizacji:', error);
-			res.status(500).json({ 
-				error: error.message,
-				stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-			});
-		}
-	}
     
-    // === ZARZĄDZANIE USTAWIENIAMI ===
-    
-    async updateSettings(req, res) {
+    async startAutoSync(req, res) {
         try {
-            const { syncSettings } = req.body;
+            const userId = req.user.userId;
             
-            const GoogleDriveClient = require('../models/GoogleDriveClient');
-            const driveClient = await GoogleDriveClient.findOne({ user: req.user.userId });
-            
-            if (!driveClient) {
-                return res.status(404).json({ error: 'Połączenie Google Drive nie znalezione' });
+            if (!this.schedulerService) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Usługa schedulera nie jest dostępna'
+                });
             }
             
-            if (syncSettings) {
-                driveClient.syncSettings = Object.assign({}, driveClient.syncSettings, syncSettings);
-                await driveClient.save();
-            }
+            const result = await this.schedulerService.startAutoSync(userId);
             
             res.json({
                 success: true,
-                settings: driveClient.syncSettings
+                message: result.message
             });
         } catch (error) {
-            console.error('Błąd aktualizacji ustawień:', error);
-            res.status(500).json({ error: error.message });
+            console.error('Błąd włączania automatycznej synchronizacji:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd włączania automatycznej synchronizacji',
+                error: error.message
+            });
         }
     }
     
-    async getSettings(req, res) {
+    async stopAutoSync(req, res) {
         try {
-            const GoogleDriveClient = require('../models/GoogleDriveClient');
-            const driveClient = await GoogleDriveClient.findOne({ user: req.user.userId });
+            const userId = req.user.userId;
             
-            if (!driveClient) {
-                return res.status(404).json({ error: 'Połączenie Google Drive nie znalezione' });
+            if (!this.schedulerService) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Usługa schedulera nie jest dostępna'
+                });
             }
             
+            const result = await this.schedulerService.stopAutoSync(userId);
+            
             res.json({
-                settings: driveClient.syncSettings,
-                status: driveClient.status,
-                stats: driveClient.stats
+                success: true,
+                message: result.message
             });
         } catch (error) {
-            console.error('Błąd pobierania ustawień:', error);
-            res.status(500).json({ error: error.message });
+            console.error('Błąd wyłączania automatycznej synchronizacji:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd wyłączania automatycznej synchronizacji',
+                error: error.message
+            });
         }
     }
-	
-	async setupGoogleDriveSync(req, res) {
-		try {
-			const { 
-				folderId, 
-				driveFolderId,
-				syncDirection = 'bidirectional',
-				isActive = true,
-				clientFolderName = 'Google Drive',
-				filters = null
-			} = req.body;
-			
-			console.log('Otrzymane dane:', req.body);
-			
-			if (!folderId) {
-				return res.status(400).json({ error: 'folderId jest wymagane' });
-			}
-			
-			if (!driveFolderId) {
-				return res.status(400).json({ error: 'driveFolderId jest wymagane - nie można synchronizować bez określenia folderu docelowego' });
-			}
-			
-			console.log('Konfigurowanie synchronizacji:', { 
-				folderId, 
-				driveFolderId, 
-				syncDirection,
-				clientFolderName 
-			});
-			
-			// Sprawdź czy Google Drive jest połączony
-			const status = await GoogleDriveService.getConnectionStatus(req.user.userId);
-			if (!status.connected) {
-				return res.status(400).json({ error: 'Google Drive nie jest połączony' });
-			}
-			
-			// Aktualizuj ustawienia synchronizacji
-			const GoogleDriveClient = require('../models/GoogleDriveClient');
-			const driveClient = await GoogleDriveClient.findOne({ user: req.user.userId });
-			
-			if (!driveClient) {
-				return res.status(404).json({ error: 'Klient Google Drive nie znaleziony' });
-			}
-			
-			// Ustaw ustawienia synchronizacji
-			driveClient.syncSettings = {
-				...driveClient.syncSettings,
-				autoSync: isActive,
-				syncDirection: syncDirection,
-				filters: filters || {}
-			};
-			
-			await driveClient.save();
-			
-			// POPRAWKA: Właściwa struktura klienta z wszystkimi wymaganymi polami
-			const clientConfig = {
-				clientId: 'google-drive',
-				clientFolderId: driveFolderId,
-				clientFolderName: clientFolderName,
-				syncDirection: syncDirection,
-				isActive: isActive,
-				filters: filters || {},
-				lastSyncDate: null
-			};
-			
-			console.log('Konfiguracja klienta:', clientConfig); // DEBUG
-			
-			// Utwórz konfigurację synchronizacji
-			const SyncService = require('../services/SyncService');
-			const syncFolder = await SyncService.createSyncFolder(req.user.userId, folderId, [clientConfig]);
-			
-			console.log('Synchronizacja skonfigurowana z folderem:', driveFolderId);
-			console.log('Utworzony syncFolder:', syncFolder);
-			
-			res.json({
-				success: true,
-				syncFolder,
-				settings: driveClient.syncSettings,
-				driveFolderId: driveFolderId,
-				message: `Synchronizacja skonfigurowana z folderem Google Drive: ${driveFolderId}`
-			});
-			
-		} catch (error) {
-			console.error('Błąd konfiguracji synchronizacji Google Drive:', error);
-			res.status(500).json({ error: error.message });
-		}
-	}
-	
-	async ensureGoogleDriveClient(req, res) {
-		try {
-			const userId = req.user.id;
-			const SyncService = require('../services/SyncService');
-			
-			const client = await SyncService.ensureGoogleDriveClient(userId);
-			
-			if (!client) {
-				return res.status(400).json({ 
-					error: 'Google Drive nie jest połączony' 
-				});
-			}
-			
-			res.json({ 
-				success: true, 
-				message: 'Klient Google Drive został utworzony/zaktualizowany',
-				client: {
-					clientId: client.clientId,
-					name: client.name,
-					type: client.type,
-					isActive: client.isActive
-				}
-			});
-			
-		} catch (error) {
-			console.error('Błąd tworzenia klienta Google Drive:', error);
-			res.status(500).json({ 
-				error: 'Błąd tworzenia klienta Google Drive: ' + error.message 
-			});
-		}
-	}			
+    
+    // === OPERACJE NA FOLDERACH GOOGLE DRIVE ===
+    
+    async listDriveFolders(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { parentId } = req.query;
+            
+            const folders = await GoogleDriveSyncService.listDriveFolders(userId, parentId);
+            
+            res.json({
+                success: true,
+                folders: folders
+            });
+        } catch (error) {
+            console.error('Błąd pobierania folderów Google Drive:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd pobierania folderów Google Drive',
+                error: error.message
+            });
+        }
+    }
+    
+    async createDriveFolder(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { name, parentId } = req.body;
+            
+            if (!name) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Nazwa folderu jest wymagana'
+                });
+            }
+            
+            const folder = await GoogleDriveSyncService.createDriveFolder(userId, name, parentId);
+            
+            res.json({
+                success: true,
+                message: 'Folder utworzony pomyślnie',
+                folder: folder
+            });
+        } catch (error) {
+            console.error('Błąd tworzenia folderu Google Drive:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd tworzenia folderu Google Drive',
+                error: error.message
+            });
+        }
+    }
+    
+    // === ZARZĄDZANIE SYNCHRONIZACJĄ FOLDERÓW ===
+
+    async createSyncFolder(req, res) {
+        try {
+            const userId = req.user.userId;
+            const { folderId, driveFolderId, driveFolderName } = req.body;
+            
+            // Walidacja wymaganych parametrów
+            if (!folderId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID folderu serwera jest wymagany'
+                });
+            }
+            
+            if (!driveFolderId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID folderu Google Drive jest wymagany'
+                });
+            }
+            
+            const syncFolder = await GoogleDriveSyncService.createSyncFolder(
+                userId, 
+                folderId, 
+                driveFolderId,
+                driveFolderName
+            );
+            
+            res.json({
+                success: true,
+                message: 'Synchronizacja folderu została utworzona pomyślnie',
+                syncFolder: syncFolder
+            });
+        } catch (error) {
+            console.error('Błąd tworzenia synchronizacji folderu:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd tworzenia synchronizacji folderu',
+                error: error.message
+            });
+        }
+    }
+    
+    // === INFORMACJE DIAGNOSTYCZNE ===
+    
+    async getDiagnostics(req, res) {
+        try {
+            const userId = req.user.userId;
+            const connectionStatus = await GoogleDriveConnectionService.getConnectionStatus(userId);
+            const syncStatus = this.schedulerService ? await this.schedulerService.getSyncStatus(userId) : null;
+            
+            const diagnostics = {
+                connection: connectionStatus,
+                sync: syncStatus,
+                scheduler: this.schedulerService ? {
+                    activeSyncCount: this.schedulerService.getActiveSyncCount(),
+                    activeSchedules: this.schedulerService.getActiveSchedules()
+                } : null,
+                timestamp: new Date().toISOString(),
+                userId: userId
+            };
+            
+            res.json({
+                success: true,
+                diagnostics: diagnostics
+            });
+        } catch (error) {
+            console.error('Błąd pobierania diagnostyki:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Błąd pobierania diagnostyki',
+                error: error.message
+            });
+        }
+    }
 }
 
-module.exports = new GoogleDriveController();
+// ZMIANA: Eksportuj KLASĘ, nie instancję
+module.exports = GoogleDriveController;

@@ -1,11 +1,9 @@
-const File = require('../models/File');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const exifr = require('exifr');
-const { exiftool } = require('exiftool-vendored');
 const mongoose = require('mongoose');
-const { generateFileHash, getFileStats, getCategoryFromMimeType } = require('../utils/fileUtils');
+const { getCategoryFromMimeType } = require('../utils/fileUtils');
+const FileService = require('../services/FileService');
 const SyncService = require('../services/SyncService');
 
 const storage = multer.diskStorage({
@@ -31,28 +29,18 @@ exports.uploadFile = [
     async (req, res) => {
         try {
             const category = getCategoryFromMimeType(req.file.mimetype);
-            const filePath = req.file.path;
-            const metadata = await processMetadata(filePath);
-            const fileHash = await generateFileHash(filePath);
-            const fileStats = await getFileStats(filePath);
             const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder)
                 ? req.body.folder
                 : null;
 
-            const file = new File({
-                user: req.user.userId,
-                path: path.join(category, req.file.filename).replace(/\\/g, '/'),
+            const fileData = {
+                filePath: req.file.path,
                 originalName: req.file.originalname,
                 mimetype: req.file.mimetype,
-                category: category,
-                folder: folderId,
-                metadata: metadata,
-                fileHash: fileHash,
-                lastModified: fileStats.lastModified,
-                isDeleted: false
-            });
-            
-            await file.save();
+                folderId: folderId
+            };
+
+            const file = await FileService.createFile(req.user.userId, fileData);
             
             if (folderId) {
                 await SyncService.markFolderForSync(req.user.userId, folderId);
@@ -60,9 +48,9 @@ exports.uploadFile = [
             
             res.status(201).json(file);
         } catch (error) {
-            console.error('Szczeg�y b��du uploadu:', error);
+            console.error('Szczegóły błędu uploadu:', error);
             res.status(500).json({
-                error: 'B��d przesy�ania pliku',
+                error: 'Błąd przesyłania pliku',
                 details: error.message
             });
         }
@@ -74,49 +62,41 @@ exports.uploadMultipleFiles = [
     async (req, res) => {
         try {
             if (!req.files || req.files.length === 0) {
-                return res.status(400).json({ error: 'Brak przes�anych plik�w' });
+                return res.status(400).json({ error: 'Brak przesyłanych plików' });
             }
 
-            const files = await Promise.all(
-                req.files.map(async (file) => {
-                    const category = getCategoryFromMimeType(file.mimetype);
-                    const filePath = file.path;
-                    const metadata = await processMetadata(filePath);
-                    const fileHash = await generateFileHash(filePath);
-                    const fileStats = await getFileStats(filePath);
-                    const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder)
-                        ? req.body.folder
-                        : null;
+            const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder) 
+                ? req.body.folder 
+                : null;
 
-                    const newFile = new File({
-                        user: req.user.userId,
-                        path: path.join(category, file.filename).replace(/\\/g, '/'),
-                        originalName: file.originalname,
-                        mimetype: file.mimetype,
-                        category: category,
-                        folder: folderId,
-                        metadata: metadata,
-                        fileHash: fileHash,
-                        lastModified: fileStats.lastModified,
-                        isDeleted: false
-                    });
-                    
-                    await newFile.save();
-                    return newFile;
-                })
-            );
+            const filesData = req.files.map(file => ({
+                filePath: file.path,
+                originalName: file.originalname,
+                mimetype: file.mimetype,
+                folderId: folderId
+            }));
 
-            // DODANE: Oznacz folder do synchronizacji je�li pliki zosta�y dodane do zsynchronizowanego folderu
-            const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder) ? req.body.folder : null;
-            if (folderId) {
+            const results = await FileService.createMultipleFiles(req.user.userId, filesData, folderId);
+            
+            // Sprawdź czy wszystkie pliki zostały pomyślnie utworzone
+            const successfulFiles = results.filter(result => result.success).map(result => result.file);
+            const failedFiles = results.filter(result => !result.success);
+
+            if (folderId && successfulFiles.length > 0) {
                 await SyncService.markFolderForSync(req.user.userId, folderId);
             }
 
-            res.status(201).json(files);
+            res.status(201).json({
+                successful: successfulFiles,
+                failed: failedFiles,
+                total: req.files.length,
+                successCount: successfulFiles.length,
+                failureCount: failedFiles.length
+            });
         } catch (error) {
-            console.error('B��d przesy�ania wielu plik�w:', error);
+            console.error('Błąd przesyłania wielu plików:', error);
             res.status(500).json({
-                error: 'B��d przesy�ania plik�w',
+                error: 'Błąd przesyłania plików',
                 details: error.message
             });
         }
@@ -125,358 +105,147 @@ exports.uploadMultipleFiles = [
 
 exports.getUserFiles = async (req, res) => {
     try {
-        const includeDeleted = req.query.includeDeleted === 'true';
-        const filter = { user: req.user.userId };
-        
-        // ZMIANA: Zawsze wykluczaj usuni�te pliki z g��wnego widoku
-        filter.isDeleted = { $ne: true };
+        const options = {
+            includeDeleted: req.query.includeDeleted === 'true',
+            folderId: req.query.folderId || null,
+            category: req.query.category || null,
+            clientId: req.query.clientId || null,
+            limit: req.query.limit ? parseInt(req.query.limit) : null,
+            skip: req.query.skip ? parseInt(req.query.skip) : 0,
+            sortBy: req.query.sortBy || 'createdAt',
+            sortOrder: req.query.sortOrder === 'asc' ? 1 : -1
+        };
 
-        const files = await File.find(filter)
-            .populate('folder', 'name')
-            .sort({ createdAt: -1 });
-            
+        const files = await FileService.getUserFiles(req.user.userId, options);
         res.json(files);
     } catch (error) {
-        console.error('B��d pobierania plik�w:', error);
-        res.status(500).json({ error: 'B��d pobierania plik�w' });
+        console.error('Błąd pobierania plików:', error);
+        res.status(500).json({ error: 'Błąd pobierania plików' });
     }
 };
 
 exports.deleteFile = async (req, res) => {
     try {
-        const { permanent } = req.query;
-        let file;
+        const permanent = req.query.permanent === 'true';
         
-        if (permanent === 'true') {
-            file = await File.findOne({ 
-                _id: req.params.id, 
-                user: req.user.userId,
-                isDeleted: true
-            });
-        } else {
-            file = await File.findOne({ 
-                _id: req.params.id, 
-                user: req.user.userId,
-                isDeleted: { $ne: true }
-            });
-        }
+        const file = await FileService.getFileById(req.user.userId, req.params.id, {
+            includeDeleted: permanent
+        });
         
         if (!file) {
             return res.status(404).json({ error: 'Plik nie znaleziony' });
         }
 
-        const folderId = file.folder; // Zapisz ID folderu przed usuni�ciem
-
-        if (permanent === 'true') {
-            const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
-
-            try {
-                await fs.promises.access(filePath, fs.constants.F_OK);
-                await fs.promises.unlink(filePath);
-            } catch (err) {
-                if (err.code !== 'ENOENT') {
-                    throw err;
-                }
-                console.warn('Plik nie istnieje na dysku:', filePath);
-            }
-
-            await File.findByIdAndDelete(req.params.id);
-            res.json({ message: 'Plik trwale usuni�ty', permanent: true });
-        } else {
-            file.isDeleted = true;
-            file.deletedAt = new Date();
-            file.deletedBy = 'user';
-            await file.save();
-            
-            res.json({ message: 'Plik przeniesiony do kosza', permanent: false });
+        if (permanent && !file.isDeleted) {
+            return res.status(400).json({ error: 'Plik musi być najpierw przeniesiony do kosza' });
         }
 
-        // DODANE: Oznacz folder do synchronizacji po usuni�ciu pliku
+        const folderId = file.folder;
+        const result = await FileService.deleteFile(req.user.userId, req.params.id, permanent);
+
         if (folderId) {
             await SyncService.markFolderForSync(req.user.userId, folderId);
         }
+
+        res.json(result);
     } catch (error) {
-        console.error('B��d usuwania pliku:', error);
-        res.status(500).json({ error: 'B��d serwera' });
-    }
-};
-
-exports.restoreFile = async (req, res) => {
-    try {
-        const file = await File.findOne({ 
-            _id: req.params.id, 
-            user: req.user.userId,
-            isDeleted: true
-        });
-        
-        if (!file) {
-            return res.status(404).json({ error: 'Plik nie znaleziony w koszu' });
-        }
-
-        file.isDeleted = false;
-        file.deletedAt = null;
-        file.deletedBy = null;
-        file.restoredFromTrash = true;
-        file.restoredAt = new Date();
-        file.syncedToDrive = false;
-        file.lastSyncDate = null;
-        await file.save();
-
-        // DODANE: Oznacz folder do synchronizacji po przywr�ceniu pliku
-        if (file.folder) {
-            await SyncService.markFolderForSync(req.user.userId, file.folder);
-        }
-        
-        res.json({ message: 'Plik przywr�cony z kosza', file });
-    } catch (error) {
-        console.error('B��d przywracania pliku:', error);
-        res.status(500).json({ error: 'B��d przywracania pliku' });
-    }
-};
-
-exports.getDeletedFiles = async (req, res) => {
-    try {
-        const deletedFiles = await File.find({ 
-            user: req.user.userId,
-            isDeleted: true
-        })
-        .populate('folder', 'name')
-        .sort({ deletedAt: -1 });
-        
-        res.json(deletedFiles);
-    } catch (error) {
-        console.error('B��d pobierania usuni�tych plik�w:', error);
-        res.status(500).json({ error: 'B��d pobierania usuni�tych plik�w' });
-    }
-};
-
-exports.emptyTrash = async (req, res) => {
-    try {
-        const deletedFiles = await File.find({ 
-            user: req.user.userId,
-            isDeleted: true
-        });
-
-        // Usu� fizyczne pliki z dysku
-        for (const file of deletedFiles) {
-            const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
-            try {
-                await fs.promises.access(filePath, fs.constants.F_OK);
-                await fs.promises.unlink(filePath);
-            } catch (err) {
-                if (err.code !== 'ENOENT') {
-                    console.warn('B��d usuwania pliku z dysku:', err);
-                }
-            }
-        }
-
-        // Usu� rekordy z bazy danych
-        const result = await File.deleteMany({ 
-            user: req.user.userId,
-            isDeleted: true
-        });
-
-        res.json({ 
-            message: 'Kosz zosta� opr�niony',
-            deletedCount: result.deletedCount
-        });
-    } catch (error) {
-        console.error('B��d opr�niania kosza:', error);
-        res.status(500).json({ error: 'B��d opr�niania kosza' });
+        console.error('Błąd usuwania pliku:', error);
+        res.status(500).json({ error: error.message || 'Błąd serwera' });
     }
 };
 
 exports.getFileMetadata = async (req, res) => {
     try {
-        const file = await File.findOne({ 
-            _id: req.params.id, 
-            user: req.user.userId,
-            isDeleted: { $ne: true }
-        })
-        .select('originalName mimetype category createdAt metadata path fileHash lastModified syncedFromDrive syncedToDrive lastSyncDate')
-        .lean();
-
-        if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
-
-        // Pobierz aktualny rozmiar pliku z systemu plik�w
-        const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
-        try {
-            const stats = await fs.promises.stat(filePath);
-            file.size = stats.size;
-            file.currentLastModified = stats.mtime;
-        } catch (err) {
-            console.warn('Nie mo�na odczyta� rozmiaru pliku:', err);
-            file.size = 0;
-            file.currentLastModified = null;
-        }
-
-        res.json(file);
+        const metadata = await FileService.getFileMetadata(req.user.userId, req.params.id);
+        res.json(metadata);
     } catch (error) {
-        console.error('B��d pobierania metadanych:', error);
-        res.status(500).json({ error: 'B��d pobierania metadanych' });
+        console.error('Błąd pobierania metadanych:', error);
+        res.status(500).json({ error: error.message || 'Błąd pobierania metadanych' });
     }
 };
 
 exports.updateFileMetadata = async (req, res) => {
     try {
-        const file = await File.findOne({ 
-            _id: req.params.id, 
-            user: req.user.userId,
-            isDeleted: { $ne: true }
+        const file = await FileService.getFileById(req.user.userId, req.params.id);
+        
+        if (!file) {
+            return res.status(404).json({ error: 'Plik nie znaleziony' });
+        }
+
+        const result = await FileService.updateFileMetadata(req.user.userId, req.params.id, req.body);
+
+        if (file.folder) {
+            await SyncService.markFolderForSync(req.user.userId, file.folder);
+        }
+        
+        res.json({ 
+            message: 'Metadane zaktualizowane pomyślnie',
+            ...result
         });
-        
-        if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
-
-        if (!file.mimetype.startsWith('image/')) {
-            return res.status(400).json({ error: 'Metadane dost�pne tylko dla obraz�w' });
-        }
-
-        const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
-        
-        try {
-            await fs.promises.access(filePath, fs.constants.F_OK);
-        } catch (err) {
-            return res.status(404).json({ error: 'Plik nie istnieje na serwerze' });
-        }
-
-        try {
-            console.log('Aktualizacja metadanych pliku:', filePath);
-            console.log('Nowe metadane:', req.body);
-            
-            await exiftool.write(filePath, req.body);
-            const updatedMetadata = await exiftool.read(filePath);
-            console.log('Zaktualizowane metadane:', updatedMetadata);
-            
-            const newFileHash = await generateFileHash(filePath);
-            const fileStats = await getFileStats(filePath);
-            
-            file.metadata = updatedMetadata;
-            file.fileHash = newFileHash;
-            file.lastModified = fileStats.lastModified;
-            await file.save();
-
-            // DODANE: Oznacz folder do synchronizacji po aktualizacji metadanych
-            if (file.folder) {
-                await SyncService.markFolderForSync(req.user.userId, file.folder);
-            }
-            
-            res.json({ 
-                message: 'Metadane zaktualizowane pomy�lnie',
-                metadata: updatedMetadata,
-                fileHash: newFileHash,
-                lastModified: fileStats.lastModified
-            });
-        } catch (error) {
-            console.error('B��d podczas aktualizacji metadanych pliku:', error);
-            return res.status(500).json({ 
-                error: 'Nie uda�o si� zaktualizowa� metadanych pliku',
-                details: error.message 
-            });
-        }
     } catch (error) {
-        console.error('Szczeg�y b��du:', error);
+        console.error('Błąd aktualizacji metadanych:', error);
         res.status(500).json({
-            error: 'B��d aktualizacji metadanych',
-            details: error.message
+            error: error.message || 'Błąd aktualizacji metadanych'
         });
+    }
+};
+
+exports.restoreFile = async (req, res) => {
+    try {
+        const file = await FileService.restoreFile(req.user.userId, req.params.id);
+
+        if (file.folder) {
+            await SyncService.markFolderForSync(req.user.userId, file.folder);
+        }
+        
+        res.json({ message: 'Plik przywrócony z kosza', file });
+    } catch (error) {
+        console.error('Błąd przywracania pliku:', error);
+        res.status(500).json({ error: error.message || 'Błąd przywracania pliku' });
+    }
+};
+
+exports.getDeletedFiles = async (req, res) => {
+    try {
+        const deletedFiles = await FileService.getDeletedFiles(req.user.userId);
+        res.json(deletedFiles);
+    } catch (error) {
+        console.error('Błąd pobierania usuniętych plików:', error);
+        res.status(500).json({ error: 'Błąd pobierania usuniętych plików' });
+    }
+};
+
+exports.emptyTrash = async (req, res) => {
+    try {
+        const result = await FileService.emptyTrash(req.user.userId);
+        res.json(result);
+    } catch (error) {
+        console.error('Błąd opróżniania kosza:', error);
+        res.status(500).json({ error: 'Błąd opróżniania kosza' });
     }
 };
 
 exports.checkFileIntegrity = async (req, res) => {
     try {
-        const file = await File.findOne({ 
-            _id: req.params.id, 
-            user: req.user.userId,
-            isDeleted: { $ne: true }
-        });
-        
-        if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
-
-        const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
-        
-        try {
-            await fs.promises.access(filePath, fs.constants.F_OK);
-            const currentHash = await generateFileHash(filePath);
-            const fileStats = await getFileStats(filePath);
-            
-            const isIntact = currentHash === file.fileHash;
-            const isModified = file.lastModified && 
-                new Date(fileStats.lastModified).getTime() !== new Date(file.lastModified).getTime();
-            
-            res.json({
-                fileExists: true,
-                hashMatch: isIntact,
-                isModified: isModified,
-                storedHash: file.fileHash,
-                currentHash: currentHash,
-                storedLastModified: file.lastModified,
-                currentLastModified: fileStats.lastModified
-            });
-        } catch (err) {
-            res.json({
-                fileExists: false,
-                hashMatch: false,
-                error: 'Plik nie istnieje na dysku'
-            });
-        }
+        const result = await FileService.checkFileIntegrity(req.user.userId, req.params.id);
+        res.json(result);
     } catch (error) {
-        console.error('B��d sprawdzania integralno�ci pliku:', error);
-        res.status(500).json({ error: 'B��d sprawdzania integralno�ci pliku' });
+        console.error('Błąd sprawdzania integralności pliku:', error);
+        res.status(500).json({ error: error.message || 'Błąd sprawdzania integralności pliku' });
     }
 };
 
 exports.updateFileHash = async (req, res) => {
     try {
-        const file = await File.findOne({ 
-            _id: req.params.id, 
-            user: req.user.userId,
-            isDeleted: { $ne: true }
+        const result = await FileService.updateFileHash(req.user.userId, req.params.id);
+        
+        res.json({
+            message: 'Hash pliku zaktualizowany',
+            ...result
         });
-        
-        if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
-
-        const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
-        
-        try {
-            await fs.promises.access(filePath, fs.constants.F_OK);
-            const newHash = await generateFileHash(filePath);
-            const fileStats = await getFileStats(filePath);
-            
-            file.fileHash = newHash;
-            file.lastModified = fileStats.lastModified;
-            await file.save();
-            
-            res.json({
-                message: 'Hash pliku zaktualizowany',
-                fileHash: newHash,
-                lastModified: fileStats.lastModified
-            });
-        } catch (err) {
-            return res.status(404).json({ error: 'Plik nie istnieje na serwerze' });
-        }
     } catch (error) {
-        console.error('B��d aktualizacji hash pliku:', error);
-        res.status(500).json({ error: 'B��d aktualizacji hash pliku' });
-    }
-};
-
-const processMetadata = async (filePath) => {
-    try {
-        // Najpierw pr�bujemy odczyta� metadane za pomoc� exifr
-        const metadata = await exifr.parse(filePath, {
-            iptc: true,
-            xmp: true,
-            icc: true,
-            maxBufferSize: 30 * 1024 * 1024
-        });
-        
-        if (metadata) return metadata;
-        
-        // Je�li exifr nie zwr�ci� metadanych, pr�bujemy z exiftool
-        return await exiftool.read(filePath);
-    } catch (error) {
-        console.error('B��d przetwarzania metadanych:', error);
-        return {};
+        console.error('Błąd aktualizacji hash pliku:', error);
+        res.status(500).json({ error: error.message || 'Błąd aktualizacji hash pliku' });
     }
 };
 
@@ -484,26 +253,15 @@ exports.renameFile = async (req, res) => {
     try {
         const { newName } = req.body;
 
-        const file = await File.findOne({ 
-            _id: req.params.id
-        });
-
-        if (!file) {
-            return res.status(404).json({ error: 'Plik nie znaleziony' });
+        if (!newName || newName.trim() === '') {
+            return res.status(400).json({ error: 'Nazwa pliku nie może być pusta' });
         }
 
-        file.originalName = newName;
-        await file.save();
+        const file = await FileService.renameFile(req.user.userId, req.params.id, newName.trim());
         
         res.status(200).json(file);
     } catch (error) {
-        res.status(500).json({ error: 'Błąd zmiany nazwy pliku' });
+        console.error('Błąd zmiany nazwy pliku:', error);
+        res.status(500).json({ error: error.message || 'Błąd zmiany nazwy pliku' });
     }
 };
-
-process.on('exit', () => exiftool.end());
-process.on('SIGINT', () => exiftool.end());
-process.on('uncaughtException', (err) => {
-    exiftool.end();
-    process.exit(1);
-});

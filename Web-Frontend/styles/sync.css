@@ -1,100 +1,129 @@
-/* ========== MODAL SYNCHRONIZACJI ========== */
-#syncModal {
-    max-width: 1000px;
-    width: 90%;
-    max-height: 85vh;
-    overflow: auto;
+/* ========== MODELE SYNCHRONIZACJI ========== */
+
+/* Podstawowe style modali */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+    animation: fadeIn 0.3s ease-out;
 }
 
-#syncModal .modal-content {
-    height: 100%;
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
+    animation: slideIn 0.3s ease-out;
 }
 
-#syncModal .modal-header {
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== NAGŁÓWEK MODALU ========== */
+.modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
+    padding: 20px 25px;
+    border-bottom: 1px solid #dee2e6;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-#syncModal .modal-header h3 {
+.modal-header h3 {
     margin: 0;
-    color: #333;
-    font-size: 1.4em;
+    color: #2c3e50;
+    font-size: 20px;
+    font-weight: 600;
 }
 
-#syncModal .close-button {
+.close-button {
     background: none;
     border: none;
     font-size: 24px;
     cursor: pointer;
-    color: #666;
-    padding: 0;
-    width: 30px;
-    height: 30px;
+    color: #6c757d;
+    padding: 5px;
+    width: 35px;
+    height: 35px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
 }
 
-#syncModal .close-button:hover {
-    background: #f0f0f0;
-    color: #333;
+.close-button:hover {
+    background: rgba(108, 117, 125, 0.1);
+    color: #495057;
+    transform: scale(1.1);
 }
 
-/* ========== LOADING SYNCHRONIZACJI ========== */
-.sync-loading {
+/* ========== STOPKA MODALU ========== */
+.modal-footer {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #6c757d;
-    font-style: italic;
-    padding: 40px 20px;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px 25px;
+    border-top: 1px solid #dee2e6;
     background: #f8f9fa;
-    border-radius: 8px;
-    border: 2px dashed #dee2e6;
 }
 
-.sync-loading::before {
-    content: "⚙️";
-    margin-right: 10px;
-    font-size: 24px;
-    animation: spin 2s linear infinite;
+/* ========== GŁÓWNY MODAL SYNCHRONIZACJI ========== */
+.sync-modal .modal-content {
+    max-width: 800px;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* ========== LISTA SYNCHRONIZACJI ========== */
-#syncList {
-    flex: 1;
+.sync-modal-body {
+    padding: 25px;
     overflow-y: auto;
-    padding-right: 5px;
+    flex-grow: 1;
 }
 
-.sync-item {
-    background: #f8f9fa;
+/* Lista synchronizacji */
+.sync-list {
+    margin-bottom: 20px;
+    min-height: 200px;
+}
+
+.sync-card {
+    background: white;
     border: 1px solid #dee2e6;
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 15px;
-    cursor: pointer;
-    transition: all 0.3s;
-    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
 }
 
-.sync-item:hover {
+.sync-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    border-color: #007bff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #3498db;
 }
 
 .sync-header {
@@ -104,728 +133,648 @@
     margin-bottom: 15px;
 }
 
-.sync-client-name {
-    font-weight: bold;
-    font-size: 1.1em;
-    color: #2c3e50;
-    margin-bottom: 5px;
+.sync-title {
+    flex-grow: 1;
 }
 
-.sync-client-type {
-    display: inline-block;
+.sync-name {
+    margin: 0 0 5px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.sync-type {
+    background: #e9ecef;
+    color: #495057;
     padding: 3px 8px;
     border-radius: 12px;
-    font-size: 0.8em;
-    font-weight: bold;
-    text-transform: uppercase;
-    color: white;
-}
-
-.sync-client-type.desktop {
-    background: #28a745;
-}
-
-.sync-client-type.mobile {
-    background: #17a2b8;
-}
-
-.sync-client-type.web {
-    background: #ffc107;
-    color: #333;
+    font-size: 12px;
+    font-weight: 500;
 }
 
 .sync-status {
-    font-weight: bold;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.9em;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.sync-status.active {
+.status-active {
     background: #d4edda;
     color: #155724;
-    border: 1px solid #c3e6cb;
 }
 
-.sync-status.inactive {
+.status-inactive {
     background: #f8d7da;
     color: #721c24;
-    border: 1px solid #f5c6cb;
 }
 
-/* ========== SZCZEGÓŁY SYNCHRONIZACJI ========== */
-.sync-details {
+.sync-info {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.sync-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sync-detail .label {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sync-detail .value {
+    color: #495057;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.sync-actions {
+    display: flex;
     gap: 10px;
-    font-size: 0.9em;
-    color: #6c757d;
-    background: white;
-    padding: 15px;
-    border-radius: 6px;
-    border: 1px solid #e9ecef;
+    justify-content: flex-end;
 }
 
-.sync-details div {
-    display: flex;
-    flex-direction: column;
-}
-
-.sync-details strong {
-    color: #495057;
-    margin-bottom: 3px;
-}
-
-.sync-direction {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.8em;
-    font-weight: bold;
-    margin-top: 2px;
-}
-
-.sync-direction.bidirectional {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.sync-direction.to-client {
-    background: #d4edda;
-    color: #155724;
-}
-
-.sync-direction.from-client {
-    background: #fff3cd;
-    color: #856404;
-}
-
-/* ========== BRAK SYNCHRONIZACJI ========== */
-#noSyncData {
-    text-align: center;
-    color: #6c757d;
-    font-style: italic;
-    padding: 40px 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 2px dashed #dee2e6;
-}
-
-#noSyncData::before {
-    content: "🔄";
-    display: block;
-    font-size: 48px;
-    margin-bottom: 10px;
-    opacity: 0.5;
-}
-
-/* ========== MODAL SZCZEGÓŁÓW SYNCHRONIZACJI ========== */
-#syncDetailsModal {
-    max-width: 800px;
-    width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-#syncDetailsModal .modal-content {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-#syncDetailsModal .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
-}
-
-#syncDetailsModal .modal-header h3 {
-    margin: 0;
-    color: #333;
-}
-
-#syncDetailsModal .close-button {
-    background: none;
+.btn-details, .btn-delete {
+    padding: 6px 14px;
     border: none;
-    font-size: 24px;
+    border-radius: 5px;
     cursor: pointer;
-    color: #666;
-    padding: 0;
-    width: 30px;
-    height: 30px;
+    font-size: 13px;
+    font-weight: 500;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s;
+    gap: 5px;
+    transition: all 0.2s ease;
 }
 
-#syncDetailsModal .close-button:hover {
-    background: #f0f0f0;
-    color: #333;
-}
-
-/* ========== FORMULARZ SYNCHRONIZACJI ========== */
-.sync-form-group {
-    margin-bottom: 20px;
-}
-
-.sync-form-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 8px;
-    color: #495057;
-}
-
-.sync-form-group input,
-.sync-form-group select,
-.sync-form-group textarea {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: border-color 0.3s;
-    box-sizing: border-box;
-}
-
-.sync-form-group input:focus,
-.sync-form-group select:focus,
-.sync-form-group textarea:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
-}
-
-.sync-form-group input[type="checkbox"] {
-    width: auto;
-    margin-right: 8px;
-    transform: scale(1.2);
-}
-
-.sync-form-group textarea {
-    resize: vertical;
-    min-height: 60px;
-    font-family: inherit;
-}
-
-.sync-form-group small {
-    display: block;
-    margin-top: 5px;
-    color: #6c757d;
-    font-size: 0.85em;
-}
-
-/* ========== FILTRY SYNCHRONIZACJI ========== */
-.sync-filters {
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-    margin-top: 20px;
-}
-
-.sync-filters h4 {
-    margin: 0 0 20px 0;
-    color: #495057;
-    font-size: 1.1em;
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: 10px;
-}
-
-/* ========== PRZYCISKI ========== */
-.modal-footer {
-    border-top: 1px solid #dee2e6;
-    padding-top: 20px;
-    margin-top: 20px;
-}
-
-.btn-primary {
-    background: #007bff;
+.btn-details {
+    background: #17a2b8;
     color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-    font-size: 14px;
 }
 
-.btn-primary:hover {
-    background: #0056b3;
+.btn-details:hover {
+    background: #138496;
+    transform: translateY(-1px);
 }
 
-.btn-secondary {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-    font-size: 14px;
-}
-
-.btn-secondary:hover {
-    background: #545b62;
-}
-
-.btn-danger {
+.btn-delete {
     background: #dc3545;
     color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-    font-size: 14px;
 }
 
-.btn-danger:hover {
+.btn-delete:hover {
     background: #c82333;
+    transform: translateY(-1px);
 }
 
-/* ========== RESPONSYWNOŚĆ ========== */
-@media only screen and (max-width: 768px) {
-    #syncModal,
-    #syncDetailsModal {
-        width: 95%;
-        max-width: none;
-        margin: 10px;
-        max-height: 95vh;
-    }
-    
-    .sync-details {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    .sync-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .sync-status {
-        align-self: flex-start;
-    }
-    
-    .modal-footer {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .modal-footer > div {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-}
-
-@media only screen and (max-width: 480px) {
-    .sync-item {
-        padding: 15px;
-    }
-    
-    .sync-client-name {
-        font-size: 1em;
-    }
-    
-    .sync-details {
-        padding: 10px;
-        font-size: 0.85em;
-    }
-    
-    .sync-form-group input,
-    .sync-form-group select,
-    .sync-form-group textarea {
-        padding: 8px;
-        font-size: 16px; /* Zapobiega zoom na iOS */
-    }
+/* Akcje synchronizacji */
+.sync-actions {
+    margin-top: 20px;
+    text-align: center;
 }
 
 /* ========== MODAL TWORZENIA SYNCHRONIZACJI ========== */
-#createSyncModal {
-    max-width: 1200px;
-    width: 95%;
-    max-height: 90vh;
-    overflow: auto;
+.create-sync-modal .modal-content {
+    max-width: 1000px;
 }
 
-#createSyncModal .modal-content {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+.create-sync-modal-body {
+    padding: 25px;
+    overflow-y: auto;
+    flex-grow: 1;
+    max-height: 65vh;
 }
 
-#createSyncModal .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* Sekcje w modalu tworzenia */
+.sync-setup-section, .google-drive-section {
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
     margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #eee;
 }
 
-#createSyncModal .modal-header h3 {
-    margin: 0;
-    color: #333;
-    font-size: 1.4em;
+.sync-setup-section h4, .google-drive-section h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 8px;
 }
 
-#createSyncModal .close-button {
-    background: none;
-    border: none;
-    font-size: 24px;
+/* Grupy formularza */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #495057;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.readonly-input {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+/* ========== NAWIGACJA GOOGLE DRIVE ========== */
+.drive-navigation {
+    margin-bottom: 20px;
+}
+
+.drive-breadcrumbs {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    border: 1px solid #dee2e6;
+}
+
+.breadcrumb-item {
+    color: #3498db;
     cursor: pointer;
-    color: #666;
-    padding: 0;
-    width: 30px;
-    height: 30px;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.breadcrumb-item:hover {
+    color: #2980b9;
+    text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+    color: #495057;
+    cursor: default;
+    font-weight: 500;
+}
+
+.breadcrumb-separator {
+    color: #6c757d;
+    margin: 0 8px;
+    user-select: none;
+}
+
+.drive-actions {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s;
+    gap: 10px;
+    justify-content: flex-end;
 }
 
-#createSyncModal .close-button:hover {
-    background: #f0f0f0;
-    color: #333;
+/* ========== FOLDERY GOOGLE DRIVE ========== */
+.drive-folders {
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    min-height: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    background: white;
 }
 
-/* ========== KONTENER KONFIGURACJI SYNCHRONIZACJI ========== */
-.sync-setup-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    flex: 1;
-    overflow: hidden;
-}
-
-/* ========== SEKCJA WYBORU FOLDERU GOOGLE DRIVE ========== */
-.drive-folder-item {
+.drive-folder-card {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 12px 15px;
     border-bottom: 1px solid #f1f3f4;
     cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-    min-height: 50px;
+    transition: background-color 0.2s ease;
 }
 
-.drive-folder-item:last-child {
+.drive-folder-card:last-child {
     border-bottom: none;
 }
 
-.drive-folder-item:hover {
-    background: #f8f9fa;
+.drive-folder-card:hover {
+    background-color: #f8f9fa;
 }
 
-.drive-folder-item.selected {
-    background: #e3f2fd;
-    border-left: 4px solid #2196f3;
+.drive-folder-card.selected {
+    background-color: #e3f2fd;
+    border-left: 4px solid #3498db;
 }
 
-.drive-folder-item.back-folder {
-    background: #fff3e0;
-    font-weight: bold;
-    color: #ef6c00;
-    cursor: pointer;
+.folder-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    opacity: 0.7;
 }
 
-.drive-folder-item.back-folder:hover {
-    background: #ffe0b2;
+.folder-info {
+    flex-grow: 1;
 }
 
-.drive-folder-item.current-folder {
-    background: #e8f5e8;
-    font-weight: bold;
-    color: #2e7d32;
-    cursor: pointer;
-}
-
-.drive-folder-item.current-folder:hover {
-    background: #c8e6c9;
-}
-
-.drive-folder-item.current-folder.selected {
-    background: #c8e6c9;
-    border-left: 4px solid #4caf50;
-}
-
-/* Style dla nazwy folderu */
 .folder-name {
-    flex: 1;
-    font-size: 0.95em;
-    cursor: pointer;
-    padding: 5px;
-    border-radius: 4px;
-    transition: background 0.2s;
+    font-weight: 500;
+    color: #2c3e50;
+    margin-bottom: 2px;
 }
 
-.folder-name:hover {
-    background: rgba(0,0,0,0.05);
+.folder-meta {
+    font-size: 12px;
+    color: #6c757d;
 }
 
-/* Style dla akcji folderu */
 .folder-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+    margin-left: 10px;
 }
 
-.select-folder-btn {
-    background: #007bff;
+.btn-select {
+    background: #28a745;
     color: white;
     border: none;
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.85em;
-    font-weight: bold;
-    transition: all 0.2s;
-    min-width: 70px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
 }
 
-.select-folder-btn:hover {
-    background: #0056b3;
+.btn-select:hover {
+    background: #218838;
+}
+
+/* ========== WYBRANY FOLDER ========== */
+.selected-folder {
+    background: #e8f5e8;
+    border: 1px solid #c3e6c3;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.selected-folder h5 {
+    margin: 0 0 10px 0;
+    color: #155724;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.selected-folder-details {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.selected-folder-details span {
+    color: #155724;
+}
+
+.folder-path {
+    font-size: 12px;
+    opacity: 0.8;
+    font-style: italic;
+}
+
+/* ========== FORMULARZ TWORZENIA FOLDERU ========== */
+.create-folder-form {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 15px;
+}
+
+.create-folder-form h5 {
+    margin: 0 0 15px 0;
+    color: #856404;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 15px;
+}
+
+/* ========== MODAL SZCZEGÓŁÓW SYNCHRONIZACJI ========== */
+.sync-details-modal .modal-content {
+    max-width: 700px;
+}
+
+.sync-details-body {
+    padding: 25px;
+    overflow-y: auto;
+    flex-grow: 1;
+    max-height: 70vh;
+}
+
+.details-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.details-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.details-section h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.detail-item label {
+    font-size: 12px;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-item span {
+    color: #495057;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.sync-id {
+    font-family: monospace;
+    background: #f8f9fa;
+    padding: 3px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.edit-form {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.form-select {
+    appearance: none;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><path fill="%23666" d="M6 9L1.5 4.5h9z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 35px;
+}
+
+.details-actions {
+    margin-top: 20px;
+    text-align: center;
+}
+
+/* ========== PRZYCISKI ========== */
+.btn-primary, .btn-secondary {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #2980b9;
     transform: translateY(-1px);
 }
 
-.select-folder-btn.selected {
-    background: #28a745;
+.btn-primary:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: #6c757d;
     color: white;
 }
 
-.select-folder-btn.selected:hover {
-    background: #218838;
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-1px);
 }
 
-.selected-indicator {
-    color: #2196f3;
-    font-weight: bold;
-    font-size: 1.2em;
-    margin-left: 10px;
-    animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-    from { 
-        opacity: 0; 
-        transform: scale(0.8); 
-    }
-    to { 
-        opacity: 1; 
-        transform: scale(1); 
-    }
-}
-
-/* Style dla informacji o wybranym folderze */
-.selected-folder-info {
-    margin-top: 15px;
-    padding: 12px;
-    background: #e3f2fd;
-    border: 1px solid #bbdefb;
-    border-radius: 6px;
-    font-size: 0.9em;
-    color: #1976d2;
-    font-weight: bold;
-}
-
-/* Style dla komunikatów błędów */
-.error-message {
-    padding: 15px;
-    background: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-    margin: 10px;
+/* ========== STANY I POWIADOMIENIA ========== */
+.loading {
     text-align: center;
-    font-size: 0.9em;
-}
-
-/* Style dla breadcrumbs */
-.drive-breadcrumbs {
-    background: #fff;
-    padding: 10px 15px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    margin-bottom: 15px;
-    font-size: 0.9em;
+    padding: 40px 20px;
     color: #6c757d;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    min-height: 20px;
+    font-style: italic;
 }
 
-/* Responsywność dla mniejszych ekranów */
-@media only screen and (max-width: 768px) {
-    .drive-folder-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        padding: 15px;
-    }
-    
-    .folder-actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
-    
-    .select-folder-btn {
-        padding: 8px 16px;
-        min-width: 80px;
-    }
-    
-    .folder-name {
-        width: 100%;
-        font-size: 1em;
-    }
+.loading::before {
+    content: "⏳";
+    display: block;
+    font-size: 24px;
+    margin-bottom: 10px;
+    animation: pulse 1.5s infinite;
 }
 
-@media only screen and (max-width: 480px) {
-    .drive-folder-item {
-        padding: 12px;
-    }
-    
-    .select-folder-btn {
-        padding: 6px 12px;
-        font-size: 0.8em;
-    }
-    
-    .selected-indicator {
-        font-size: 1em;
-        margin-left: 5px;
-    }
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
 
-/* ========== SEKCJA USTAWIEŃ SYNCHRONIZACJI ========== */
-.sync-settings {
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    padding: 20px;
-    background: #fff;
-    display: flex;
-    flex-direction: column;
-    max-height: 500px;
-    overflow-y: auto;
-}
-
-.sync-settings h4 {
-    margin: 0 0 20px 0;
-    color: #495057;
-    font-size: 1.1em;
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: 10px;
-}
-
-.sync-settings h5 {
-    margin: 20px 0 15px 0;
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
     color: #6c757d;
-    font-size: 1em;
-    font-weight: bold;
-}
-
-/* ========== SEKCJA DODAWANIA SYNCHRONIZACJI ========== */
-#addSyncSection {
-    margin-top: 20px;
-    padding: 20px;
     background: #f8f9fa;
-    border: 1px solid #dee2e6;
     border-radius: 8px;
+    border: 2px dashed #dee2e6;
 }
 
-.add-sync-header h4 {
-    margin: 0 0 15px 0;
-    color: #495057;
-    font-size: 1.1em;
+.empty-state::before {
+    content: "📂";
+    display: block;
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
 }
 
-.add-sync-options {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
+.error-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #721c24;
+    background: #f8d7da;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
 }
 
-.add-sync-button {
+.error-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.btn-retry {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.2s ease;
+}
+
+.btn-retry:hover {
+    background: #c82333;
+}
+
+.success-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #d4edda;
+    color: #155724;
+    padding: 15px 20px;
+    border-radius: 8px;
+    border: 1px solid #c3e6cb;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1100;
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 15px 20px;
-    background: #fff;
-    border: 2px solid #007bff;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-size: 14px;
-    font-weight: bold;
-    color: #007bff;
-    text-decoration: none;
+    animation: slideInRight 0.3s ease-out;
 }
 
-.add-sync-button:hover {
-    background: #007bff;
-    color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
-.sync-icon {
+.success-icon {
     font-size: 20px;
 }
 
-/* ========== FOOTER MODALA TWORZENIA SYNCHRONIZACJI ========== */
-#createSyncModal .modal-footer {
-    border-top: 1px solid #dee2e6;
-    padding-top: 20px;
-    margin-top: 20px;
-}
-
-#createSyncButton {
-    background: #28a745;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.3s;
-    font-size: 14px;
-    font-weight: bold;
-}
-
-#createSyncButton:hover {
-    background: #218838;
-}
-
-#createSyncButton:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-}
-
 /* ========== RESPONSYWNOŚĆ ========== */
-@media only screen and (max-width: 768px) {
-    #syncModal,
-    #syncDetailsModal,
-    #createSyncModal {
+@media (max-width: 768px) {
+    .modal-content {
         width: 95%;
-        max-width: none;
-        margin: 10px;
-        max-height: 95vh;
+        margin: 10px auto;
+        max-height: 90vh;
     }
     
-    .sync-setup-container {
+    .modal-header, .modal-footer, .sync-modal-body, .create-sync-modal-body, .sync-details-body {
+        padding: 15px;
+    }
+    
+    .sync-info {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 10px;
     }
     
-    .drive-folder-selection,
-    .sync-settings {
-        max-height: none;
+    .sync-actions {
+        flex-direction: column;
+        align-items: stretch;
     }
+    
+    .drive-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .btn-primary, .btn-secondary {
+        min-width: auto;
+        width: 100%;
+    }
+    
+    .modal-footer {
+        flex-direction: column-reverse;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 98%;
+        margin: 5px auto;
+    }
+    
+    .drive-folder-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .folder-actions {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .btn-select {
+        width: 100%;
+    }
+    
+    .success-notification {
+        left: 10px;
+        right: 10px;
+        top: 10px;
+    }
+}

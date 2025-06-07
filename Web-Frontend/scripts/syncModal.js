@@ -1,442 +1,540 @@
-// syncModal.js - zaktualizowany z przyciskiem dodawania synchronizacji
+// syncModal.js - Główny interfejs synchronizacji
+let currentFolderData = null;
 
-import { showCreateSyncModal } from './createSyncModal.js';
-
-let currentSyncData = null;
-let currentEditingSync = null;
-
-// Funkcja otwierająca modal synchronizacji
-async function showSyncModal(folderId, folderName) {
-    document.getElementById('syncFolderName').textContent = folderName;
-    document.getElementById('syncModal').style.display = 'flex';
-    
-    // Pokaż loading
-    document.getElementById('syncLoading').style.display = 'block';
-    document.getElementById('syncList').style.display = 'none';
-    document.getElementById('noSyncData').style.display = 'none';
-    
-    // Sprawdź czy addSyncSection istnieje i ukryj
-    const addSyncSection = document.getElementById('addSyncSection');
-    if (addSyncSection) {
-        addSyncSection.style.display = 'none';
-    }
-    
-    try {
-        const response = await fetch(`/api/sync/folders/${folderId}/sync`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (response.status === 404) {
-            // Brak synchronizacji dla tego folderu
-            document.getElementById('syncLoading').style.display = 'none';
-            document.getElementById('noSyncData').style.display = 'block';
-            
-            // Sprawdź czy Google Drive jest dostępne
-            await checkGoogleDriveAvailability(folderId, folderName);
-            return;
-        }
-        
-        if (!response.ok) {
-            throw new Error('Błąd podczas pobierania danych synchronizacji');
-        }
-        
-        const syncData = await response.json();
-        currentSyncData = syncData;
-        
-        renderSyncList(syncData);
-        
-        // Sprawdź czy można dodać Google Drive sync
-        await checkGoogleDriveAvailability(folderId, folderName);
-        
-        // Upewnij się, że addSyncSection istnieje
-        ensureAddSyncSectionExists();
-        
-    } catch (error) {
-        console.error('Błąd:', error);
-        alert('Nie udało się załadować danych synchronizacji: ' + error.message);
-        closeSyncModal();
-    }
-}
-
-// Nowa funkcja pomocnicza do tworzenia sekcji addSync
-function ensureAddSyncSectionExists() {
-    const syncModal = document.getElementById('syncModal');
-    let addSyncSection = document.getElementById('addSyncSection');
-
-    if (!addSyncSection) {
-        addSyncSection = document.createElement('div');
-        addSyncSection.id = 'addSyncSection';
-        addSyncSection.style.display = 'none';
-        
-        // Znajdź miejsce do wstawienia - przed modal-footer
-        const modalFooter = syncModal.querySelector('.modal-footer');
-        if (modalFooter) {
-            modalFooter.parentNode.insertBefore(addSyncSection, modalFooter);
-        } else {
-            // Jeśli nie ma modal-footer, dodaj na końcu modal-content
-            const modalContent = syncModal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.appendChild(addSyncSection);
-            } else {
-                // Fallback - dodaj bezpośrednio do syncModal
-                syncModal.appendChild(addSyncSection);
-            }
-        }
-    }
-}
-
-// Funkcja sprawdzająca dostępność Google Drive
-async function checkGoogleDriveAvailability(folderId, folderName) {
-    try {
-        const response = await fetch('/api/google-drive/status', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        const status = await response.json();
-        
-        if (status.connected) {
-            // Sprawdź czy już nie ma synchronizacji z Google Drive
-            const hasGoogleDriveSync = currentSyncData?.clients?.some(
-                clientConfig => clientConfig.client.type === 'google-drive'
-            );
-            
-            if (!hasGoogleDriveSync) {
-                showAddSyncSection(folderId, folderName);
-            }
-        }
-        
-    } catch (error) {
-        console.error('Błąd sprawdzania statusu Google Drive:', error);
-    }
-}
-
-// Funkcja pokazująca sekcję dodawania synchronizacji
-function showAddSyncSection(folderId, folderName) {
-    ensureAddSyncSectionExists(); // Upewnij się, że element istnieje
-    
-    const addSyncSection = document.getElementById('addSyncSection');
-    addSyncSection.innerHTML = `
-        <div class="add-sync-header">
-            <h4>Dodaj nową synchronizację</h4>
-        </div>
-        <div class="add-sync-options">
-            <button onclick="addGoogleDriveSync('${folderId}', '${folderName}')" class="add-sync-button">
-                <span class="sync-icon">📁</span>
-                Dodaj synchronizację z Google Drive
-            </button>
-        </div>
-    `;
-    addSyncSection.style.display = 'block';
-}
-
-// Funkcja dodająca synchronizację z Google Drive
-function addGoogleDriveSync(folderId, folderName) {
-    showCreateSyncModal(folderId, folderName);
-}
-
-function renderSyncList(syncData) {
-    const syncList = document.getElementById('syncList');
-    
-    if (!syncData.clients || syncData.clients.length === 0) {
-        document.getElementById('syncLoading').style.display = 'none';
-        document.getElementById('noSyncData').style.display = 'block';
+export async function showSyncModal(folderId, folderName) {
+    // Walidacja parametrów wejściowych
+    if (!folderId || !folderName) {
+        console.error('Nieprawidłowe parametry folderu:', { folderId, folderName });
+        alert('Błąd: Nieprawidłowe dane folderu');
         return;
     }
     
-    let html = '';
+    currentFolderData = { id: folderId, name: folderName };
     
-    syncData.clients.forEach((clientConfig, index) => {
-        // Bezpieczne odczytywanie danych klienta
-        const client = clientConfig.client || {};
-        const clientName = client.name || clientConfig.clientId || 'Nieznany klient';
-        const clientType = client.type || 'unknown';
-        const isActive = clientConfig.isActive !== undefined ? clientConfig.isActive : true;
-        const direction = clientConfig.syncDirection || 'bidirectional';
-        const lastSeen = client.lastSeen || clientConfig.lastSyncDate || null;
-        
-        // Debug: wyloguj dane klienta aby zobaczyć strukturę
-        console.log('Client config:', clientConfig);
-        
-        html += `
-            <div class="sync-item" onclick="showSyncDetails(${index})">
-                <div class="sync-header">
-                    <div>
-                        <div class="sync-client-name">${clientName}</div>
-                        <span class="sync-client-type ${clientType}">${clientType}</span>
-                    </div>
-                    <div class="sync-status ${isActive ? 'active' : 'inactive'}">
-                        ${isActive ? '● Aktywna' : '○ Nieaktywna'}
-                    </div>
+    const modal = ensureModalExists();
+    updateModalHeader(folderName);
+    modal.style.display = 'block';
+    
+    await loadSyncs(folderId);
+}
+
+export function closeSyncModal() {
+    const modal = document.getElementById('syncModal');
+    if (modal) {
+        modal.style.display = 'none';
+        // Resetuj stan modalu
+        currentFolderData = null;
+    }
+}
+
+// === TWORZENIE I ZARZĄDZANIE MODALEM ===
+
+function ensureModalExists() {
+    let modal = document.getElementById('syncModal');
+    if (!modal) {
+        modal = createSyncModal();
+        document.body.appendChild(modal);
+    }
+    return modal;
+}
+
+function createSyncModal() {
+    const modal = document.createElement('div');
+    modal.id = 'syncModal';
+    modal.className = 'modal sync-modal';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="syncModalTitle">Synchronizacje</h3>
+                <button onclick="window.closeSyncModal()" class="close-button">&times;</button>
+            </div>
+            
+            <div class="sync-modal-body">
+                <div id="syncList" class="sync-list">
+                    <div class="loading">Ładowanie synchronizacji...</div>
                 </div>
                 
-                <div class="sync-details">
-                    <div><strong>Kierunek:</strong> 
-                        <span class="sync-direction ${direction}">${getSyncDirectionLabel(direction)}</span>
-                    </div>
-                    <div><strong>Ścieżka klienta:</strong> ${clientConfig.clientFolderPath || 'Brak'}</div>
-                    <div><strong>Nazwa folderu:</strong> ${clientConfig.clientFolderName || 'Brak nazwy'}</div>
-                    <div><strong>Ostatnia aktywność:</strong> ${formatDate(lastSeen)}</div>
+                <div class="sync-actions">
+                    <button onclick="window.addGoogleDriveSync()" class="btn-primary" id="addGoogleDriveSyncBtn">
+                        Dodaj nową synchronizację
+                    </button>
                 </div>
             </div>
+            
+            <div class="modal-footer">
+                <button onclick="window.closeSyncModal()" class="btn-secondary">Zamknij</button>
+            </div>
+        </div>
+    `;
+    
+    return modal;
+}
+
+export function addGoogleDriveSync() {
+    if (currentFolderData && currentFolderData.id && currentFolderData.name) {
+        console.log('Wywołuję showCreateGoogleDriveSync z:', currentFolderData);
+        if (window.showCreateGoogleDriveSync) {
+            window.showCreateGoogleDriveSync(currentFolderData.id, currentFolderData.name);
+        } else {
+            console.error('showCreateGoogleDriveSync nie jest zdefiniowane w window');
+            alert('Błąd: Funkcja synchronizacji nie jest dostępna');
+        }
+    } else {
+        console.error('Brak danych folderu:', currentFolderData);
+        alert('Błąd: Brak danych folderu');
+    }
+}
+
+function updateModalHeader(folderName) {
+    const title = document.getElementById('syncModalTitle');
+    if (title) title.textContent = `Synchronizacje: ${folderName}`;
+}
+
+// === ŁADOWANIE I WYŚWIETLANIE SYNCHRONIZACJI ===
+
+async function loadSyncs(folderId) {
+    const syncList = document.getElementById('syncList');
+    if (!syncList) return;
+    
+    syncList.innerHTML = '<div class="loading">Ładowanie synchronizacji...</div>';
+    
+    try {
+        const response = await apiRequest(`/api/sync/folders/${folderId}/syncs`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            renderSyncList(data.syncs || []);
+        } else {
+            throw new Error(data.error || 'Nieznany błąd serwera');
+        }
+        
+    } catch (error) {
+        console.error('Błąd ładowania synchronizacji:', error);
+        showError(syncList, `Błąd ładowania: ${error.message}`);
+    }
+}
+
+function renderSyncList(syncs) {
+    const syncList = document.getElementById('syncList');
+    if (!syncList) return;
+    
+    if (syncs.length === 0) {
+        syncList.innerHTML = `
+            <div class="empty-state">
+                <p>Brak synchronizacji dla tego folderu</p>
+                <p style="font-size: 14px; color: #666; margin-top: 10px;">
+                    Kliknij przycisk "Dodaj nową synchronizację" aby utworzyć pierwszą synchronizację.
+                </p>
+            </div>
         `;
-    });
+        return;
+    }
     
-    syncList.innerHTML = html;
+    syncList.innerHTML = syncs.map(sync => createSyncCard(sync)).join('');
+}
+
+function createSyncCard(sync) {
+    const statusClass = sync.isActive ? 'status-active' : 'status-inactive';
+    const statusText = sync.isActive ? 'Aktywna' : 'Nieaktywna';
     
-    document.getElementById('syncLoading').style.display = 'none';
-    document.getElementById('syncList').style.display = 'block';
+    return `
+        <div class="sync-card" data-sync-id="${sync.id}">
+            <div class="sync-header">
+                <div class="sync-title">
+                    <h4 class="sync-name">${escapeHtml(sync.clientName || 'Nienazwana synchronizacja')}</h4>
+                    <span class="sync-type">${getClientTypeLabel(sync.clientType)}</span>
+                </div>
+                <span class="sync-status ${statusClass}">${statusText}</span>
+            </div>
+            
+            <div class="sync-info">
+                <div class="sync-detail">
+                    <span class="label">Kierunek:</span>
+                    <span class="value">${getSyncDirectionLabel(sync.syncDirection)}</span>
+                </div>
+                <div class="sync-detail">
+                    <span class="label">Ścieżka:</span>
+                    <span class="value" title="${escapeHtml(sync.clientFolderPath || '')}">
+                        ${escapeHtml(sync.clientFolderPath) || '<em>Nie ustawiona</em>'}
+                    </span>
+                </div>
+                <div class="sync-detail">
+                    <span class="label">Ostatnia synchronizacja:</span>
+                    <span class="value">${formatDate(sync.lastSyncDate)}</span>
+                </div>
+            </div>
+            
+            <div class="sync-actions">
+                <button onclick="window.viewSyncDetails('${sync.id}')" class="btn-details" title="Szczegóły">
+                    <span>📋</span> Szczegóły
+                </button>
+                <button onclick="window.deleteSync('${sync.id}')" class="btn-delete" title="Usuń">
+                    <span>🗑️</span> Usuń
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// === WYŚWIETLANIE SZCZEGÓŁÓW SYNCHRONIZACJI Z MOŻLIWOŚCIĄ EDYCJI ===
+
+export async function viewSyncDetails(syncId) {
+    if (!currentFolderData) {
+        alert('Błąd: Brak danych folderu');
+        return;
+    }
+    
+    try {
+        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/syncs/${syncId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSyncDetailsModal(data.sync);
+        } else {
+            throw new Error(data.error || 'Nieznany błąd serwera');
+        }
+        
+    } catch (error) {
+        console.error('Błąd ładowania szczegółów:', error);
+        alert(`Błąd ładowania szczegółów: ${error.message}`);
+    }
+}
+
+function showSyncDetailsModal(sync) {
+    // Utwórz modal szczegółów jeśli nie istnieje
+    let detailsModal = document.getElementById('syncDetailsModal');
+    if (!detailsModal) {
+        detailsModal = createSyncDetailsModal();
+        document.body.appendChild(detailsModal);
+    }
+    
+    // Wypełnij dane
+    populateSyncDetails(sync);
+    
+    detailsModal.style.display = 'block';
+}
+
+function createSyncDetailsModal() {
+    const modal = document.createElement('div');
+    modal.id = 'syncDetailsModal';
+    modal.className = 'modal sync-details-modal';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Szczegóły synchronizacji</h3>
+                <button onclick="window.closeSyncDetailsModal()" class="close-button">&times;</button>
+            </div>
+            
+            <div class="sync-details-body">
+                <div id="syncDetailsContent">
+                    <!-- Zawartość będzie wstawiona dynamicznie -->
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button onclick="window.closeSyncDetailsModal()" class="btn-secondary">Zamknij</button>
+            </div>
+        </div>
+    `;
+    
+    return modal;
+}
+
+function populateSyncDetails(sync) {
+    const content = document.getElementById('syncDetailsContent');
+    if (!content) return;
+    
+    content.innerHTML = `
+        <div class="details-section">
+            <h4>Podstawowe informacje</h4>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <label>Nazwa:</label>
+                    <span>${escapeHtml(sync.clientName || 'Nienazwana synchronizacja')}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Typ klienta:</label>
+                    <span>${getClientTypeLabel(sync.clientType)}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Ścieżka klienta:</label>
+                    <span>${escapeHtml(sync.clientFolderPath) || '<em>Nie ustawiona</em>'}</span>
+                </div>
+                <div class="detail-item">
+                    <label>ID synchronizacji:</label>
+                    <span class="sync-id">${sync.id}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="details-section">
+            <h4>Ustawienia edytowalne</h4>
+            <div class="edit-form">
+                <div class="form-group">
+                    <label for="edit-direction-${sync.id}">Kierunek synchronizacji:</label>
+                    <select id="edit-direction-${sync.id}" class="form-select">
+                        <option value="bidirectional" ${sync.syncDirection === 'bidirectional' ? 'selected' : ''}>
+                            Dwukierunkowa (serwer ↔ klient)
+                        </option>
+                        <option value="to-client" ${sync.syncDirection === 'to-client' ? 'selected' : ''}>
+                            Tylko do klienta (serwer → klient)
+                        </option>
+                        <option value="from-client" ${sync.syncDirection === 'from-client' ? 'selected' : ''}>
+                            Tylko z klienta (klient → serwer)
+                        </option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-status-${sync.id}">Status:</label>
+                    <select id="edit-status-${sync.id}" class="form-select">
+                        <option value="true" ${sync.isActive ? 'selected' : ''}>Aktywna</option>
+                        <option value="false" ${!sync.isActive ? 'selected' : ''}>Nieaktywna</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="details-section">
+            <h4>Historia synchronizacji</h4>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <label>Ostatnia synchronizacja:</label>
+                    <span>${formatDate(sync.lastSyncDate)}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="details-actions">
+            <button onclick="window.saveSync('${sync.id}')" class="btn-primary">
+                <span>💾</span> Zapisz zmiany
+            </button>
+        </div>
+    `;
+}
+
+export function closeSyncDetailsModal() {
+    const modal = document.getElementById('syncDetailsModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// === ZAPISYWANIE ZMIAN SYNCHRONIZACJI ===
+
+export async function saveSync(syncId) {
+    if (!currentFolderData) {
+        alert('Błąd: Brak danych folderu');
+        return;
+    }
+    
+    const syncDirection = document.getElementById(`edit-direction-${syncId}`)?.value;
+    const isActiveValue = document.getElementById(`edit-status-${syncId}`)?.value;
+    
+    if (!syncDirection || isActiveValue === null || isActiveValue === undefined) {
+        alert('Błąd: Nie można odczytać danych z formularza');
+        return;
+    }
+    
+    const isActive = isActiveValue === 'true';
+    
+    try {
+        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/syncs/${syncId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ 
+                syncDirection, 
+                isActive 
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Odśwież główną listę synchronizacji
+            await loadSyncs(currentFolderData.id);
+            
+            // Zamknij modal szczegółów
+            closeSyncDetailsModal();
+            
+            showSuccess('Synchronizacja zaktualizowana pomyślnie');
+        } else {
+            throw new Error(data.error || 'Nieznany błąd serwera');
+        }
+        
+    } catch (error) {
+        console.error('Błąd zapisywania:', error);
+        alert(`Błąd zapisywania: ${error.message}`);
+    }
+}
+
+// === USUWANIE SYNCHRONIZACJI ===
+
+export async function deleteSync(syncId) {
+    if (!currentFolderData) {
+        alert('Błąd: Brak danych folderu');
+        return;
+    }
+    
+    // Znajdź nazwę synchronizacji dla potwierdzenia
+    const syncCard = document.querySelector(`[data-sync-id="${syncId}"]`);
+    const syncName = syncCard?.querySelector('.sync-name')?.textContent || 'tę synchronizację';
+    
+    if (!confirm(`Czy na pewno chcesz usunąć synchronizację "${syncName}"?\n\nTa operacja jest nieodwracalna.`)) {
+        return;
+    }
+    
+    try {
+        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/syncs/${syncId}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            await loadSyncs(currentFolderData.id);
+            showSuccess('Synchronizacja została usunięta');
+        } else {
+            throw new Error(data.error || 'Nieznany błąd serwera');
+        }
+        
+    } catch (error) {
+        console.error('Błąd usuwania:', error);
+        alert(`Błąd usuwania: ${error.message}`);
+    }
+}
+
+// === FUNKCJE POMOCNICZE ===
+
+async function apiRequest(url, options = {}) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('Brak tokenu autoryzacji');
+    }
+    
+    const defaultOptions = {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        }
+    };
+    
+    return fetch(url, { ...defaultOptions, ...options });
+}
+
+function showError(container, message) {
+    if (!container) return;
+    container.innerHTML = `
+        <div class="error-state">
+            <span class="error-icon">⚠️</span>
+            <p>${escapeHtml(message)}</p>
+            <button onclick="window.location.reload()" class="btn-retry">Odśwież stronę</button>
+        </div>
+    `;
+}
+
+function showSuccess(message) {
+    // Prosta implementacja - można zastąpić bardziej zaawansowanym systemem
+    const notification = document.createElement('div');
+    notification.className = 'success-notification';
+    notification.innerHTML = `
+        <span class="success-icon">✅</span>
+        <span>${escapeHtml(message)}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 3000);
+}
+
+function getClientTypeLabel(type) {
+    const labels = {
+        'desktop': 'Aplikacja desktopowa',
+        'mobile': 'Aplikacja mobilna', 
+        'web': 'Przeglądarka',
+        'server-integration': 'Integracja serwera',
+        'google-drive': 'Google Drive',
+        'dropbox': 'Dropbox',
+        'onedrive': 'OneDrive'
+    };
+    return labels[type] || type || 'Nieznany typ';
 }
 
 function getSyncDirectionLabel(direction) {
     const labels = {
-        'bidirectional': 'Dwukierunkowa',
-        'to-client': 'Do klienta',
-        'from-client': 'Od klienta'
+        'bidirectional': 'Dwukierunkowa (↔)',
+        'to-client': 'Do klienta (→)',
+        'from-client': 'Z klienta (←)'
     };
-    return labels[direction] || direction;
-}
-
-function showSyncDetails(clientIndex) {
-    if (!currentSyncData || !currentSyncData.clients[clientIndex]) {
-        alert('Błąd: Nie można załadować szczegółów synchronizacji');
-        return;
-    }
-    
-    currentEditingSync = {
-        ...currentSyncData.clients[clientIndex],
-        index: clientIndex
-    };
-    
-    renderSyncDetailsModal(currentEditingSync);
-    document.getElementById('syncDetailsModal').style.display = 'flex';
-}
-
-function renderSyncDetailsModal(syncConfig) {
-    const client = syncConfig.client;
-    const content = document.getElementById('syncDetailsContent');
-    
-    // Przygotuj listę rozszerzeń dla filtrów
-    const allowedExtensions = syncConfig.filters?.allowedExtensions || [];
-    const excludedExtensions = syncConfig.filters?.excludedExtensions || [];
-    
-    content.innerHTML = `
-        <div class="sync-form-group">
-            <label>Klient:</label>
-            <input type="text" value="${client.name} (${client.type})" disabled>
-        </div>
-        
-        <div class="sync-form-group">
-            <label for="clientFolderName">Nazwa folderu w kliencie:</label>
-            <input type="text" id="clientFolderName" value="${syncConfig.clientFolderName}">
-        </div>
-        
-        <div class="sync-form-group">
-            <label for="clientFolderPath">Ścieżka w kliencie:</label>
-            <input type="text" id="clientFolderPath" value="${syncConfig.clientFolderPath || ''}" 
-                   placeholder="np. /home/user/documents">
-        </div>
-        
-        <div class="sync-form-group">
-            <label for="syncDirection">Kierunek synchronizacji:</label>
-            <select id="syncDirection">
-                <option value="bidirectional" ${syncConfig.syncDirection === 'bidirectional' ? 'selected' : ''}>
-                    Dwukierunkowa
-                </option>
-                <option value="to-client" ${syncConfig.syncDirection === 'to-client' ? 'selected' : ''}>
-                    Tylko do klienta
-                </option>
-                <option value="from-client" ${syncConfig.syncDirection === 'from-client' ? 'selected' : ''}>
-                    Tylko od klienta
-                </option>
-            </select>
-        </div>
-        
-        <div class="sync-form-group">
-            <label>
-                <input type="checkbox" id="isActive" ${syncConfig.isActive ? 'checked' : ''}> 
-                Synchronizacja aktywna
-            </label>
-        </div>
-        
-        <div class="sync-filters">
-            <h4>Filtry plików</h4>
-            
-            <div class="sync-form-group">
-                <label for="maxFileSize">Maksymalny rozmiar pliku (MB):</label>
-                <input type="number" id="maxFileSize" 
-                       value="${syncConfig.filters?.maxFileSize ? Math.round(syncConfig.filters.maxFileSize / (1024*1024)) : ''}" 
-                       placeholder="Bez limitu">
-            </div>
-            
-            <div class="sync-form-group">
-                <label>Dozwolone rozszerzenia (oddzielone przecinkami):</label>
-                <textarea id="allowedExtensions" 
-                          placeholder="np. .jpg, .png, .pdf">${allowedExtensions.join(', ')}</textarea>
-                <small>Pozostaw puste, aby dozwolić wszystkie rozszerzenia</small>
-            </div>
-            
-            <div class="sync-form-group">
-                <label>Wykluczone rozszerzenia (oddzielone przecinkami):</label>
-                <textarea id="excludedExtensions" 
-                          placeholder="np. .tmp, .log">${excludedExtensions.join(', ')}</textarea>
-                <small>Mają priorytet nad dozwolonymi rozszerzeniami</small>
-            </div>
-        </div>
-        
-        <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-            <strong>Informacje o kliencie:</strong><br>
-            <small>ID: ${client.clientId}</small><br>
-            <small>Ostatnia aktywność: ${formatDate(client.lastSeen)}</small><br>
-            <small>Status: ${client.isActive ? 'Aktywny' : 'Nieaktywny'}</small>
-        </div>
-    `;
-}
-
-async function saveSyncChanges() {
-    if (!currentEditingSync || !currentSyncData) {
-        alert('Błąd: Brak danych do zapisania');
-        return;
-    }
-    
-    try {
-        // Zbierz dane z formularza
-        const updatedConfig = {
-            clientFolderName: document.getElementById('clientFolderName').value,
-            clientFolderPath: document.getElementById('clientFolderPath').value,
-            syncDirection: document.getElementById('syncDirection').value,
-            isActive: document.getElementById('isActive').checked,
-            filters: {}
-        };
-        
-        // Filtry
-        const maxFileSize = document.getElementById('maxFileSize').value;
-        if (maxFileSize) {
-            updatedConfig.filters.maxFileSize = parseInt(maxFileSize) * 1024 * 1024; // Konwersja MB na bajty
-        }
-        
-        const allowedExtensions = document.getElementById('allowedExtensions').value
-            .split(',')
-            .map(ext => ext.trim())
-            .filter(ext => ext.length > 0);
-        
-        const excludedExtensions = document.getElementById('excludedExtensions').value
-            .split(',')
-            .map(ext => ext.trim())
-            .filter(ext => ext.length > 0);
-        
-        if (allowedExtensions.length > 0) {
-            updatedConfig.filters.allowedExtensions = allowedExtensions;
-        }
-        
-        if (excludedExtensions.length > 0) {
-            updatedConfig.filters.excludedExtensions = excludedExtensions;
-        }
-        
-        // Przygotuj dane do wysłania
-        const requestData = {
-            folderId: currentSyncData.folder._id,
-            clientConfigs: [{
-                clientId: currentEditingSync.client.clientId,
-                ...updatedConfig
-            }]
-        };
-        
-        const response = await fetch('/api/sync/folders', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (!response.ok) {
-            throw new Error('Błąd podczas zapisywania zmian');
-        }
-        
-        alert('Zmiany zostały zapisane');
-        closeSyncDetailsModal();
-        
-        // Odśwież listę synchronizacji
-        showSyncModal(currentSyncData.folder._id, currentSyncData.folder.name);
-        
-    } catch (error) {
-        console.error('Błąd:', error);
-        alert('Nie udało się zapisać zmian: ' + error.message);
-    }
-}
-
-async function deleteSyncConfig() {
-    if (!currentEditingSync || !currentSyncData) {
-        alert('Błąd: Brak danych do usunięcia');
-        return;
-    }
-    
-    if (!confirm('Czy na pewno chcesz usunąć tę synchronizację?')) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/api/sync/folders/${currentSyncData.folder._id}?clientId=${currentEditingSync.client.clientId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error('Błąd podczas usuwania synchronizacji');
-        }
-        
-        alert('Synchronizacja została usunięta');
-        closeSyncDetailsModal();
-        closeSyncModal();
-        
-    } catch (error) {
-        console.error('Błąd:', error);
-        alert('Nie udało się usunąć synchronizacji: ' + error.message);
-    }
-}
-
-function closeSyncModal() {
-    document.getElementById('syncModal').style.display = 'none';
-    currentSyncData = null;
-}
-
-function closeSyncDetailsModal() {
-    document.getElementById('syncDetailsModal').style.display = 'none';
-    currentEditingSync = null;
+    return labels[direction] || direction || 'Nieznany kierunek';
 }
 
 function formatDate(dateString) {
     if (!dateString) return 'Nigdy';
     
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    
-    if (diffMins < 1) return 'Przed chwilą';
-    if (diffMins < 60) return `${diffMins} min temu`;
-    if (diffHours < 24) return `${diffHours} godz. temu`;
-    if (diffDays < 7) return `${diffDays} dni temu`;
-    
-    return date.toLocaleDateString('pl-PL');
+    try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
+            return 'Dzisiaj, ' + date.toLocaleTimeString('pl-PL', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        } else if (diffDays === 1) {
+            return 'Wczoraj, ' + date.toLocaleTimeString('pl-PL', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        } else if (diffDays < 7) {
+            return `${diffDays} dni temu`;
+        } else {
+            return date.toLocaleString('pl-PL', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    } catch (error) {
+        console.error('Błąd formatowania daty:', error);
+        return 'Błędna data';
+    }
 }
 
-// Eksportuj funkcje włącznie z nową funkcją
-export { 
-    showSyncModal, 
-    closeSyncModal, 
-    showSyncDetails, 
-    closeSyncDetailsModal, 
-    saveSyncChanges, 
-    deleteSyncConfig,
-    addGoogleDriveSync
-};
+function escapeHtml(text) {
+    if (typeof text !== 'string') return '';
+    
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Eksportuj funkcje do globalnego dostępu
+window.closeSyncDetailsModal = closeSyncDetailsModal;
+window.viewSyncDetails = viewSyncDetails;
+window.saveSync = saveSync;

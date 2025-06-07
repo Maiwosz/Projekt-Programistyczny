@@ -3,6 +3,9 @@ const mongoose = require('mongoose');
 const GoogleDriveClientSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     
+    // Identyfikator klienta w systemie synchronizacji
+    clientId: { type: String, required: true, unique: true },
+    
     // Nazwa połączenia nadana przez użytkownika
     name: { type: String, required: true },
     
@@ -41,7 +44,6 @@ const GoogleDriveClientSchema = new mongoose.Schema({
             allowedExtensions: [String],
             excludedExtensions: [String],
             maxFileSize: { type: Number, default: 100 * 1024 * 1024 }, // 100MB
-            includeFolders: { type: Boolean, default: true }
         }
     },
     
@@ -53,21 +55,13 @@ const GoogleDriveClientSchema = new mongoose.Schema({
         syncInProgress: { type: Boolean, default: false }
     },
     
-    // Statystyki
-    stats: {
-        totalFiles: { type: Number, default: 0 },
-        totalSize: { type: Number, default: 0 },
-        filesUploaded: { type: Number, default: 0 },
-        filesDownloaded: { type: Number, default: 0 },
-        lastSyncDuration: Number // w milisekundach
-    },
-    
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
 
 // Indeks unikalności - jeden użytkownik może mieć tylko jedno aktywne połączenie z Google Drive
 GoogleDriveClientSchema.index({ user: 1 }, { unique: true });
+GoogleDriveClientSchema.index({ clientId: 1 }, { unique: true });
 
 // Middleware do aktualizacji updatedAt
 GoogleDriveClientSchema.pre('save', function(next) {
@@ -82,11 +76,10 @@ GoogleDriveClientSchema.methods.isTokenExpired = function() {
 };
 
 // Metoda do aktualizacji statusu ostatniej synchronizacji
-GoogleDriveClientSchema.methods.updateSyncStatus = function(success, error = null, duration = null) {
+GoogleDriveClientSchema.methods.updateSyncStatus = function(success, error = null) {
     this.status.lastSync = new Date();
     this.status.lastError = error;
     this.status.syncInProgress = false;
-    if (duration) this.stats.lastSyncDuration = duration;
     return this.save();
 };
 

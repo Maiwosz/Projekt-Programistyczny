@@ -13,10 +13,11 @@ import { triggerFileInput, renameFile, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
 import { showTrashModal, closeTrashModal, restoreFile, permanentDeleteFile, emptyTrash } from './trashHandler.js';
-import { showSyncModal, closeSyncModal, showSyncDetails, closeSyncDetailsModal,saveSyncChanges,deleteSyncConfig } from './syncModal.js';
-import { showCreateSyncModal, closeCreateSyncModal, createSyncConfiguration, loadGoogleDriveFolders, selectDriveFolder, openDriveFolder, goBackInDrive } from './createSyncModal.js';
 import { loadUserTags, renderTagsList, createTag, deleteTag, renderFileTags, populateTagSelector, addTagToFile, removeTagFromFile, populateTagFilterSelector } from './tagPrototype.js';
 import { populateTypeFilterSelector, populateTypeFilterSelectorMultiple, getSelectedFileTypes, setSelectedFileTypes, filterFiles, filterFilesByTag, filterFilesByType, filterFilesByName } from './filterPrototype.js';
+import { showSyncModal, closeSyncModal, addGoogleDriveSync, saveSync, deleteSync } from './syncModal.js';
+import { showCreateSyncModal, closeCreateSyncModal } from './createSyncModal.js';
+
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', async () => {
@@ -211,23 +212,6 @@ window.restoreFile = restoreFile;
 window.permanentDeleteFile = permanentDeleteFile;
 window.emptyTrash = emptyTrash;
 
-// Funkcje obsługi synchronizacji
-window.showSyncModal = showSyncModal;
-window.closeSyncModal = closeSyncModal;
-window.showSyncDetails = showSyncDetails;
-window.closeSyncDetailsModal = closeSyncDetailsModal;
-window.saveSyncChanges = saveSyncChanges;
-window.deleteSyncConfig = deleteSyncConfig;
-
-// Funkcje tworzenia synchronizacji
-window.showCreateSyncModal = showCreateSyncModal;
-window.closeCreateSyncModal = closeCreateSyncModal;
-window.createSyncConfiguration = createSyncConfiguration;
-window.loadGoogleDriveFolders = loadGoogleDriveFolders;
-window.selectDriveFolder = selectDriveFolder;
-window.openDriveFolder = openDriveFolder;
-window.goBackInDrive = goBackInDrive;
-
 // TAGI
 window.loadUserTags = loadUserTags;
 window.renderTagsList = renderTagsList;
@@ -251,30 +235,18 @@ window.filterFilesByTag = filterFilesByTag;
 window.filterFilesByType = filterFilesByType;
 window.filterFilesByName = filterFilesByName;
 
-// Funkcja disconnectSync - sprawdź czy istnieje disconnectProvider w innych plikach
-window.disconnectSync = async function(provider) {
-    try {
-        // Sprawdź czy funkcja disconnectProvider istnieje
-        if (typeof disconnectProvider === 'function') {
-            await disconnectProvider(provider);
-        } else {
-            console.warn('disconnectProvider function not found');
-            // Możesz dodać alternatywną implementację lub wywołanie API
-            const response = await fetch(`/api/sync/disconnect/${provider}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Błąd podczas rozłączania providera');
-            }
-        }
-    } catch (error) {
-        console.error('Disconnect error:', error);
-        throw error;
-    }
+// Funkcje synchronizacji
+window.showSyncModal = showSyncModal;
+window.closeSyncModal = closeSyncModal;
+window.showCreateSyncModal = showCreateSyncModal;
+window.closeCreateSyncModal = closeCreateSyncModal;
+window.addGoogleDriveSync = addGoogleDriveSync;
+window.saveSync = saveSync;
+window.deleteSync = deleteSync;
+
+window.showCreateGoogleDriveSync = function(folderId, folderName) {
+    console.log('showCreateGoogleDriveSync wywołane z:', { folderId, folderName });
+    showCreateSyncModal(folderId, folderName);
 };
 
 // Funkcje UI
@@ -322,8 +294,4 @@ window.logout = function() {
     } else {
         window.location.href = '/index.html';
     }
-};
-
-window.addGoogleDriveSync = function(folderId, folderName) {
-    showCreateSyncModal(folderId, folderName);
 };

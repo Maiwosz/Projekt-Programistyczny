@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (token) {
         try {
-            const response = await fetch('/api/me', {
+            const response = await fetch('/api/auth/me', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -73,7 +73,7 @@ document.addEventListener('submit', async (e) => {
         const data = Object.fromEntries(formData.entries());
 
         try {
-            const response = await callApi(`/api${e.target.getAttribute('action')}`, {
+            const response = await callApi(`/api/auth${e.target.getAttribute('action')}`, {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
