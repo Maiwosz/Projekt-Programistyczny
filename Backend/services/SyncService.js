@@ -51,7 +51,7 @@ class SyncService {
      * Usuwa klienta z synchronizacji folderu
      */
     async removeSyncClient(userId, folderId, syncId) {
-        return await this._removeSyncClient(userId, folderId, syncId);
+        return await this._removeSyncClientBySyncId(userId, folderId, syncId);
     }
     
     /**
@@ -808,6 +808,54 @@ class SyncService {
             }
         );
     }
+	
+	async _removeSyncClientBySyncId(userId, folderId, syncId) {
+		const result = await SyncFolder.updateOne(
+			{ user: userId, folder: folderId },
+			{
+				$pull: { clients: { _id: syncId } },
+				$set: { updatedAt: new Date() }
+			}
+		);
+		
+		if (result.matchedCount > 0) {
+			// Pobierz informacje o usuwanym kliencie przed usunięciem
+			const syncFolder = await SyncFolder.findOne({ 
+				user: userId, 
+				folder: folderId,
+				'clients._id': syncId 
+			});
+			
+			let clientIdToCleanup = null;
+			if (syncFolder) {
+				const clientConfig = syncFolder.clients.find(c => c._id.toString() === syncId);
+				if (clientConfig) {
+					clientIdToCleanup = clientConfig.client;
+				}
+			}
+			
+			// Usuń konfigurację synchronizacji
+			await SyncFolder.updateOne(
+				{ user: userId, folder: folderId },
+				{
+					$pull: { clients: { _id: syncId } },
+					$set: { updatedAt: new Date() }
+				}
+			);
+			
+			// Wyczyść puste foldery synchronizacji
+			await this._cleanupEmptySyncFolder(userId, folderId);
+			
+			// Wyczyść stany synchronizacji dla tego klienta (jeśli znamy clientId)
+			if (clientIdToCleanup) {
+				await this._cleanupClientFileSyncStates(userId, folderId, clientIdToCleanup);
+			}
+			
+			return true;
+		}
+		
+		return false;
+	}
     
     async _removeSyncClient(userId, folderId, clientId) {
         const result = await SyncFolder.updateOne(

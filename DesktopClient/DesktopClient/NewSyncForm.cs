@@ -181,18 +181,26 @@ namespace DesktopClient.Forms {
                 var selectedServerFolder = (dynamic)cmbServerFolder.SelectedItem;
                 var selectedSyncDirection = (dynamic)cmbSyncDirection.SelectedItem;
 
-                var response = await _apiClient.AddSyncFolderAsync(
+                var response = await _apiClient.AddFolderToSyncAsync(
                     _clientId,
                     txtLocalPath.Text,
-                    selectedServerFolder.Value.ToString()
+                    selectedServerFolder.Value.ToString(),
+                    System.IO.Path.GetFileName(txtLocalPath.Text)
                 );
 
-                if (response.success) {
+                if (response?.success == true) {
                     this.DialogResult = DialogResult.OK;
                     this.Close();
                 } else {
-                    lblStatus.Text = response.message ?? "Błąd podczas tworzenia synchronizacji";
-                    lblStatus.ForeColor = Color.Red;
+                    lblStatus.Text = response?.syncFolder != null ?
+                        "Synchronizacja została utworzona" :
+                        "Błąd podczas tworzenia synchronizacji";
+                    lblStatus.ForeColor = response?.syncFolder != null ? Color.Green : Color.Red;
+
+                    if (response?.syncFolder != null) {
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
                 }
             } catch (Exception ex) {
                 lblStatus.Text = $"Błąd: {ex.Message}";

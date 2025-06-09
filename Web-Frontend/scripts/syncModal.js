@@ -408,8 +408,8 @@ export async function deleteSync(syncId) {
     }
     
     try {
-        // ZMIANA: Usuwanie konkretnego klienta z synchronizacji folderu
-        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}?clientId=${syncId}`, {
+        // POPRAWKA: Używamy syncId jako parametru w URL, nie clientId
+        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}?syncId=${syncId}`, {
             method: 'DELETE'
         });
         

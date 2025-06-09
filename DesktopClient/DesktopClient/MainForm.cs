@@ -127,29 +127,29 @@ namespace DesktopClient {
                 // Dla każdego folderu sprawdź synchronizacje
                 foreach (var folder in folders) {
                     try {
-                        var syncResponse = await _apiClient.GetFolderSyncsAsync(folder._id);
+                        var syncResponse = await _apiClient.GetSyncFolderInfoAsync(folder._id);
 
-                        if (syncResponse?.success == true && syncResponse.syncs?.Any() == true) {
-                            // Znajdź synchronizacje dla aktualnego klienta
-                            var clientSyncs = syncResponse.syncs.Where(s => s.clientId == _clientId);
+                        if (syncResponse?.success == true && syncResponse.syncFolder?.clients?.Any() == true) {
+                            // Znajdź synchronizacje dla aktualnego klienta - używamy poprawionej właściwości
+                            var clientSync = syncResponse.syncFolder.clients.FirstOrDefault(c =>
+                                c.client == _clientId || c.clientId == _clientId);
 
-                            foreach (var sync in clientSyncs) {
+                            if (clientSync != null) {
                                 var item = new ListViewItem(folder.name);
-                                item.SubItems.Add(sync.clientFolderPath ?? "");
-                                item.SubItems.Add(GetSyncDirectionText(sync.syncDirection));
-                                item.SubItems.Add(sync.isActive ? "Aktywna" : "Nieaktywna");
-                                item.SubItems.Add(sync.lastSyncDate?.ToString("dd.MM.yyyy HH:mm") ?? "Nigdy");
+                                item.SubItems.Add(clientSync.clientFolderPath ?? "");
+                                item.SubItems.Add(GetSyncDirectionText(clientSync.syncDirection));
+                                item.SubItems.Add(clientSync.isActive ? "Aktywna" : "Nieaktywna");
+                                item.SubItems.Add(clientSync.lastSyncDate?.ToString("dd.MM.yyyy HH:mm") ?? "Nigdy");
                                 item.Tag = new {
                                     FolderId = folder._id,
                                     FolderName = folder.name,
-                                    SyncId = sync.id
+                                    SyncId = clientSync._id // Używamy _id zamiast clientFolderId
                                 };
 
                                 listViewSyncs.Items.Add(item);
                             }
                         }
                     } catch (Exception ex) {
-                        // Ignoruj błędy dla pojedynczych folderów
                         System.Diagnostics.Debug.WriteLine($"Błąd pobierania synchronizacji dla folderu {folder.name}: {ex.Message}");
                     }
                 }
@@ -213,7 +213,8 @@ namespace DesktopClient {
                 _syncService,
                 tagData.FolderId,
                 tagData.SyncId,
-                tagData.FolderName)) {
+                tagData.FolderName,
+                _clientId)) { // Dodano _clientId jako parametr
 
                 if (detailsForm.ShowDialog() == DialogResult.OK) {
                     LoadSynchronizations();

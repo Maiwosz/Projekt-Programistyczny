@@ -1,4 +1,4 @@
-namespace DesktopClient {
+namespace DesktopClient.Forms {
     partial class SyncDetailsForm {
         /// <summary>
         /// Required designer variable.

@@ -2,6 +2,7 @@ using DesktopClient.Models;
 using DesktopClient.Services;
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace DesktopClient.Forms {
@@ -11,6 +12,7 @@ namespace DesktopClient.Forms {
         private readonly string _folderId;
         private readonly string _syncId;
         private readonly string _folderName;
+        private readonly string _clientId;
         private SyncClientInfo _syncInfo;
 
         private TextBox txtFolderPath;
@@ -22,12 +24,13 @@ namespace DesktopClient.Forms {
         private Button btnCancel;
         private Label lblStatus;
 
-        public SyncDetailsForm(ApiClient apiClient, SyncService syncService, string folderId, string syncId, string folderName) {
+        public SyncDetailsForm(ApiClient apiClient, SyncService syncService, string folderId, string syncId, string folderName, string clientId) {
             _apiClient = apiClient;
             _syncService = syncService;
             _folderId = folderId;
             _syncId = syncId;
             _folderName = folderName;
+            _clientId = clientId;
 
             InitializeComponent();
             LoadSyncDetails();
@@ -141,16 +144,24 @@ namespace DesktopClient.Forms {
             try {
                 System.Diagnostics.Debug.WriteLine($"Loading sync details for folder: {_folderId}, sync: {_syncId}");
 
-                var response = await _apiClient.GetSyncDetailsAsync(_folderId, _syncId);
+                // Używamy GetSyncFolderInfoAsync zamiast GetSyncDetailsAsync
+                var response = await _apiClient.GetSyncFolderInfoAsync(_folderId);
 
-                System.Diagnostics.Debug.WriteLine($"API Response - Success: {response?.success}, Sync: {response?.sync != null}");
+                System.Diagnostics.Debug.WriteLine($"API Response - Success: {response?.success}, SyncFolder: {response?.syncFolder != null}");
 
-                if (response?.success == true && response.sync != null) {
-                    _syncInfo = response.sync;
-                    PopulateForm();
-                    ShowStatus("Szczegóły załadowane", Color.Green);
+                if (response?.success == true && response.syncFolder?.clients?.Any() == true) {
+                    // Znajdź synchronizację dla aktualnego klienta
+                    var clientSync = response.syncFolder.clients.FirstOrDefault(c => c.clientId == _clientId);
+
+                    if (clientSync != null) {
+                        _syncInfo = clientSync;
+                        PopulateForm();
+                        ShowStatus("Szczegóły załadowane", Color.Green);
+                    } else {
+                        ShowStatus("Nie znaleziono synchronizacji dla tego klienta", Color.Red);
+                    }
                 } else {
-                    var errorMessage = response?.message ?? response?.error ?? "Nieznany błąd";
+                    var errorMessage = response?.message ?? "Nieznany błąd";
                     ShowStatus($"Błąd ładowania szczegółów: {errorMessage}", Color.Red);
                     System.Diagnostics.Debug.WriteLine($"API Error: {errorMessage}");
                 }
@@ -228,7 +239,8 @@ namespace DesktopClient.Forms {
             ShowStatus("Usuwanie...", Color.Blue);
 
             try {
-                var response = await _apiClient.DeleteSyncFolderAsync(_folderId, _syncId);
+                // Używamy RemoveFolderFromSyncAsync z syncId
+                var response = await _apiClient.RemoveFolderFromSyncAsync(_folderId, _syncId);
                 if (response.success) {
                     ShowStatus("Usunięto pomyślnie", Color.Green);
                     this.DialogResult = DialogResult.OK;

@@ -14,12 +14,8 @@ namespace DesktopClient.Services {
 
         public ApiClient() {
             _httpClient = new HttpClient();
-            //_baseUrl = "http://89.200.230.226"; // Publiczny adres
-            _baseUrl = "https://localhost:3443"; // Backup localhost
-
+            _baseUrl = "https://localhost:3443";
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
-
-            // Dodaj nagłówek Accept aby serwer wiedział, że oczekujemy JSON
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Accept.Add(
                 new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
@@ -35,109 +31,24 @@ namespace DesktopClient.Services {
             }
         }
 
+        // === AUTORYZACJA ===
+
         public async Task<LoginResponse> LoginAsync(string username, string password) {
-            try {
-                var loginRequest = new LoginRequest {
-                    username = username,
-                    password = password
-                };
+            var request = new LoginRequest {
+                username = username,
+                password = password
+            };
 
-                var json = JsonConvert.SerializeObject(loginRequest);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.PostAsync($"{_baseUrl}/api/auth/login", content);
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                // Debugowanie - sprawdź co zwraca serwer
-                System.Diagnostics.Debug.WriteLine($"Status Code: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"Response Content: {responseContent}");
-
-                if (response.IsSuccessStatusCode) {
-                    // Sprawdź czy odpowiedź to JSON
-                    if (responseContent.Trim().StartsWith("{") || responseContent.Trim().StartsWith("[")) {
-                        try {
-                            // Dodaj dodatkowe debugowanie przed deserializacją
-                            System.Diagnostics.Debug.WriteLine($"Attempting to deserialize: {responseContent}");
-
-                            var loginResponse = JsonConvert.DeserializeObject<LoginResponse>(responseContent);
-
-                            // Sprawdź czy deserializacja się powiodła
-                            System.Diagnostics.Debug.WriteLine($"Deserialized token: {loginResponse?.token ?? "NULL"}");
-
-                            return loginResponse;
-                        } catch (JsonException jsonEx) {
-                            System.Diagnostics.Debug.WriteLine($"JSON Deserialization Error: {jsonEx.Message}");
-                            System.Diagnostics.Debug.WriteLine($"JSON Content: {responseContent}");
-                            throw new Exception($"Błąd parsowania odpowiedzi serwera: {jsonEx.Message}. Otrzymana odpowiedź: {responseContent}");
-                        }
-                    } else {
-                        throw new Exception($"Serwer zwrócił nieprawidłową odpowiedź: {responseContent}");
-                    }
-                } else {
-                    // Dla błędów też sprawdź format odpowiedzi
-                    if (responseContent.Trim().StartsWith("{") || responseContent.Trim().StartsWith("[")) {
-                        try {
-                            var error = JsonConvert.DeserializeObject<ErrorResponse>(responseContent);
-                            throw new Exception(error?.error ?? $"Błąd serwera ({response.StatusCode}): {responseContent}");
-                        } catch (JsonException) {
-                            throw new Exception($"Błąd serwera ({response.StatusCode}): {responseContent}");
-                        }
-                    } else {
-                        throw new Exception($"Błąd serwera ({response.StatusCode}): {responseContent}");
-                    }
-                }
-            } catch (HttpRequestException ex) {
-                throw new Exception($"Błąd połączenia z serwerem: {ex.Message}");
-            } catch (TaskCanceledException) {
-                throw new Exception("Timeout - serwer nie odpowiada");
-            } catch (Exception ex) when (ex is JsonException) {
-                // Ten blok już został obsłużony wyżej, ale dla pewności
-                throw new Exception($"Błąd parsowania JSON: {ex.Message}");
-            } catch (Exception ex) {
-                // Ogólny handler dla innych błędów
-                System.Diagnostics.Debug.WriteLine($"General Exception: {ex.GetType().Name}: {ex.Message}");
-                throw new Exception($"Błąd podczas logowania: {ex.Message}");
-            }
+            return await PostAsync<LoginResponse>("/api/auth/login", request);
         }
 
         public async Task<List<Folder>> GetFoldersAsync() {
-            try {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/api/folders");
-                var responseContent = await response.Content.ReadAsStringAsync();
-
-                // Debugowanie
-                System.Diagnostics.Debug.WriteLine($"GetFolders Status Code: {response.StatusCode}");
-                System.Diagnostics.Debug.WriteLine($"GetFolders Response: {responseContent}");
-
-                if (response.IsSuccessStatusCode) {
-                    if (responseContent.Trim().StartsWith("{") || responseContent.Trim().StartsWith("[")) {
-                        return JsonConvert.DeserializeObject<List<Folder>>(responseContent);
-                    } else {
-                        throw new Exception($"Serwer zwrócił nieprawidłową odpowiedź: {responseContent}");
-                    }
-                } else {
-                    if (responseContent.Trim().StartsWith("{") || responseContent.Trim().StartsWith("[")) {
-                        try {
-                            var error = JsonConvert.DeserializeObject<ErrorResponse>(responseContent);
-                            throw new Exception(error?.error ?? $"Błąd pobierania folderów ({response.StatusCode})");
-                        } catch (JsonException) {
-                            throw new Exception($"Błąd serwera ({response.StatusCode}): {responseContent}");
-                        }
-                    } else {
-                        throw new Exception($"Błąd serwera ({response.StatusCode}): {responseContent}");
-                    }
-                }
-            } catch (HttpRequestException ex) {
-                throw new Exception($"Błąd połączenia z serwerem: {ex.Message}");
-            } catch (TaskCanceledException) {
-                throw new Exception("Timeout - serwer nie odpowiada");
-            } catch (JsonException ex) {
-                throw new Exception($"Błąd parsowania odpowiedzi serwera: {ex.Message}");
-            }
+            return await GetAsync<List<Folder>>("/api/folders");
         }
 
         // === ZARZĄDZANIE KLIENTAMI ===
 
+        // Rejestruje nowego klienta synchronizacji w systemie
         public async Task<RegisterClientResponse> RegisterClientAsync(string type, string name, object metadata = null) {
             var request = new RegisterClientRequest {
                 type = type,
@@ -148,140 +59,123 @@ namespace DesktopClient.Services {
             return await PostAsync<RegisterClientResponse>("/api/sync/clients", request);
         }
 
+        // Pobiera informacje o zarejestrowanym kliencie
         public async Task<GetClientResponse> GetClientAsync(string clientId) {
             return await GetAsync<GetClientResponse>($"/api/sync/clients/{clientId}");
         }
 
+        // Aktualizuje timestamp ostatniej aktywności klienta (heartbeat)
         public async Task<ApiResponse> UpdateClientActivityAsync(string clientId) {
             return await PutAsync<ApiResponse>($"/api/sync/clients/{clientId}/activity", null);
         }
 
-        // === KONFIGURACJA SYNCHRONIZACJI FOLDERÓW ===
+        // === KONFIGURACJA FOLDERÓW SYNCHRONIZACJI ===
 
-        public async Task<ApiResponse> AddSyncFolderAsync(string clientId, string folderPath, string serverFolderId) {
-            var request = new AddSyncFolderRequest {
+        // Dodaje folder serwera do synchronizacji z lokalnym folderem klienta
+        public async Task<AddFolderToSyncResponse> AddFolderToSyncAsync(string clientId, string clientFolderPath, string serverFolderId, string clientFolderName = null) {
+            var request = new AddFolderToSyncRequest {
                 clientId = clientId,
-                folderPath = folderPath,
-                serverFolderId = serverFolderId
+                clientFolderPath = clientFolderPath,
+                serverFolderId = serverFolderId,
+                clientFolderName = clientFolderName
             };
 
-            return await PostAsync<ApiResponse>("/api/sync/folders", request);
+            return await PostAsync<AddFolderToSyncResponse>("/api/sync/folders", request);
         }
 
-        public async Task<ApiResponse> RemoveSyncFolderAsync(string folderId) {
-            return await DeleteAsync<ApiResponse>($"/api/sync/folders/{folderId}");
+        // Usuwa folder z synchronizacji (całkowicie lub tylko dla określonego klienta)
+        public async Task<ApiResponse> RemoveFolderFromSyncAsync(string folderId, string syncId) {
+            var url = $"/api/sync/folders/{folderId}?syncId={syncId}";
+            return await DeleteAsync<ApiResponse>(url);
         }
 
-        // === SYNCHRONIZACJA - GŁÓWNY INTERFEJS ===
-
-        public async Task<SyncStateResponse> GetSyncStateAsync(string folderId, string clientId) {
-            return await GetAsync<SyncStateResponse>($"/api/sync/folders/{folderId}/state/{clientId}");
+        // Pobiera informacje o synchronizacji folderu (klienci, ustawienia)
+        public async Task<SyncFolderInfoResponse> GetSyncFolderInfoAsync(string folderId) {
+            return await GetAsync<SyncFolderInfoResponse>($"/api/sync/folders/{folderId}/info");
         }
 
-        public async Task<ApiResponse> ConfirmSyncCompletedAsync(string folderId, string clientId, List<CompletedOperation> completedOperations) {
-            var request = new ConfirmSyncRequest {
-                completedOperations = completedOperations
-            };
+        // === GŁÓWNY PROCES SYNCHRONIZACJI ===
 
-            return await PostAsync<ApiResponse>($"/api/sync/folders/{folderId}/confirm/{clientId}", request);
+        // Pobiera dane synchronizacji - listę wszystkich operacji do wykonania
+        public async Task<SyncDataResponse> GetSyncDataAsync(string folderId, string clientId) {
+            return await GetAsync<SyncDataResponse>($"/api/sync/folders/{folderId}/sync-data/{clientId}");
         }
 
-        // === OPERACJE NA PLIKACH PODCZAS SYNCHRONIZACJI ===
-
-        public async Task<FileDownloadResponse> GetFileForDownloadAsync(string fileId, string clientId) {
+        // Pobiera plik z serwera (do pobrania przez klienta)
+        public async Task<FileDownloadResponse> DownloadFileFromServerAsync(string fileId, string clientId) {
             return await GetAsync<FileDownloadResponse>($"/api/sync/files/{fileId}/download/{clientId}");
         }
 
+        // Wysyła nowy plik z klienta na serwer
+        public async Task<UploadFileResponse> UploadNewFileToServerAsync(string folderId, string clientId, UploadFileRequest fileData) {
+            return await PostAsync<UploadFileResponse>($"/api/sync/folders/{folderId}/files/{clientId}", fileData);
+        }
+
+        // Aktualizuje istniejący plik na serwerze
+        public async Task<UpdateFileResponse> UpdateExistingFileOnServerAsync(string fileId, string clientId, UpdateFileRequest fileData) {
+            return await PutAsync<UpdateFileResponse>($"/api/sync/files/{fileId}/update/{clientId}", fileData);
+        }
+
+        // Potwierdza pobranie pliku przez klienta (po downlodzie z serwera)
         public async Task<ApiResponse> ConfirmFileDownloadedAsync(string fileId, string clientId, ClientFileInfo clientFileInfo) {
             return await PostAsync<ApiResponse>($"/api/sync/files/{fileId}/confirm-download/{clientId}", clientFileInfo);
         }
 
-        public async Task<ApiResponse> ConfirmFileDeletedAsync(string fileId, string clientId) {
+        // Potwierdza usunięcie pliku przez klienta (usuwa stan synchronizacji)
+        public async Task<ApiResponse> ConfirmFileDeletedOnClientAsync(string fileId, string clientId) {
             return await PostAsync<ApiResponse>($"/api/sync/files/{fileId}/confirm-delete/{clientId}", null);
         }
 
-        public async Task<ApiResponse> UploadFileFromClientAsync(string folderId, string clientId, UploadFileRequest fileData) {
-            return await PostAsync<ApiResponse>($"/api/sync/folders/{folderId}/files/{clientId}", fileData);
+        // Usuwa plik z serwera na żądanie klienta
+        public async Task<ApiResponse> DeleteFileFromServerAsync(string fileId, string clientId) {
+            return await DeleteAsync<ApiResponse>($"/api/sync/files/{fileId}/delete-from-server/{clientId}");
         }
 
-        public async Task<ApiResponse> UpdateFileFromClientAsync(string fileId, string clientId, UpdateFileRequest fileData) {
-            return await PutAsync<ApiResponse>($"/api/sync/files/{fileId}/update/{clientId}", fileData);
+        // Potwierdza zakończenie całej synchronizacji folderu
+        public async Task<SyncCompletedResponse> ConfirmSyncCompletedAsync(string folderId, string clientId) {
+            return await PostAsync<SyncCompletedResponse>($"/api/sync/folders/{folderId}/confirm/{clientId}", null);
         }
 
-        public async Task<FileExistsResponse> CheckFileExistsAsync(string folderId, string clientId, CheckFileExistsRequest checkData) {
-            return await PostAsync<FileExistsResponse>($"/api/sync/folders/{folderId}/files/check/{clientId}", checkData);
-        }
+        // === FUNKCJE POMOCNICZE ===
 
-        public async Task<ApiResponse> ConfirmFileOperationAsync(string fileId, string clientId, ClientFileInfo clientFileInfo) {
-            return await PostAsync<ApiResponse>($"/api/sync/files/{fileId}/confirm-operation/{clientId}", clientFileInfo);
-        }
-
-        public async Task<ApiResponse> MarkFileAsDeletedAsync(string fileId) {
-            return await PostAsync<ApiResponse>($"/api/sync/files/{fileId}/mark-deleted", new { });
-        }
-
-        public async Task<FileExistsResponse> FindFileByClientIdAsync(string clientId, string clientFileId, string folderId = null) {
+        // Wyszukuje plik po ID klienta (clientFileId)
+        public async Task<FindFileResponse> FindFileByClientIdAsync(string clientId, string clientFileId, string folderId = null) {
             var url = $"/api/sync/clients/{clientId}/files/{clientFileId}";
             if (!string.IsNullOrEmpty(folderId)) {
                 url += $"?folderId={folderId}";
             }
-            return await GetAsync<FileExistsResponse>(url);
+            return await GetAsync<FindFileResponse>(url);
         }
 
-        public async Task<FileExistsResponse> FindFileByNameAndHashAsync(string folderId, string fileName, string fileHash) {
-            return await GetAsync<FileExistsResponse>($"/api/sync/folders/{folderId}/find/{fileName}/{fileHash}");
+        // Wyszukuje plik po nazwie i hashu
+        public async Task<FindFileResponse> FindFileByNameAndHashAsync(string folderId, string fileName, string fileHash) {
+            return await GetAsync<FindFileResponse>($"/api/sync/folders/{folderId}/find/{fileName}/{fileHash}");
         }
 
-        // === OZNACZANIE PLIKÓW DO SYNCHRONIZACJI ===
-
-        public async Task<ApiResponse> MarkFileForSyncAsync(string fileId, string operation = "modified") {
-            var request = new { operation = operation };
-            return await PostAsync<ApiResponse>($"/api/sync/files/{fileId}/mark", request);
-        }
-
-        public async Task<ApiResponse> MarkFolderForSyncAsync(string folderId) {
-            return await PostAsync<ApiResponse>($"/api/sync/folders/{folderId}/mark", null);
-        }
-
-        // === ZARZĄDZANIE SYNCHRONIZACJAMI FOLDERÓW - INTERFEJS WEBOWY ===
-
-        public async Task<FolderSyncsResponse> GetFolderSyncsAsync(string folderId) {
-            return await GetAsync<FolderSyncsResponse>($"/api/sync/folders/{folderId}/syncs");
-        }
-
-        public async Task<SyncDetailsResponse> GetSyncDetailsAsync(string folderId, string syncId) {
-            return await GetAsync<SyncDetailsResponse>($"/api/sync/folders/{folderId}/syncs/{syncId}");
-        }
-
+        // Aktualizuje ustawienia synchronizacji (kierunek, ścieżka, aktywność)
         public async Task<ApiResponse> UpdateSyncSettingsAsync(string folderId, string syncId, UpdateSyncSettingsRequest settings) {
-            return await PutAsync<ApiResponse>($"/api/sync/folders/{folderId}/syncs/{syncId}", settings);
+            return await PutAsync<ApiResponse>($"/api/sync/folders/{folderId}/settings/{syncId}", settings);
         }
 
-        public async Task<ApiResponse> DeleteSyncFolderAsync(string folderId, string syncId) {
-            return await DeleteAsync<ApiResponse>($"/api/sync/folders/{folderId}/syncs/{syncId}");
-        }
-
-        // === METODY POMOCNICZE ===
+        // === METODY POMOCNICZE HTTP ===
 
         private async Task<T> GetAsync<T>(string endpoint) {
             try {
-                var response = await _httpClient.GetAsync($"{_baseUrl}{endpoint}");
+                var url = $"{_baseUrl}{endpoint}";
+                Console.WriteLine($"[HTTP GET] {url}");
+                var response = await _httpClient.GetAsync(url);
                 return await ProcessResponse<T>(response);
             } catch (Exception ex) {
                 throw new Exception($"Błąd podczas GET {endpoint}: {ex.Message}");
             }
         }
 
+
         private async Task<T> PostAsync<T>(string endpoint, object data) {
             try {
                 var json = JsonConvert.SerializeObject(data);
-
-                // Dodaj debugowanie dla requestów upload
-                if (endpoint.Contains("/files/")) {
-                    System.Diagnostics.Debug.WriteLine($"POST to {endpoint}");
-                    System.Diagnostics.Debug.WriteLine($"Request JSON: {json}");
-                }
-
+                Console.WriteLine($"[HTTP POST] {_baseUrl}{endpoint}");
+                Console.WriteLine($"Payload: {json}");
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PostAsync($"{_baseUrl}{endpoint}", content);
                 return await ProcessResponse<T>(response);
@@ -290,9 +184,12 @@ namespace DesktopClient.Services {
             }
         }
 
+
         private async Task<T> PutAsync<T>(string endpoint, object data) {
             try {
                 var json = data != null ? JsonConvert.SerializeObject(data) : "{}";
+                Console.WriteLine($"[HTTP PUT] {_baseUrl}{endpoint}");
+                Console.WriteLine($"Payload: {json}");
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
                 var response = await _httpClient.PutAsync($"{_baseUrl}{endpoint}", content);
                 return await ProcessResponse<T>(response);
@@ -301,30 +198,30 @@ namespace DesktopClient.Services {
             }
         }
 
+
         private async Task<T> DeleteAsync<T>(string endpoint) {
             try {
-                var response = await _httpClient.DeleteAsync($"{_baseUrl}{endpoint}");
+                var url = $"{_baseUrl}{endpoint}";
+                Console.WriteLine($"[HTTP DELETE] {url}");
+                var response = await _httpClient.DeleteAsync(url);
                 return await ProcessResponse<T>(response);
             } catch (Exception ex) {
                 throw new Exception($"Błąd podczas DELETE {endpoint}: {ex.Message}");
             }
         }
 
+
         private async Task<T> ProcessResponse<T>(HttpResponseMessage response) {
             var responseContent = await response.Content.ReadAsStringAsync();
 
-            // Dodaj debugging
-            System.Diagnostics.Debug.WriteLine($"HTTP Status: {response.StatusCode}");
-            System.Diagnostics.Debug.WriteLine($"Response Content: {responseContent}");
+            Console.WriteLine($"[HTTP RESPONSE] {(int)response.StatusCode} {response.StatusCode}");
+            Console.WriteLine($"Response body: {responseContent}");
 
             if (response.IsSuccessStatusCode) {
                 if (responseContent.Trim().StartsWith("{") || responseContent.Trim().StartsWith("[")) {
                     try {
-                        var result = JsonConvert.DeserializeObject<T>(responseContent);
-                        System.Diagnostics.Debug.WriteLine($"Deserialization successful for type {typeof(T).Name}");
-                        return result;
+                        return JsonConvert.DeserializeObject<T>(responseContent);
                     } catch (JsonException jsonEx) {
-                        System.Diagnostics.Debug.WriteLine($"JSON Deserialization Error: {jsonEx.Message}");
                         throw new Exception($"Błąd parsowania odpowiedzi: {jsonEx.Message}");
                     }
                 } else {
@@ -343,6 +240,7 @@ namespace DesktopClient.Services {
                 }
             }
         }
+
 
         public void Dispose() {
             _httpClient?.Dispose();
