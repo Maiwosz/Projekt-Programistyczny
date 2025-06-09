@@ -554,71 +554,67 @@ class SyncController {
     // ===== FUNKCJE POMOCNICZE =====
     
     /**
-     * Wyszukuje plik po ID klienta (clientFileId)
-     * GET /api/sync/clients/:clientId/files/:clientFileId
-     */
-    async findFileByClientId(req, res) {
-        try {
-            const userId = req.user.userId;
-            const { clientId, clientFileId } = req.params;
-            const { folderId } = req.query;
-            
-            const file = await SyncService.findFileByClientId(
-                userId, 
-                clientId, 
-                clientFileId, 
-                folderId
-            );
-            
-            res.json({
-                success: true,
-                exists: !!file,
-                file: file
-            });
-            
-        } catch (error) {
-            console.error('Błąd wyszukiwania pliku po clientId:', error);
-            res.status(500).json({
-                error: 'Błąd podczas wyszukiwania pliku'
-            });
-        }
-    }
-    
-    /**
-     * Wyszukuje plik po nazwie i hashu
-     * GET /api/sync/folders/:folderId/find/:fileName/:fileHash
-     */
-    async findFileByNameAndHash(req, res) {
-        try {
-            const userId = req.user.userId;
-            const { folderId, fileName, fileHash } = req.params;
-            
-            const file = await SyncService.findFileByNameAndHash(
-                userId, 
-                folderId, 
-                fileName, 
-                fileHash
-            );
-            
-            res.json({
-                success: true,
-                exists: !!file,
-                file: file ? {
-                    fileId: file._id.toString(),
-                    originalName: file.originalName,
-                    hash: file.fileHash,
-                    lastModified: file.lastModified,
-                    size: file.size
-                } : null
-            });
-            
-        } catch (error) {
-            console.error('Błąd wyszukiwania pliku po nazwie i hashu:', error);
-            res.status(500).json({
-                error: 'Błąd podczas wyszukiwania pliku'
-            });
-        }
-    }
+	 * Wyszukuje pliki po ID klienta (clientFileId)
+	 * GET /api/sync/clients/:clientId/files/:clientFileId
+	 */
+	async findFileByClientId(req, res) {
+		try {
+			const userId = req.user.userId;
+			const { clientId, clientFileId } = req.params;
+			const { folderId } = req.query;
+			
+			const files = await SyncService.findFileByClientId(
+				userId, 
+				clientId, 
+				clientFileId, 
+				folderId
+			);
+			
+			res.json({
+				success: true,
+				exists: files.length > 0,
+				count: files.length,
+				files: files
+			});
+			
+		} catch (error) {
+			console.error('Błąd wyszukiwania plików po clientId:', error);
+			res.status(500).json({
+				error: 'Błąd podczas wyszukiwania plików'
+			});
+		}
+	}
+
+	/**
+	 * Wyszukuje pliki po nazwie i hashu
+	 * GET /api/sync/folders/:folderId/find/:fileName/:fileHash
+	 */
+	async findFileByNameAndHash(req, res) {
+		try {
+			const userId = req.user.userId;
+			const { folderId, fileName, fileHash } = req.params;
+			
+			const files = await SyncService.findFileByNameAndHash(
+				userId, 
+				folderId, 
+				fileName, 
+				fileHash
+			);
+			
+			res.json({
+				success: true,
+				exists: files.length > 0,
+				count: files.length,
+				files: files
+			});
+			
+		} catch (error) {
+			console.error('Błąd wyszukiwania plików po nazwie i hashu:', error);
+			res.status(500).json({
+				error: 'Błąd podczas wyszukiwania plików'
+			});
+		}
+	}
     
     // ===== ZARZĄDZANIE USTAWIENIAMI SYNCHRONIZACJI =====
     

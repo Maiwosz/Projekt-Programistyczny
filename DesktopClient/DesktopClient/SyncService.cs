@@ -16,16 +16,46 @@ namespace DesktopClient.Services {
         public event Action<string> OnSyncStatusChanged;
         public event Action<string, Exception> OnSyncError;
 
+        private int _currentIntervalMinutes = 5;
+
         public SyncService(ApiClient apiClient, string clientId) {
             _apiClient = apiClient;
             _clientId = clientId;
         }
 
         public void StartAutoSync(int intervalMinutes = 5) {
+            _currentIntervalMinutes = intervalMinutes;
+            StopAutoSync(); // Zatrzymaj istniejący timer
+
             _syncTimer = new System.Timers.Timer(intervalMinutes * 60 * 1000);
             _syncTimer.Elapsed += async (sender, e) => await PerformSyncAsync();
             _syncTimer.AutoReset = true;
             _syncTimer.Enabled = true;
+
+            OnSyncStatusChanged?.Invoke($"Automatyczna synchronizacja uruchomiona (co {intervalMinutes} min)");
+        }
+
+        public void UpdateSyncInterval(int intervalMinutes) {
+            if (intervalMinutes < 1) {
+                throw new ArgumentException("Interwał musi wynosić co najmniej 1 minutę");
+            }
+
+            _currentIntervalMinutes = intervalMinutes;
+
+            // Jeśli timer jest aktywny, uruchom go ponownie z nowym interwałem
+            if (_syncTimer != null && _syncTimer.Enabled) {
+                StartAutoSync(intervalMinutes);
+            }
+
+            OnSyncStatusChanged?.Invoke($"Interwał synchronizacji zmieniony na {intervalMinutes} min");
+        }
+
+        public int GetCurrentSyncInterval() {
+            return _currentIntervalMinutes;
+        }
+
+        public bool IsAutoSyncRunning {
+            get { return _syncTimer != null && _syncTimer.Enabled; }
         }
 
         public void StopAutoSync() {
@@ -144,19 +174,30 @@ namespace DesktopClient.Services {
             OnSyncStatusChanged?.Invoke($"Przetwarzanie pliku z serwera: {fileName} (operacja: {syncItem.operation})");
 
             try {
-                // DODANE: Sprawdź czy plik nie jest oznaczony jako usunięty na serwerze
-                if (syncItem.file?.isDeleted == true && syncItem.operation.ToLower() != "deleted") {
-                    OnSyncStatusChanged?.Invoke($"Pomijanie usuniętego pliku z serwera: {fileName}");
-                    return;
+                if (syncItem.file?.isDeleted == true) {
+                    if (File.Exists(localPath) && CanUploadFromClient(syncFolder.SyncDirection)) {
+                        OnSyncStatusChanged?.Invoke($"Plik oznaczony jako usunięty na serwerze, ale istnieje lokalnie - przesyłanie jako nowy: {fileName}");
+
+                        // Oblicz względną ścieżkę dla clientFileId
+                        var relativePath = GetRelativePath(syncFolder.LocalPath, localPath);
+
+                        // Prześlij lokalny plik jako zupełnie nowy
+                        await UploadNewFile(localPath, syncFolder.FolderId, relativePath);
+                        return;
+                    } else if (!File.Exists(localPath)) {
+                        // Plik usunięty na serwerze i nie istnieje lokalnie - potwierdź usunięcie
+                        OnSyncStatusChanged?.Invoke($"Potwierdzanie usunięcia pliku nieistniejącego lokalnie: {fileName}");
+                        await _apiClient.ConfirmFileDeletedOnClientAsync(syncItem.fileId, _clientId);
+                        return;
+                    } else {
+                        // Plik usunięty na serwerze, istnieje lokalnie, ale nie można przesyłać z klienta
+                        OnSyncStatusChanged?.Invoke($"Plik usunięty na serwerze, istnieje lokalnie, ale synchronizacja nie pozwala na przesyłanie: {fileName}");
+                        return;
+                    }
                 }
 
                 switch (syncItem.operation.ToLower()) {
                     case "added":
-                        // DODANE: Dodatkowe sprawdzenie dla operacji "added"
-                        if (syncItem.file?.isDeleted == true) {
-                            OnSyncStatusChanged?.Invoke($"Pomijanie dodania usuniętego pliku: {fileName}");
-                            return;
-                        }
                         await HandleServerFileAdded(syncItem, localPath, syncFolder.SyncDirection);
                         break;
 
@@ -165,7 +206,7 @@ namespace DesktopClient.Services {
                         break;
 
                     case "deleted":
-                    case "deleted_from_server":  // DODANE: Obsługa dodatkowego typu operacji
+                    case "deleted_from_server":
                         await HandleServerFileDeleted(syncItem, localPath, syncFolder.SyncDirection);
                         break;
 
@@ -195,27 +236,40 @@ namespace DesktopClient.Services {
                 var fileHash = CalculateFileHash(fileContent);
 
                 // Sprawdź czy plik istnieje na serwerze po nazwie i hashu
-                var existingFile = await _apiClient.FindFileByNameAndHashAsync(syncFolder.FolderId, localFile.Name, fileHash);
+                var existingFileResponse = await _apiClient.FindFileByNameAndHashAsync(syncFolder.FolderId, localFile.Name, fileHash);
 
-                if (existingFile.exists) {
-                    // Plik już istnieje na serwerze z tym samym hashem - potwierdź pobranie
-                    OnSyncStatusChanged?.Invoke($"Plik {localFile.Name} już istnieje na serwerze - potwierdzanie");
-                    await ConfirmLocalFileExists(existingFile.file._id, localFile, relativePath);
-                    return;
+                if (existingFileResponse.exists && existingFileResponse.files?.Count > 0) {
+                    // Wybierz pierwszy nieusunięty plik lub pierwszy dostępny
+                    var validFile = existingFileResponse.files.FirstOrDefault(f => !f.isDeleted)
+                                   ?? existingFileResponse.files.FirstOrDefault();
+
+                    if (validFile != null) {
+                        // Plik już istnieje na serwerze z tym samym hashem - potwierdź pobranie
+                        OnSyncStatusChanged?.Invoke($"Plik {localFile.Name} już istnieje na serwerze - potwierdzanie");
+                        await ConfirmLocalFileExists(validFile._id, localFile, relativePath);
+                        return;
+                    }
                 }
 
                 // Sprawdź czy może istnieje plik o tej samej nazwie ale innym hashu
-                var fileByClientId = await _apiClient.FindFileByClientIdAsync(_clientId, relativePath, syncFolder.FolderId);
+                var fileByClientIdResponse = await _apiClient.FindFileByClientIdAsync(_clientId, relativePath, syncFolder.FolderId);
 
-                if (fileByClientId.exists) {
-                    // Aktualizuj istniejący plik
-                    OnSyncStatusChanged?.Invoke($"Aktualizowanie pliku na serwerze: {localFile.Name}");
-                    await UpdateFileOnServer(fileByClientId.file._id, localFile.FullPath, relativePath);
-                } else {
-                    // Prześlij nowy plik
-                    OnSyncStatusChanged?.Invoke($"Przesyłanie nowego pliku: {localFile.Name}");
-                    await UploadNewFile(localFile.FullPath, syncFolder.FolderId, relativePath);
+                if (fileByClientIdResponse.exists && fileByClientIdResponse.files?.Count > 0) {
+                    // Wybierz pierwszy nieusunięty plik lub pierwszy dostępny
+                    var validFile = fileByClientIdResponse.files.FirstOrDefault(f => !f.isDeleted)
+                                   ?? fileByClientIdResponse.files.FirstOrDefault();
+
+                    if (validFile != null) {
+                        // Aktualizuj istniejący plik
+                        OnSyncStatusChanged?.Invoke($"Aktualizowanie pliku na serwerze: {localFile.Name}");
+                        await UpdateFileOnServer(validFile._id, localFile.FullPath, relativePath);
+                        return;
+                    }
                 }
+
+                // Prześlij nowy plik
+                OnSyncStatusChanged?.Invoke($"Przesyłanie nowego pliku: {localFile.Name}");
+                await UploadNewFile(localFile.FullPath, syncFolder.FolderId, relativePath);
 
             } catch (Exception ex) {
                 OnSyncStatusChanged?.Invoke($"Błąd przetwarzania lokalnego pliku {localFile.Name}: {ex.Message}");

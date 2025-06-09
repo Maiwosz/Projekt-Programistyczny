@@ -1,7 +1,9 @@
-/* ========== MODELE SYNCHRONIZACJI ========== */
+/* ========== MODELE SYNCHRONIZACJI - SCOPED STYLES ========== */
 
-/* Podstawowe style modali */
-.modal {
+/* Wszystkie style są teraz ograniczone do modali synchronizacji */
+
+/* Podstawowe style modali - tylko dla sync modali */
+.sync-modal, .sync-details-modal, .create-sync-modal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -10,10 +12,12 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.5) !important;
-    animation: fadeIn 0.3s ease-out;
+    animation: syncFadeIn 0.3s ease-out;
 }
 
-.modal-content {
+.sync-modal .modal-content, 
+.sync-details-modal .modal-content, 
+.create-sync-modal .modal-content {
     background-color: white;
     margin: 5% auto;
     padding: 0;
@@ -25,15 +29,15 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    animation: slideIn 0.3s ease-out;
+    animation: syncSlideIn 0.3s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes syncFadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
 }
 
-@keyframes slideIn {
+@keyframes syncSlideIn {
     from { 
         opacity: 0;
         transform: translateY(-50px);
@@ -45,7 +49,9 @@
 }
 
 /* ========== NAGŁÓWEK MODALU ========== */
-.modal-header {
+.sync-modal .modal-header,
+.sync-details-modal .modal-header,
+.create-sync-modal .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -54,14 +60,18 @@
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
-.modal-header h3 {
+.sync-modal .modal-header h3,
+.sync-details-modal .modal-header h3,
+.create-sync-modal .modal-header h3 {
     margin: 0;
     color: #2c3e50;
     font-size: 20px;
     font-weight: 600;
 }
 
-.close-button {
+.sync-modal .close-button,
+.sync-details-modal .close-button,
+.create-sync-modal .close-button {
     background: none;
     border: none;
     font-size: 24px;
@@ -77,14 +87,18 @@
     transition: all 0.2s ease;
 }
 
-.close-button:hover {
+.sync-modal .close-button:hover,
+.sync-details-modal .close-button:hover,
+.create-sync-modal .close-button:hover {
     background: rgba(108, 117, 125, 0.1);
     color: #495057;
     transform: scale(1.1);
 }
 
 /* ========== STOPKA MODALU ========== */
-.modal-footer {
+.sync-modal .modal-footer,
+.sync-details-modal .modal-footer,
+.create-sync-modal .modal-footer {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
@@ -205,7 +219,8 @@
     justify-content: flex-end;
 }
 
-.btn-details, .btn-delete {
+.sync-card .btn-details, 
+.sync-card .btn-delete {
     padding: 6px 14px;
     border: none;
     border-radius: 5px;
@@ -218,28 +233,28 @@
     transition: all 0.2s ease;
 }
 
-.btn-details {
+.sync-card .btn-details {
     background: #17a2b8;
     color: white;
 }
 
-.btn-details:hover {
+.sync-card .btn-details:hover {
     background: #138496;
     transform: translateY(-1px);
 }
 
-.btn-delete {
+.sync-card .btn-delete {
     background: #dc3545;
     color: white;
 }
 
-.btn-delete:hover {
+.sync-card .btn-delete:hover {
     background: #c82333;
     transform: translateY(-1px);
 }
 
 /* Akcje synchronizacji */
-.sync-actions {
+.sync-modal .sync-actions {
     margin-top: 20px;
     text-align: center;
 }
@@ -274,12 +289,16 @@
     padding-bottom: 8px;
 }
 
-/* Grupy formularza */
-.form-group {
+/* Grupy formularza - tylko w sync modalach */
+.sync-modal .form-group,
+.sync-details-modal .form-group,
+.create-sync-modal .form-group {
     margin-bottom: 15px;
 }
 
-.form-group label {
+.sync-modal .form-group label,
+.sync-details-modal .form-group label,
+.create-sync-modal .form-group label {
     display: block;
     margin-bottom: 5px;
     color: #495057;
@@ -287,7 +306,12 @@
     font-size: 14px;
 }
 
-.form-group input, .form-group select {
+.sync-modal .form-group input, 
+.sync-modal .form-group select,
+.sync-details-modal .form-group input, 
+.sync-details-modal .form-group select,
+.create-sync-modal .form-group input, 
+.create-sync-modal .form-group select {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid #ced4da;
@@ -297,7 +321,12 @@
     box-sizing: border-box;
 }
 
-.form-group input:focus, .form-group select:focus {
+.sync-modal .form-group input:focus, 
+.sync-modal .form-group select:focus,
+.sync-details-modal .form-group input:focus, 
+.sync-details-modal .form-group select:focus,
+.create-sync-modal .form-group input:focus, 
+.create-sync-modal .form-group select:focus {
     outline: none;
     border-color: #3498db;
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
@@ -408,7 +437,7 @@
     margin-left: 10px;
 }
 
-.btn-select {
+.drive-folder-card .btn-select {
     background: #28a745;
     color: white;
     border: none;
@@ -420,7 +449,7 @@
     transition: background-color 0.2s ease;
 }
 
-.btn-select:hover {
+.drive-folder-card .btn-select:hover {
     background: #218838;
 }
 
@@ -563,8 +592,13 @@
     text-align: center;
 }
 
-/* ========== PRZYCISKI ========== */
-.btn-primary, .btn-secondary {
+/* ========== PRZYCISKI - TYLKO DLA SYNC MODALI ========== */
+.sync-modal .btn-primary, 
+.sync-modal .btn-secondary,
+.sync-details-modal .btn-primary, 
+.sync-details-modal .btn-secondary,
+.create-sync-modal .btn-primary, 
+.create-sync-modal .btn-secondary {
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
@@ -580,49 +614,61 @@
     justify-content: center;
 }
 
-.btn-primary {
+.sync-modal .btn-primary,
+.sync-details-modal .btn-primary,
+.create-sync-modal .btn-primary {
     background: #3498db;
     color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
+.sync-modal .btn-primary:hover:not(:disabled),
+.sync-details-modal .btn-primary:hover:not(:disabled),
+.create-sync-modal .btn-primary:hover:not(:disabled) {
     background: #2980b9;
     transform: translateY(-1px);
 }
 
-.btn-primary:disabled {
+.sync-modal .btn-primary:disabled,
+.sync-details-modal .btn-primary:disabled,
+.create-sync-modal .btn-primary:disabled {
     background: #95a5a6;
     cursor: not-allowed;
     transform: none;
 }
 
-.btn-secondary {
+.sync-modal .btn-secondary,
+.sync-details-modal .btn-secondary,
+.create-sync-modal .btn-secondary {
     background: #6c757d;
     color: white;
 }
 
-.btn-secondary:hover {
+.sync-modal .btn-secondary:hover,
+.sync-details-modal .btn-secondary:hover,
+.create-sync-modal .btn-secondary:hover {
     background: #5a6268;
     transform: translateY(-1px);
 }
 
 /* ========== STANY I POWIADOMIENIA ========== */
-.loading {
+.sync-list .loading,
+.drive-folders .loading {
     text-align: center;
     padding: 40px 20px;
     color: #6c757d;
     font-style: italic;
 }
 
-.loading::before {
+.sync-list .loading::before,
+.drive-folders .loading::before {
     content: "⏳";
     display: block;
     font-size: 24px;
     margin-bottom: 10px;
-    animation: pulse 1.5s infinite;
+    animation: syncPulse 1.5s infinite;
 }
 
-@keyframes pulse {
+@keyframes syncPulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
 }
@@ -708,13 +754,23 @@
 
 /* ========== RESPONSYWNOŚĆ ========== */
 @media (max-width: 768px) {
-    .modal-content {
+    .sync-modal .modal-content,
+    .sync-details-modal .modal-content,
+    .create-sync-modal .modal-content {
         width: 95%;
         margin: 10px auto;
         max-height: 90vh;
     }
     
-    .modal-header, .modal-footer, .sync-modal-body, .create-sync-modal-body, .sync-details-body {
+    .sync-modal .modal-header, 
+    .sync-modal .modal-footer, 
+    .sync-modal-body,
+    .sync-details-modal .modal-header, 
+    .sync-details-modal .modal-footer, 
+    .sync-details-body,
+    .create-sync-modal .modal-header, 
+    .create-sync-modal .modal-footer, 
+    .create-sync-modal-body {
         padding: 15px;
     }
     
@@ -741,18 +797,27 @@
         gap: 10px;
     }
     
-    .btn-primary, .btn-secondary {
+    .sync-modal .btn-primary, 
+    .sync-modal .btn-secondary,
+    .sync-details-modal .btn-primary, 
+    .sync-details-modal .btn-secondary,
+    .create-sync-modal .btn-primary, 
+    .create-sync-modal .btn-secondary {
         min-width: auto;
         width: 100%;
     }
     
-    .modal-footer {
+    .sync-modal .modal-footer,
+    .sync-details-modal .modal-footer,
+    .create-sync-modal .modal-footer {
         flex-direction: column-reverse;
     }
 }
 
 @media (max-width: 480px) {
-    .modal-content {
+    .sync-modal .modal-content,
+    .sync-details-modal .modal-content,
+    .create-sync-modal .modal-content {
         width: 98%;
         margin: 5px auto;
     }
@@ -768,7 +833,7 @@
         width: 100%;
     }
     
-    .btn-select {
+    .drive-folder-card .btn-select {
         width: 100%;
     }
     

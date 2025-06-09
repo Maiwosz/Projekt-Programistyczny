@@ -507,53 +507,79 @@ class SyncService {
     // ===== PUBLICZNE FUNKCJE POMOCNICZE =====
     
     /**
-     * Znajduje istniejący plik po ID klienta
-     */
-    async findFileByClientId(userId, clientId, clientFileId, folderId = null) {
-        const client = await this._getClientOrThrow(userId, clientId);
-        
-        const query = {
-            user: userId,
-            client: client._id,
-            clientFileId: clientFileId
-        };
-        
-        const syncState = await FileSyncState.findOne(query).populate('file');
-        
-        if (!syncState?.file || syncState.file.isDeleted) {
-            return null;
-        }
-        
-        if (folderId && syncState.file.folder?.toString() !== folderId) {
-            return null;
-        }
-        
-        return {
-            fileId: syncState.file._id.toString(),
-            originalName: syncState.file.originalName,
-            hash: syncState.file.fileHash,
-            lastModified: syncState.file.lastModified,
-            clientFileId: syncState.clientFileId,
-            clientFileName: syncState.clientFileName,
-            clientLastModified: syncState.clientLastModified,
-            size: syncState.file.size
-        };
-    }
-    
-    /**
-     * Znajduje istniejący plik po nazwie i hashu
-     */
-    async findFileByNameAndHash(userId, folderId, fileName, fileHash) {
-        const file = await File.findOne({
-            user: userId,
-            folder: folderId,
-            originalName: fileName,
-            fileHash: fileHash,
-            isDeleted: { $ne: true }
-        });
-        
-        return file;
-    }
+	 * Znajduje wszystkie istniejące pliki po ID klienta
+	 */
+	async findFileByClientId(userId, clientId, clientFileId, folderId = null) {
+		const client = await this._getClientOrThrow(userId, clientId);
+		
+		const query = {
+			user: userId,
+			client: client._id,
+			clientFileId: clientFileId
+		};
+		
+		// Znajdź wszystkie stany synchronizacji pasujące do kryteriów
+		const syncStates = await FileSyncState.find(query).populate('file');
+		
+		const results = [];
+		
+		for (const syncState of syncStates) {
+			// Pomiń jeśli plik nie istnieje lub jest usunięty
+			if (!syncState?.file || syncState.file.isDeleted) {
+				continue;
+			}
+			
+			// Sprawdź folder jeśli określono
+			if (folderId && syncState.file.folder?.toString() !== folderId) {
+				continue;
+			}
+			
+			results.push({
+				fileId: syncState.file._id.toString(),
+				originalName: syncState.file.originalName,
+				hash: syncState.file.fileHash,
+				lastModified: syncState.file.lastModified,
+				clientFileId: syncState.clientFileId,
+				clientFileName: syncState.clientFileName,
+				clientLastModified: syncState.clientLastModified,
+				size: syncState.file.size,
+				folder: syncState.file.folder?.toString() || null
+			});
+		}
+		
+		return results;
+	}
+
+	/**
+	 * Znajduje wszystkie istniejące pliki po nazwie i hashu
+	 */
+	async findFileByNameAndHash(userId, folderId, fileName, fileHash) {
+		const query = {
+			user: userId,
+			originalName: fileName,
+			fileHash: fileHash,
+			isDeleted: { $ne: true }
+		};
+		
+		// Dodaj folder do zapytania jeśli określono
+		if (folderId) {
+			query.folder = folderId;
+		}
+		
+		const files = await File.find(query);
+		
+		return files.map(file => ({
+			fileId: file._id.toString(),
+			originalName: file.originalName,
+			hash: file.fileHash,
+			lastModified: file.lastModified,
+			size: file.size,
+			folder: file.folder?.toString() || null,
+			mimetype: file.mimetype,
+			category: file.category,
+			path: file.path
+		}));
+	}
     
     // ===== FUNKCJE PRYWATNE - WALIDACJA =====
     
@@ -917,24 +943,30 @@ class SyncService {
     }
     
     async _updateFileSyncState(userId, clientId, fileId, operation, hash = null, clientFileId = null, clientFileName = null, clientPath = null, clientLastModified = null) {
-        const updateData = {
-            operation,
-            lastKnownHash: hash,
-            lastSyncDate: new Date(),
-            updatedAt: new Date()
-        };
-        
-        if (clientFileId !== null) updateData.clientFileId = clientFileId;
-        if (clientFileName !== null) updateData.clientFileName = clientFileName;
-        if (clientPath !== null) updateData.clientPath = clientPath;
-        if (clientLastModified !== null) updateData.clientLastModified = clientLastModified;
-        
-        await FileSyncState.updateOne(
-            { user: userId, client: clientId, file: fileId },
-            updateData,
-            { upsert: true }
-        );
-    }
+		const updateData = {
+			operation,
+			lastSyncDate: new Date(),
+			updatedAt: new Date()
+		};
+		
+		// KLUCZOWA POPRAWKA: Dla nowych plików nie ustawiaj lastKnownHash
+		if (operation === 'added') {
+			updateData.lastKnownHash = null; // ← TUTAJ ZMIANA
+		} else {
+			updateData.lastKnownHash = hash;
+		}
+		
+		if (clientFileId !== null) updateData.clientFileId = clientFileId;
+		if (clientFileName !== null) updateData.clientFileName = clientFileName;
+		if (clientPath !== null) updateData.clientPath = clientPath;
+		if (clientLastModified !== null) updateData.clientLastModified = clientLastModified;
+		
+		await FileSyncState.updateOne(
+			{ user: userId, client: clientId, file: fileId },
+			updateData,
+			{ upsert: true }
+		);
+	}
     
     // ===== FUNKCJE POMOCNICZE =====
     

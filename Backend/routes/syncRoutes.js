@@ -104,13 +104,13 @@ router.delete('/files/:fileId/delete-from-server/:clientId', syncController.dele
 // Wyszukiwanie plików dla klientów podczas synchronizacji
 
 /**
- * Wyszukuje plik po ID klienta (clientFileId)
+ * Wyszukuje pliki po ID klienta (clientFileId)
  * Query: ?folderId=xxx - ogranicza wyszukiwanie do konkretnego folderu
  */
 router.get('/clients/:clientId/files/:clientFileId', syncController.findFileByClientId);
 
 /**
- * Wyszukuje plik po nazwie i hashu w folderze
+ * Wyszukuje pliki po nazwie i hashu w folderze
  * Używane przez klientów do sprawdzenia czy plik już istnieje przed uploadem
  */
 router.get('/folders/:folderId/find/:fileName/:fileHash', syncController.findFileByNameAndHash);

@@ -18,4 +18,6 @@ router.put('/:id/hash', authMiddleware, fileController.updateFileHash);
 
 router.put('/:id', authMiddleware, fileController.renameFile);
 
+router.post('/handle-duplicates', authMiddleware, fileController.handleDuplicates);
+
 module.exports = router;

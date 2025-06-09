@@ -12,27 +12,59 @@ class FileService {
     // === TWORZENIE PLIKÓW ===
     
     async createFile(userId, fileData, options = {}) {
-		const {
-			filePath,
-			originalName,
-			mimetype,
-			folderId = null,
-			content = null,
-			hash = null,
-			lastModified = null
-		} = fileData;
+    const {
+        filePath,
+        originalName,
+        mimetype,
+        folderId = null,
+        content = null,
+        hash = null,
+        lastModified = null,
+        duplicateAction = null // 'overwrite', 'rename', 'cancel'
+    } = fileData;
+    
+    const category = getCategoryFromMimeType(mimetype);
+    
+    // Sprawdź duplikaty
+    const duplicateCheck = await this._checkForDuplicates(userId, originalName, folderId);
+    
+    if (duplicateCheck.hasDuplicate) {
+        if (duplicateCheck.isDeleted) {
+            // Istniejący plik jest usunięty - przywróć go i nadpisz
+            return await this._restoreAndOverwriteFile(duplicateCheck.existingFile, fileData);
+        } else {
+            // Plik istnieje i nie jest usunięty
+            if (!duplicateAction) {
+                // NAPRAWIONE - tworzymy błąd z dodatkowymi właściwościami
+                const error = new Error('DUPLICATE_FILE');
+                error.existingFile = duplicateCheck.existingFile;
+                error.suggestedName = this._generateUniqueName(originalName, duplicateCheck.existingNames);
+                throw error;
+            }
+            
+            switch (duplicateAction) {
+                case 'overwrite':
+                    return await this._overwriteExistingFile(duplicateCheck.existingFile, fileData);
+                case 'rename':
+                    fileData.originalName = this._generateUniqueName(originalName, duplicateCheck.existingNames);
+                    break;
+                case 'cancel':
+                    throw new Error('Operacja anulowana przez użytkownika');
+                default:
+                    throw new Error('Nieprawidłowa akcja dla duplikatu');
+            }
+        }
+    }
 		
-		const category = getCategoryFromMimeType(mimetype);
+		// Kontynuuj normalnie jeśli brak duplikatów lub została wybrana opcja rename
 		let finalFilePath = filePath;
 		let fileHash = hash;
 		let fileStats = null;
 		
-		// POPRAWKA: Zapisz plik z base64 jeśli jest content (nawet pusty) i brak filePath
 		if (content !== null && !filePath) {
-			finalFilePath = await this._saveBase64Content(content, originalName, category);
+			finalFilePath = await this._saveBase64Content(content, fileData.originalName, category);
 		}
 		
-		// Generuj hash i statystyki
 		if (finalFilePath) {
 			fileHash = fileHash || await generateFileHash(finalFilePath);
 			fileStats = await getFileStats(finalFilePath);
@@ -40,7 +72,6 @@ class FileService {
 		
 		const metadata = finalFilePath ? await this._processMetadata(finalFilePath) : {};
 		
-		// POPRAWKA: Upewnij się, że path nie jest null
 		let filePath_normalized = null;
 		if (finalFilePath) {
 			filePath_normalized = path.join(category, path.basename(finalFilePath)).replace(/\\/g, '/');
@@ -48,8 +79,8 @@ class FileService {
 		
 		const file = new File({
 			user: userId,
-			path: filePath_normalized, // Może być null tylko jeśli nie ma finalFilePath
-			originalName,
+			path: filePath_normalized,
+			originalName: fileData.originalName, // Używaj zaktualizowanej nazwy
 			mimetype,
 			size: fileStats?.size || 0,
 			category,
@@ -62,7 +93,6 @@ class FileService {
 		
 		await file.save();
 		
-		// Oznacz do synchronizacji jeśli w folderze
 		if (folderId) {
 			await this._markForSync(userId, file._id, 'added');
 		}
@@ -71,23 +101,53 @@ class FileService {
 	}
     
     async createMultipleFiles(userId, filesData, folderId = null) {
-        const results = [];
-        
-        for (const fileData of filesData) {
-            try {
-                const file = await this.createFile(userId, { ...fileData, folderId });
-                results.push({ success: true, file });
-            } catch (error) {
-                results.push({ 
-                    success: false, 
-                    error: error.message,
-                    fileName: fileData.originalName 
-                });
-            }
-        }
-        
-        return results;
-    }
+		const results = [];
+		const duplicateInfo = [];
+		
+		// Sprawdź duplikaty dla wszystkich plików
+		for (const fileData of filesData) {
+			try {
+				const duplicateCheck = await this._checkForDuplicates(userId, fileData.originalName, folderId);
+				
+				if (duplicateCheck.hasDuplicate && !duplicateCheck.isDeleted) {
+					duplicateInfo.push({
+						originalName: fileData.originalName,
+						existingFile: duplicateCheck.existingFile,
+						suggestedName: this._generateUniqueName(fileData.originalName, duplicateCheck.existingNames)
+					});
+				}
+			} catch (error) {
+				results.push({ 
+					success: false, 
+					error: error.message,
+					fileName: fileData.originalName 
+				});
+			}
+		}
+		
+		// Jeśli są duplikaty, zwróć specjalny błąd
+		if (duplicateInfo.length > 0) {
+			const error = new Error('MULTIPLE_DUPLICATES');
+			error.duplicates = duplicateInfo;  // Dodaj dane do obiektu błędu
+			throw error;
+		}
+		
+		// Przetwórz pliki normalnie jeśli brak duplikatów
+		for (const fileData of filesData) {
+			try {
+				const file = await this.createFile(userId, { ...fileData, folderId });
+				results.push({ success: true, file });
+			} catch (error) {
+				results.push({ 
+					success: false, 
+					error: error.message,
+					fileName: fileData.originalName 
+				});
+			}
+		}
+		
+		return results;
+	}
     
     // === POBIERANIE PLIKÓW ===
     
@@ -236,24 +296,29 @@ class FileService {
 	}
     
     async restoreFile(userId, fileId) {
-        const file = await File.findOne({ 
-            _id: fileId, 
-            user: userId,
-            isDeleted: true
-        });
-        
-        if (!file) throw new Error('Plik nie znaleziony w koszu');
-        
-        file.isDeleted = false;
-        file.deletedAt = null;
-        file.deletedBy = null;
-        file.restoredFromTrash = true;
-        file.restoredAt = new Date();
-        await file.save();
-        
-        return file;
-    }
-    
+		const file = await File.findOne({ 
+			_id: fileId, 
+			user: userId,
+			isDeleted: true
+		});
+		
+		if (!file) throw new Error('Plik nie znaleziony w koszu');
+		
+		file.isDeleted = false;
+		file.deletedAt = null;
+		file.deletedBy = null;
+		file.restoredFromTrash = true;
+		file.restoredAt = new Date();
+		await file.save();
+		
+		// POPRAWKA: Oznacz przywrócony plik do synchronizacji
+		if (file.folder) {
+			await this._markForSync(userId, fileId, 'added');
+		}
+		
+		return file;
+	}
+	
     async emptyTrash(userId) {
         const deletedFiles = await File.find({ user: userId, isDeleted: true });
         
@@ -457,6 +522,140 @@ class FileService {
 		} catch (error) {
 			console.warn('Błąd oznaczania jako usunięty do synchronizacji:', error.message);
 		}
+	}
+	
+	async _checkForDuplicates(userId, originalName, folderId) {
+		const existingFiles = await File.find({
+			user: userId,
+			originalName: originalName,
+			folder: folderId
+		}).sort({ createdAt: -1 });
+		
+		if (existingFiles.length === 0) {
+			return { hasDuplicate: false };
+		}
+		
+		// POPRAWKA: Znajdź tylko pierwszy aktywny i pierwszy usunięty plik
+		const activeFile = existingFiles.find(f => !f.isDeleted);
+		const deletedFile = existingFiles.find(f => f.isDeleted);
+		
+		if (activeFile) {
+			// Pobierz wszystkie nazwy w folderze dla generowania unikalnej nazwy
+			const allFiles = await File.find({
+				user: userId,
+				folder: folderId,
+				isDeleted: { $ne: true }
+			}).select('originalName');
+			
+			return {
+				hasDuplicate: true,
+				isDeleted: false,
+				existingFile: activeFile,
+				existingNames: allFiles.map(f => f.originalName)
+			};
+		} else if (deletedFile) {
+			return {
+				hasDuplicate: true,
+				isDeleted: true,
+				existingFile: deletedFile
+			};
+		}
+		
+		return { hasDuplicate: false };
+	}
+
+	async _restoreAndOverwriteFile(existingFile, newFileData) {
+		const category = getCategoryFromMimeType(newFileData.mimetype);
+		let finalFilePath = newFileData.filePath;
+		
+		// Usuń stary plik fizyczny jeśli istnieje
+		if (existingFile.path) {
+			const oldFilePath = path.resolve(process.env.UPLOADS_DIR, existingFile.path);
+			await this._deletePhysicalFile(oldFilePath);
+		}
+		
+		// Zapisz nowy plik
+		if (newFileData.content !== null && !newFileData.filePath) {
+			finalFilePath = await this._saveBase64Content(newFileData.content, newFileData.originalName, category);
+		}
+		
+		const fileHash = await generateFileHash(finalFilePath);
+		const fileStats = await getFileStats(finalFilePath);
+		const metadata = await this._processMetadata(finalFilePath);
+		
+		// Aktualizuj istniejący rekord
+		existingFile.path = path.join(category, path.basename(finalFilePath)).replace(/\\/g, '/');
+		existingFile.mimetype = newFileData.mimetype;
+		existingFile.size = fileStats.size;
+		existingFile.category = category;
+		existingFile.metadata = metadata;
+		existingFile.fileHash = fileHash;
+		existingFile.lastModified = fileStats.lastModified;
+		existingFile.isDeleted = false;
+		existingFile.deletedAt = null;
+		existingFile.restoredFromTrash = true;
+		existingFile.restoredAt = new Date();
+		
+		await existingFile.save();
+		
+		// POPRAWKA: Oznacz jako przywrócony z kosza zamiast zmodyfikowany
+		if (existingFile.folder) {
+			await this._markForSync(existingFile.user, existingFile._id, 'added');
+		}
+		
+		return existingFile;
+	}
+
+	async _overwriteExistingFile(existingFile, newFileData) {
+		const category = getCategoryFromMimeType(newFileData.mimetype);
+		let finalFilePath = newFileData.filePath;
+		
+		// Usuń stary plik fizyczny
+		if (existingFile.path) {
+			const oldFilePath = path.resolve(process.env.UPLOADS_DIR, existingFile.path);
+			await this._deletePhysicalFile(oldFilePath);
+		}
+		
+		// Zapisz nowy plik
+		if (newFileData.content !== null && !newFileData.filePath) {
+			finalFilePath = await this._saveBase64Content(newFileData.content, newFileData.originalName, category);
+		}
+		
+		const fileHash = await generateFileHash(finalFilePath);
+		const fileStats = await getFileStats(finalFilePath);
+		const metadata = await this._processMetadata(finalFilePath);
+		
+		// Aktualizuj istniejący rekord
+		existingFile.path = path.join(category, path.basename(finalFilePath)).replace(/\\/g, '/');
+		existingFile.mimetype = newFileData.mimetype;
+		existingFile.size = fileStats.size;
+		existingFile.category = category;
+		existingFile.metadata = metadata;
+		existingFile.fileHash = fileHash;
+		existingFile.lastModified = fileStats.lastModified;
+		
+		await existingFile.save();
+		
+		if (existingFile.folder) {
+			await this._markForSync(existingFile.user, existingFile._id, 'modified');
+		}
+		
+		return existingFile;
+	}
+
+	_generateUniqueName(originalName, existingNames) {
+		const ext = path.extname(originalName);
+		const baseName = path.basename(originalName, ext);
+		
+		let counter = 1;
+		let newName = originalName;
+		
+		while (existingNames.includes(newName)) {
+			newName = `${baseName} (${counter})${ext}`;
+			counter++;
+		}
+		
+		return newName;
 	}
 }
 

@@ -37,7 +37,8 @@ exports.uploadFile = [
                 filePath: req.file.path,
                 originalName: req.file.originalname,
                 mimetype: req.file.mimetype,
-                folderId: folderId
+                folderId: folderId,
+                duplicateAction: req.body.duplicateAction // 'overwrite', 'rename', 'cancel'
             };
 
             const file = await FileService.createFile(req.user.userId, fileData);
@@ -49,6 +50,18 @@ exports.uploadFile = [
             res.status(201).json(file);
         } catch (error) {
             console.error('Szczegóły błędu uploadu:', error);
+            
+            // NAPRAWIONA obsługa błędu duplikatu
+            if (error.message === 'DUPLICATE_FILE' && error.existingFile) {
+                return res.status(409).json({
+                    error: 'DUPLICATE_FILE',
+                    message: 'Plik o tej nazwie już istnieje',
+                    existingFile: error.existingFile,
+                    suggestedName: error.suggestedName,
+                    actions: ['overwrite', 'rename', 'cancel']
+                });
+            }
+            
             res.status(500).json({
                 error: 'Błąd przesyłania pliku',
                 details: error.message
@@ -78,7 +91,6 @@ exports.uploadMultipleFiles = [
 
             const results = await FileService.createMultipleFiles(req.user.userId, filesData, folderId);
             
-            // Sprawdź czy wszystkie pliki zostały pomyślnie utworzone
             const successfulFiles = results.filter(result => result.success).map(result => result.file);
             const failedFiles = results.filter(result => !result.success);
 
@@ -95,6 +107,17 @@ exports.uploadMultipleFiles = [
             });
         } catch (error) {
             console.error('Błąd przesyłania wielu plików:', error);
+            
+            // NAPRAWIONA obsługa błędu wielu duplikatów
+            if (error.message === 'MULTIPLE_DUPLICATES' && error.duplicates) {
+                return res.status(409).json({
+                    error: 'MULTIPLE_DUPLICATES',
+                    message: 'Niektóre pliki już istnieją',
+                    duplicates: error.duplicates,
+                    actions: ['overwrite', 'rename', 'cancel']
+                });
+            }
+            
             res.status(500).json({
                 error: 'Błąd przesyłania plików',
                 details: error.message
@@ -263,5 +286,53 @@ exports.renameFile = async (req, res) => {
     } catch (error) {
         console.error('Błąd zmiany nazwy pliku:', error);
         res.status(500).json({ error: error.message || 'Błąd zmiany nazwy pliku' });
+    }
+};
+
+exports.handleDuplicates = async (req, res) => {
+    try {
+        const { files, action, folderId } = req.body; // files: [{ tempPath, originalName, mimetype, newName? }]
+        
+        const results = [];
+        
+        for (const fileInfo of files) {
+            try {
+                const fileData = {
+                    filePath: fileInfo.tempPath,
+                    originalName: action === 'rename' && fileInfo.newName ? fileInfo.newName : fileInfo.originalName,
+                    mimetype: fileInfo.mimetype,
+                    folderId: folderId,
+                    duplicateAction: action
+                };
+                
+                const file = await FileService.createFile(req.user.userId, fileData);
+                results.push({ success: true, file, originalName: fileInfo.originalName });
+            } catch (error) {
+                results.push({ 
+                    success: false, 
+                    error: error.message,
+                    originalName: fileInfo.originalName
+                });
+            }
+        }
+        
+        if (folderId) {
+            const successfulFiles = results.filter(r => r.success);
+            if (successfulFiles.length > 0) {
+                await SyncService.markFolderForSync(req.user.userId, folderId);
+            }
+        }
+        
+        res.json({
+            results,
+            successCount: results.filter(r => r.success).length,
+            failureCount: results.filter(r => !r.success).length
+        });
+    } catch (error) {
+        console.error('Błąd obsługi duplikatów:', error);
+        res.status(500).json({
+            error: 'Błąd obsługi duplikatów',
+            details: error.message
+        });
     }
 };

@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DesktopClient.Models {
     // === PODSTAWOWE MODELE ===
@@ -205,7 +206,12 @@ namespace DesktopClient.Models {
     public class FindFileResponse {
         public bool success { get; set; }
         public bool exists { get; set; }
-        public FileInfo file { get; set; }
+        public int count { get; set; }
+        public List<FileInfo> files { get; set; }
+
+        // Właściwość pomocnicza dla kompatybilności wstecznej - zwraca pierwszy plik
+        [JsonIgnore]
+        public FileInfo file => files?.FirstOrDefault();
     }
 
     public class UpdateSyncSettingsRequest {
