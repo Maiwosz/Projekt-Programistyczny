@@ -15,3 +15,6 @@ yarn-debug.log*
 .vscode/
 
 client_secret_409697200173-003cd5hk14iqmlip5irspoqk5j5vjebv.apps.googleusercontent.com.json
+/DesktopClient/.vs
+/DesktopClient/.vs/DesktopClient
+/DesktopClient/.vs/DesktopClient/CopilotIndices/17.13.433.20974
