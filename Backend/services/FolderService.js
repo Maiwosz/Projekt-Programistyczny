@@ -172,11 +172,11 @@ class FolderService {
         }
         
         // Usuń synchronizację folderu
-        try {
-            await SyncService.removeSyncFolder(userId, folderId);
-        } catch (error) {
-            console.warn('Błąd usuwania synchronizacji folderu:', error.message);
-        }
+		try {
+			await SyncService.removeFolderFromSync(userId, folderId);
+		} catch (error) {
+			console.warn('Błąd usuwania synchronizacji folderu:', error.message);
+		}
         
         if (force) {
             // Rekurencyjne usuwanie
@@ -209,7 +209,7 @@ class FolderService {
 		for (const file of files) {
 			// Oznacz do synchronizacji
 			try {
-				await SyncService.markFileForSync(userId, file._id, 'deleted');
+				await SyncService.markFileAsDeleted(userId, file._id);
 			} catch (error) {
 				console.warn('Błąd oznaczania pliku do synchronizacji:', error.message);
 			}
@@ -229,10 +229,10 @@ class FolderService {
 			// Usuń rekord z bazy danych
 			await File.findByIdAndDelete(file._id);
 		}
-		
+
 		// Usuń synchronizację folderu na końcu
 		try {
-			await SyncService.removeSyncFolder(userId, folderId);
+			await SyncService.removeFolderFromSync(userId, folderId);
 		} catch (error) {
 			console.warn('Błąd usuwania synchronizacji folderu:', error.message);
 		}

@@ -40,9 +40,9 @@ class GoogleDriveConnectionService {
             const userInfo = await oauth2.userinfo.get();
             
             const driveClient = await this._findOrCreateClient(userId, tokens, userInfo.data, connectionName);
-            
-            if (!driveClient.clientId) {
-                throw new Error('ClientId nie został ustawiony');
+			
+			if (!driveClient.client) {
+                throw new Error('Client nie został ustawiony');
             }
             
             return driveClient;
@@ -135,25 +135,38 @@ class GoogleDriveConnectionService {
     }
     
     async _createNewClient(userId, tokens, userInfo, connectionName) {
-        // Zarejestruj klienta w systemie synchronizacji
-        const client = await SyncService.registerClient(userId, {
-            type: 'google-drive',
-            name: connectionName || 'Google Drive',
-            metadata: { googleUserId: userInfo.id }
-        });
-        
-        // Utwórz GoogleDriveClient
-        const driveClient = new GoogleDriveClient({
-            user: userId,
-            clientId: client.clientId,
-            name: connectionName || 'Google Drive',
-            credentials: tokens,
-            googleUser: userInfo
-        });
-        
-        await driveClient.save();
-        return driveClient;
-    }
+		// Zarejestruj klienta w systemie synchronizacji
+		const client = await SyncService.registerClient(userId, {
+			type: 'google-drive',
+			name: connectionName || 'Google Drive',
+			metadata: { googleUserId: userInfo.id }
+		});
+		
+		console.log(`[GDRIVE] Utworzono klienta:`, {
+			id: client._id,
+			type: client.type,
+			name: client.name
+		});
+		
+		// POPRAWKA: Użyj client._id (ObjectId) zamiast client.clientId
+		const driveClient = new GoogleDriveClient({
+			user: userId,
+			client: client._id,  // To jest ObjectId z Client._id
+			name: connectionName || 'Google Drive',
+			credentials: tokens,
+			googleUser: userInfo
+		});
+		
+		await driveClient.save();
+		
+		console.log(`[GDRIVE] Utworzono GoogleDriveClient:`, {
+			user: driveClient.user,
+			client: driveClient.client,
+			name: driveClient.name
+		});
+		
+		return driveClient;
+	}
     
     async _getClient(userId) {
         return await GoogleDriveClient.findOne({ user: userId });

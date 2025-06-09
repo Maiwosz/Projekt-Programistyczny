@@ -31,28 +31,30 @@ class GoogleDriveSyncService {
     }
     
     async createSyncFolder(userId, serverFolderId, driveFolderId) {
-        const driveClient = await GoogleDriveConnectionService.getValidatedClient(userId);
-        const drive = await GoogleDriveConnectionService.getDriveInstance(userId);
-        
-        await this._validateDriveFolder(drive, driveFolderId);
-        
-        const syncFolder = await SyncService.addSyncFolder(
-            userId,
-            driveClient.clientId,
-            driveFolderId,
-            serverFolderId
-        );
-        
-        await SyncService.markFolderForSync(userId, serverFolderId);
-        
-        return {
-            syncFolderId: syncFolder._id,
-            serverFolderId: serverFolderId,
-            driveFolderId: driveFolderId,
-            clientId: driveClient.clientId,
-            message: 'Synchronizacja Google Drive została utworzona pomyślnie'
-        };
-    }
+		const driveClient = await GoogleDriveConnectionService.getValidatedClient(userId);
+		const drive = await GoogleDriveConnectionService.getDriveInstance(userId);
+		
+		await this._validateDriveFolder(drive, driveFolderId);
+		
+		// POPRAWKA: Używaj addFolderToSync zamiast addSyncFolder
+		const syncFolder = await SyncService.addFolderToSync(
+			userId,
+			driveClient.client,
+			driveFolderId,  // clientFolderPath
+			serverFolderId, // serverFolderId
+			null            // clientFolderName (opcjonalne)
+		);
+		
+		await SyncService.markFolderForSync(userId, serverFolderId);
+		
+		return {
+			syncFolderId: syncFolder._id,
+			serverFolderId: serverFolderId,
+			driveFolderId: driveFolderId,
+			clientId: driveClient.client,
+			message: 'Synchronizacja Google Drive została utworzona pomyślnie'
+		};
+	}
     
     // === OPERACJE NA FOLDERACH GOOGLE DRIVE ===
     
@@ -87,13 +89,12 @@ class GoogleDriveSyncService {
     
     async _syncSingleFolder(driveClient, folderId) {
 		console.log(`[GDRIVE] Rozpoczynam synchronizację folderu: ${folderId}`);
+    
+		await SyncService.updateClientActivity(driveClient.user, driveClient.client);
 		
-		await SyncService.updateClientActivity(driveClient.user, driveClient.clientId);
-		
-		// 1. Pobierz stan synchronizacji z SyncService
-		const syncState = await SyncService.getSyncState(
+		const syncState = await SyncService.getSyncData(
 			driveClient.user, 
-			driveClient.clientId, 
+			driveClient.client, 
 			folderId
 		);
 		
@@ -111,23 +112,23 @@ class GoogleDriveSyncService {
 		// 3. Synchronizuj serwer -> Google Drive
 		console.log(`[GDRIVE] === SYNCHRONIZACJA SERWER -> GOOGLE DRIVE ===`);
 		for (const fileData of syncState.syncData) {
-			console.log(`[GDRIVE] Przetwarzam plik: ${fileData.originalName} (${fileData.operation})`);
+			console.log(`[GDRIVE] Przetwarzam plik: ${fileData.file?.originalName || 'BRAK_NAZWY'} (${fileData.operation})`);
 			
 			try {
 				const operation = await this._processSyncOperation(driveClient, fileData, driveFolderId);
 				if (operation) {
 					operations.push(operation);
-					console.log(`[GDRIVE] ✓ Operacja ${operation.operation} zakończona dla: ${operation.fileName || fileData.originalName}`);
+					console.log(`[GDRIVE] ✓ Operacja ${operation.operation} zakończona dla: ${operation.fileName || fileData.file?.originalName}`);
 				} else {
-					console.log(`[GDRIVE] - Brak operacji dla pliku: ${fileData.originalName}`);
+					console.log(`[GDRIVE] - Brak operacji dla pliku: ${fileData.file?.originalName}`);
 				}
 			} catch (error) {
-				console.error(`[GDRIVE] ✗ Błąd operacji dla pliku ${fileData.originalName}:`, error.message);
+				console.error(`[GDRIVE] ✗ Błąd operacji dla pliku ${fileData.file?.originalName}:`, error.message);
 				operations.push({
 					fileId: fileData.fileId,
 					operation: 'error',
 					error: error.message,
-					fileName: fileData.originalName
+					fileName: fileData.file?.originalName
 				});
 			}
 		}
@@ -164,9 +165,8 @@ class GoogleDriveSyncService {
 		console.log(`[GDRIVE] Potwierdzam synchronizację - operacji: ${operations.length}`);
 		await SyncService.confirmSyncCompleted(
 			driveClient.user,
-			driveClient.clientId,
-			folderId,
-			operations
+			driveClient.client,
+			folderId
 		);
 		
 		await driveClient.updateSyncStatus(true);
@@ -183,41 +183,41 @@ class GoogleDriveSyncService {
     // === SYNCHRONIZACJA WSZYSTKICH FOLDERÓW ===
     
     async _syncAllFolders(driveClient) {
-        console.log(`[GDRIVE] Synchronizacja wszystkich folderów dla klienta: ${driveClient.clientId}`);
-        
-        const syncFolders = await this._getActiveSyncFolders(driveClient);
-        
-        if (syncFolders.length === 0) {
-            return [{
-                message: 'Brak folderów skonfigurowanych do synchronizacji Google Drive',
-                totalFolders: 0
-            }];
-        }
-        
-        const results = [];
-        
-        for (const syncFolder of syncFolders) {
-            try {
-                const result = await this._syncSingleFolder(driveClient, syncFolder.folder);
-                results.push(result);
-            } catch (error) {
-                console.error(`[GDRIVE] Błąd synchronizacji folderu ${syncFolder.folder}:`, error);
-                results.push({
-                    folderId: syncFolder.folder,
-                    error: error.message,
-                    filesProcessed: 0,
-                    operations: []
-                });
-            }
-        }
-        
-        return results;
-    }
+		console.log(`[GDRIVE] Synchronizacja wszystkich folderów dla klienta: ${driveClient.client}`);
+		
+		const syncFolders = await this._getActiveSyncFolders(driveClient);
+		
+		if (syncFolders.length === 0) {
+			return [{
+				message: 'Brak folderów skonfigurowanych do synchronizacji Google Drive',
+				totalFolders: 0
+			}];
+		}
+		
+		const results = [];
+		
+		for (const syncFolder of syncFolders) {
+			try {
+				const result = await this._syncSingleFolder(driveClient, syncFolder.folder);
+				results.push(result);
+			} catch (error) {
+				console.error(`[GDRIVE] Błąd synchronizacji folderu ${syncFolder.folder}:`, error);
+				results.push({
+					folderId: syncFolder.folder,
+					error: error.message,
+					filesProcessed: 0,
+					operations: []
+				});
+			}
+		}
+		
+		return results;
+	}
     
     // === OPERACJE SYNCHRONIZACJI ===
     
     async _processSyncOperation(driveClient, fileData, driveFolderId) {
-		console.log(`[GDRIVE] Przetwarzam operację: ${fileData.operation} dla pliku: ${fileData.originalName}, clientFileId: ${fileData.clientFileId || 'brak'}`);
+		console.log(`[GDRIVE] Przetwarzam operację: ${fileData.operation} dla pliku: ${fileData.file?.originalName}, clientFileId: ${fileData.clientFileId || 'brak'}`);
 		
 		switch (fileData.operation) {
 			case 'added':
@@ -232,18 +232,18 @@ class GoogleDriveSyncService {
 			case 'unchanged':
 				// POPRAWKA: Sprawdź czy plik rzeczywiście istnieje w Google Drive
 				if (!fileData.clientFileId) {
-					console.log(`[GDRIVE] Plik ${fileData.originalName} oznaczony jako unchanged ale brak clientFileId - przesyłam`);
+					console.log(`[GDRIVE] Plik ${fileData.file?.originalName} oznaczony jako unchanged ale brak clientFileId - przesyłam`);
 					return await this._uploadToDrive(driveClient, fileData, driveFolderId);
 				}
 				
 				// Sprawdź czy plik nadal istnieje w Google Drive
 				const stillExists = await this._verifyFileExistsInDrive(driveClient, fileData.clientFileId);
 				if (!stillExists) {
-					console.log(`[GDRIVE] Plik ${fileData.originalName} nie istnieje już w Google Drive - przesyłam ponownie`);
+					console.log(`[GDRIVE] Plik ${fileData.file?.originalName} nie istnieje już w Google Drive - przesyłam ponownie`);
 					return await this._uploadToDrive(driveClient, fileData, driveFolderId);
 				}
 				
-				console.log(`[GDRIVE] Plik ${fileData.originalName} rzeczywiście unchanged - pomijam`);
+				console.log(`[GDRIVE] Plik ${fileData.file?.originalName} rzeczywiście unchanged - pomijam`);
 				return null;
 				
 			default:
@@ -255,23 +255,22 @@ class GoogleDriveSyncService {
     async _uploadToDrive(driveClient, fileData, driveFolderId) {
 		const drive = await GoogleDriveConnectionService.getDriveInstance(driveClient.user);
 		
-		// Użyj SyncService do pobrania pliku
-		const downloadResult = await SyncService.getFileForDownload(
+		// POPRAWKA: Zmiana getFileForDownload na downloadFileFromServer
+		const downloadResult = await SyncService.downloadFileFromServer(
 			driveClient.user,
-			driveClient.clientId,
+			driveClient.client,
 			fileData.fileId
 		);
 		
-		const tempPath = await this._saveToTempFile(fileData.originalName, downloadResult.content);
+		// Użyj downloadResult.file.originalName zamiast fileData.file.originalName
+		const tempPath = await this._saveToTempFile(downloadResult.file.originalName, downloadResult.content);
 		
 		try {
 			let driveFileId = fileData.clientFileId;
 			let response;
 			
-			// POPRAWKA: Sprawdź czy to modyfikacja istniejącego pliku czy nowy plik
 			if (driveFileId && fileData.operation === 'modified') {
-				// Aktualizuj istniejący plik
-				console.log(`[GDRIVE] Aktualizuję istniejący plik: ${fileData.originalName} (${driveFileId})`);
+				console.log(`[GDRIVE] Aktualizuję istniejący plik: ${downloadResult.file.originalName} (${driveFileId})`);
 				
 				response = await drive.files.update({
 					fileId: driveFileId,
@@ -281,13 +280,11 @@ class GoogleDriveSyncService {
 					fields: 'id, name, size, modifiedTime'
 				});
 				
-				console.log(`[GDRIVE] Zaktualizowano plik: ${fileData.originalName}`);
+				console.log(`[GDRIVE] Zaktualizowano plik: ${downloadResult.file.originalName}`);
 				
 			} else {
-				// Utwórz nowy plik - zarówno dla 'added' jak i 'modified' bez clientFileId
-				console.log(`[GDRIVE] Tworzę nowy plik: ${fileData.originalName} w folderze ${driveFolderId}`);
+				console.log(`[GDRIVE] Tworzę nowy plik: ${downloadResult.file.originalName} w folderze ${driveFolderId}`);
 				
-				// DODATKOWA WALIDACJA: Sprawdź czy folder istnieje
 				try {
 					await drive.files.get({
 						fileId: driveFolderId,
@@ -299,7 +296,7 @@ class GoogleDriveSyncService {
 				
 				response = await drive.files.create({
 					resource: {
-						name: fileData.originalName,
+						name: downloadResult.file.originalName,
 						parents: [driveFolderId]
 					},
 					media: {
@@ -309,17 +306,16 @@ class GoogleDriveSyncService {
 				});
 				
 				driveFileId = response.data.id;
-				console.log(`[GDRIVE] Przesłano nowy plik: ${fileData.originalName} z ID: ${driveFileId}`);
+				console.log(`[GDRIVE] Przesłano nowy plik: ${downloadResult.file.originalName} z ID: ${driveFileId}`);
 			}
 			
-			// Użyj SyncService do potwierdzenia operacji
-			await SyncService.confirmFileOperation(
+			await SyncService.confirmFileDownloaded(
 				driveClient.user,
-				driveClient.clientId,
+				driveClient.client,
 				fileData.fileId,
 				{
 					clientFileId: driveFileId,
-					clientFileName: fileData.originalName,
+					clientFileName: downloadResult.file.originalName,
 					clientPath: driveFolderId,
 					clientLastModified: new Date().toISOString()
 				}
@@ -329,11 +325,11 @@ class GoogleDriveSyncService {
 				fileId: fileData.fileId,
 				operation: fileData.operation === 'modified' ? 'updated' : 'uploaded',
 				clientFileId: driveFileId,
-				fileName: fileData.originalName
+				fileName: downloadResult.file.originalName
 			};
 			
 		} catch (error) {
-			console.error(`[GDRIVE] Błąd przesyłania pliku ${fileData.originalName}:`, error);
+			console.error(`[GDRIVE] Błąd przesyłania pliku ${downloadResult.file.originalName}:`, error);
 			throw error;
 		} finally {
 			this._cleanupTempFile(tempPath);
@@ -341,29 +337,29 @@ class GoogleDriveSyncService {
 	}
     
     async _deleteFromDrive(driveClient, fileData) {
-        if (fileData.clientFileId) {
-            const drive = await GoogleDriveConnectionService.getDriveInstance(driveClient.user);
-            
-            try {
-                await drive.files.delete({ fileId: fileData.clientFileId });
-                console.log(`[GDRIVE] Usunięto plik: ${fileData.originalName}`);
-            } catch (error) {
-                console.warn(`[GDRIVE] Nie można usunąć pliku z Google Drive: ${error.message}`);
-            }
-        }
-        
-        // Użyj SyncService do potwierdzenia usunięcia
-        await SyncService.confirmFileDeleted(
-            driveClient.user,
-            driveClient.clientId,
-            fileData.fileId
-        );
-        
-        return {
-            fileId: fileData.fileId,
-            operation: 'deleted'
-        };
-    }
+		if (fileData.clientFileId) {
+			const drive = await GoogleDriveConnectionService.getDriveInstance(driveClient.user);
+			
+			try {
+				await drive.files.delete({ fileId: fileData.clientFileId });
+				console.log(`[GDRIVE] Usunięto plik: ${fileData.file?.originalName || 'BRAK_NAZWY'}`);
+			} catch (error) {
+				console.warn(`[GDRIVE] Nie można usunąć pliku z Google Drive: ${error.message}`);
+			}
+		}
+		
+		// POPRAWKA: Zmiana confirmFileDeleted na confirmFileDeletedOnClient
+		await SyncService.confirmFileDeletedOnClient(
+			driveClient.user,
+			driveClient.client,
+			fileData.fileId
+		);
+		
+		return {
+			fileId: fileData.fileId,
+			operation: 'deleted'
+		};
+	}
     
     async _processGDriveFile(driveClient, driveFile, folderId) {
         // Sprawdź czy plik już istnieje w SyncService
@@ -381,111 +377,107 @@ class GoogleDriveSyncService {
     }
     
     async _updateExistingFile(driveClient, driveFile, existingFileData) {
-        // Sprawdź czy plik wymaga aktualizacji na podstawie daty modyfikacji
-        const driveModified = new Date(driveFile.modifiedTime);
-        const lastKnownModified = existingFileData.clientLastModified ? 
-            new Date(existingFileData.clientLastModified) : new Date(0);
-        
-        if (driveModified <= lastKnownModified) {
-            console.log(`[GDRIVE] Plik ${driveFile.name} - data modyfikacji niezmieniona, pomijanie`);
-            return null;
-        }
-        
-        // Pobierz plik i sprawdź hash
-        const tempPath = await this._downloadDriveFile(driveClient, driveFile);
-        
-        try {
-            const newHash = await generateFileHash(tempPath);
-            
-            // Porównaj hash z ostatnim znanym hashem
-            if (existingFileData.hash === newHash) {
-                console.log(`[GDRIVE] Plik ${driveFile.name} - hash identyczny, aktualizacja tylko metadanych`);
-                
-                // Zaktualizuj tylko metadane przez SyncService
-                await SyncService.confirmFileOperation(
-                    driveClient.user,
-                    driveClient.clientId,
-                    existingFileData.fileId,
-                    {
-                        clientFileId: driveFile.id,
-                        clientFileName: driveFile.name,
-                        clientPath: null,
-                        clientLastModified: driveFile.modifiedTime
-                    }
-                );
-                
-                return null;
-            }
-            
-            // Hash się zmienił - zaktualizuj plik przez SyncService
-            const fileBuffer = fs.readFileSync(tempPath);
-            
-            await SyncService.updateFileFromClient(
-                driveClient.user,
-                driveClient.clientId,
-                existingFileData.fileId,
-                {
-                    content: fileBuffer.toString('base64'),
-                    hash: newHash,
-                    clientFileId: driveFile.id,
-                    clientLastModified: driveFile.modifiedTime
-                }
-            );
-            
-            console.log(`[GDRIVE] Zaktualizowano plik z Google Drive: ${driveFile.name}`);
-            
-            return {
-                fileId: existingFileData.fileId,
-                operation: 'updated_from_drive',
-                clientFileId: driveFile.id
-            };
-            
-        } finally {
-            this._cleanupTempFile(tempPath);
-        }
-    }
+		const driveModified = new Date(driveFile.modifiedTime);
+		const lastKnownModified = existingFileData.clientLastModified ? 
+			new Date(existingFileData.clientLastModified) : new Date(0);
+		
+		if (driveModified <= lastKnownModified) {
+			console.log(`[GDRIVE] Plik ${driveFile.name} - data modyfikacji niezmieniona, pomijanie`);
+			return null;
+		}
+		
+		const tempPath = await this._downloadDriveFile(driveClient, driveFile);
+		
+		try {
+			const newHash = await generateFileHash(tempPath);
+			
+			if (existingFileData.hash === newHash) {
+				console.log(`[GDRIVE] Plik ${driveFile.name} - hash identyczny, aktualizacja tylko metadanych`);
+				
+				// POPRAWKA: Zmiana confirmFileOperation na confirmFileDownloaded
+				await SyncService.confirmFileDownloaded(
+					driveClient.user,
+					driveClient.client,
+					existingFileData.fileId,
+					{
+						clientFileId: driveFile.id,
+						clientFileName: driveFile.name,
+						clientPath: null,
+						clientLastModified: driveFile.modifiedTime
+					}
+				);
+				
+				return null;
+			}
+			
+			const fileBuffer = fs.readFileSync(tempPath);
+			
+			// POPRAWKA: Zmiana updateFileFromClient na updateExistingFileOnServer
+			await SyncService.updateExistingFileOnServer(
+				driveClient.user,
+				driveClient.client,
+				existingFileData.fileId,
+				{
+					content: fileBuffer.toString('base64'),
+					hash: newHash,
+					clientFileId: driveFile.id,
+					clientLastModified: driveFile.modifiedTime
+				}
+			);
+			
+			console.log(`[GDRIVE] Zaktualizowano plik z Google Drive: ${driveFile.name}`);
+			
+			return {
+				fileId: existingFileData.fileId,
+				operation: 'updated_from_drive',
+				clientFileId: driveFile.id
+			};
+			
+		} finally {
+			this._cleanupTempFile(tempPath);
+		}
+	}
     
     async _createNewFile(driveClient, driveFile, folderId) {
-        const syncDirection = driveClient.syncSettings?.syncDirection;
-        
-        if (syncDirection === 'upload-only') {
-            console.log(`[GDRIVE] Tryb upload-only - pomijanie pobierania ${driveFile.name}`);
-            return null;
-        }
-        
-        const tempPath = await this._downloadDriveFile(driveClient, driveFile);
-        
-        try {
-            const fileBuffer = fs.readFileSync(tempPath);
-            const hash = await generateFileHash(tempPath);
-            
-            // Użyj SyncService do utworzenia nowego pliku
-            const uploadResult = await SyncService.uploadFileFromClient(
-                driveClient.user,
-                driveClient.clientId,
-                folderId,
-                {
-                    name: driveFile.name,
-                    size: driveFile.size,
-                    content: fileBuffer.toString('base64'),
-                    hash: hash,
-                    clientFileId: driveFile.id,
-                    clientLastModified: driveFile.modifiedTime
-                }
-            );
-            
-            console.log(`[GDRIVE] Pobrano nowy plik z Google Drive: ${driveFile.name}`);
-            
-            return {
-                fileId: uploadResult.fileId,
-                operation: 'downloaded_from_drive',
-                clientFileId: driveFile.id
-            };
-            
-        } finally {
-            this._cleanupTempFile(tempPath);
-        }
-    }
+		const syncDirection = driveClient.syncSettings?.syncDirection;
+		
+		if (syncDirection === 'upload-only') {
+			console.log(`[GDRIVE] Tryb upload-only - pomijanie pobierania ${driveFile.name}`);
+			return null;
+		}
+		
+		const tempPath = await this._downloadDriveFile(driveClient, driveFile);
+		
+		try {
+			const fileBuffer = fs.readFileSync(tempPath);
+			const hash = await generateFileHash(tempPath);
+			
+			// POPRAWKA: Zmiana uploadFileFromClient na uploadNewFileToServer
+			const uploadResult = await SyncService.uploadNewFileToServer(
+				driveClient.user,
+				driveClient.client,
+				folderId,
+				{
+					name: driveFile.name,
+					content: fileBuffer.toString('base64'),
+					hash: hash,
+					clientFileId: driveFile.id,
+					clientLastModified: driveFile.modifiedTime
+				}
+			);
+			
+			console.log(`[GDRIVE] Pobrano nowy plik z Google Drive: ${driveFile.name}`);
+			
+			return {
+				fileId: uploadResult.fileId,
+				operation: 'downloaded_from_drive',
+				clientFileId: driveFile.id
+			};
+			
+		} finally {
+			this._cleanupTempFile(tempPath);
+		}
+	}
     
     // === OPERACJE NA PLIKACH GOOGLE DRIVE ===
     
@@ -527,7 +519,6 @@ class GoogleDriveSyncService {
 		const operations = [];
 		const driveFileIds = new Set(driveFileList.map(f => f.id));
 		
-		// Znajdź pliki które były zsynchronizowane ale już nie istnieją w Google Drive
 		const filesWithClientId = syncData.filter(fileData => 
 			fileData.clientFileId && 
 			fileData.operation !== 'deleted' &&
@@ -535,36 +526,32 @@ class GoogleDriveSyncService {
 		);
 		
 		for (const fileData of filesWithClientId) {
-			console.log(`[GDRIVE] Plik ${fileData.originalName} usunięty z Google Drive - usuwam z serwera`);
+			console.log(`[GDRIVE] Plik ${fileData.file?.originalName || 'BRAK_NAZWY'} usunięty z Google Drive - usuwam z serwera`);
 			
 			try {
-				// Usuń plik z serwera
-				const FileService = require('./FileService');
-				await FileService.deleteFile(driveClient.user, fileData.fileId);
-				
-				// Potwierdź usunięcie w SyncService
-				await SyncService.confirmFileDeleted(
+				// POPRAWKA: Zmiana na deleteFileFromServer
+				await SyncService.deleteFileFromServer(
 					driveClient.user,
-					driveClient.clientId,
+					driveClient.client,
 					fileData.fileId
 				);
 				
 				operations.push({
 					fileId: fileData.fileId,
 					operation: 'deleted_from_server',
-					fileName: fileData.originalName,
+					fileName: fileData.file?.originalName || 'BRAK_NAZWY',
 					reason: 'deleted_from_drive'
 				});
 				
-				console.log(`[GDRIVE] ✓ Usunięto plik z serwera: ${fileData.originalName}`);
+				console.log(`[GDRIVE] ✓ Usunięto plik z serwera: ${fileData.file?.originalName}`);
 				
 			} catch (error) {
-				console.error(`[GDRIVE] ✗ Błąd usuwania pliku z serwera ${fileData.originalName}:`, error.message);
+				console.error(`[GDRIVE] ✗ Błąd usuwania pliku z serwera ${fileData.file?.originalName}:`, error.message);
 				operations.push({
 					fileId: fileData.fileId,
 					operation: 'error',
 					error: error.message,
-					fileName: fileData.originalName
+					fileName: fileData.file?.originalName || 'BRAK_NAZWY'
 				});
 			}
 		}
@@ -621,61 +608,77 @@ class GoogleDriveSyncService {
     }
     
     async _getActiveSyncFolders(driveClient) {
-        const SyncFolder = require('../models/SyncFolder');
-        const Client = require('../models/Client');
-        
-        const clientDoc = await Client.findOne({
-            user: driveClient.user,
-            clientId: driveClient.clientId,
-            isActive: true
-        });
-        
-        if (!clientDoc) return [];
-        
-        return await SyncFolder.find({
-            user: driveClient.user,
-            'clients.client': clientDoc._id,
-            'clients.isActive': true
-        });
-    }
+		const SyncFolder = require('../models/SyncFolder');
+		const Client = require('../models/Client');
+		
+		const clientDoc = await Client.findOne({
+			user: driveClient.user,
+			_id: driveClient.client,
+			isActive: true
+		});
+		
+		if (!clientDoc) {
+			console.log(`[GDRIVE] Nie znaleziono aktywnego klienta: user=${driveClient.user}, client=${driveClient.client}`);
+			return [];
+		}
+		
+		const syncFolders = await SyncFolder.find({
+			user: driveClient.user,
+			'clients.client': clientDoc._id,
+			'clients.isActive': true
+		});
+		
+		console.log(`[GDRIVE] Znaleziono ${syncFolders.length} folderów do synchronizacji dla klienta ${clientDoc._id}`);
+		
+		return syncFolders;
+	}
     
     async _getClientFolderConfig(driveClient, folderId) {
-        const SyncFolder = require('../models/SyncFolder');
-        const Client = require('../models/Client');
-        
-        const clientDoc = await Client.findOne({
-            user: driveClient.user,
-            clientId: driveClient.clientId,
-            isActive: true
-        });
-        
-        if (!clientDoc) throw new Error('Klient Google Drive nie został znaleziony');
-        
-        const syncFolder = await SyncFolder.findOne({
-            user: driveClient.user,
-            folder: folderId,
-            'clients.client': clientDoc._id
-        });
-        
-        if (!syncFolder) throw new Error('Konfiguracja synchronizacji Google Drive nie została znaleziona');
-        
-        const clientConfig = syncFolder.clients.find(c => 
-            c.client.toString() === clientDoc._id.toString()
-        );
-        
-        if (!clientConfig) throw new Error('Konfiguracja klienta Google Drive nie została znaleziona');
-        
-        return clientConfig;
-    }
+		const SyncFolder = require('../models/SyncFolder');
+		const Client = require('../models/Client');
+		
+		const clientDoc = await Client.findOne({
+			user: driveClient.user,
+			_id: driveClient.client, // ZMIANA: _id zamiast clientId
+			isActive: true
+		});
+		
+		if (!clientDoc) {
+			console.log(`[GDRIVE] Klient nie został znaleziony: user=${driveClient.user}, client=${driveClient.client}`);
+			throw new Error('Klient Google Drive nie został znaleziony');
+		}
+		
+		const syncFolder = await SyncFolder.findOne({
+			user: driveClient.user,
+			folder: folderId,
+			'clients.client': clientDoc._id
+		});
+		
+		if (!syncFolder) {
+			console.log(`[GDRIVE] SyncFolder nie został znaleziony: user=${driveClient.user}, folder=${folderId}, client=${clientDoc._id}`);
+			throw new Error('Konfiguracja synchronizacji Google Drive nie została znaleziona');
+		}
+		
+		const clientConfig = syncFolder.clients.find(c => 
+			c.client.toString() === clientDoc._id.toString() // POPRAWKA: porównanie z clientDoc._id
+		);
+		
+		if (!clientConfig) {
+			console.log(`[GDRIVE] ClientConfig nie został znaleziony w syncFolder dla klienta ${clientDoc._id}`);
+			throw new Error('Konfiguracja klienta Google Drive nie została znaleziona');
+		}
+		
+		return clientConfig;
+	}
     
     // POPRAWIONA metoda - używa danych z SyncService
     async _findExistingFileInSync(driveClient, driveFileId, folderId) {
         // Pobierz stan synchronizacji z SyncService
-        const syncState = await SyncService.getSyncState(
-            driveClient.user, 
-            driveClient.clientId, 
-            folderId
-        );
+        const syncState = await SyncService.getSyncData(
+			driveClient.user, 
+			driveClient.client, 
+			folderId
+		);
         
         // Znajdź plik po clientFileId
         const existingFile = syncState.syncData.find(fileData => 

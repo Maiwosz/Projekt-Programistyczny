@@ -100,7 +100,8 @@ async function loadSyncs(folderId) {
     syncList.innerHTML = '<div class="loading">Ładowanie synchronizacji...</div>';
     
     try {
-        const response = await apiRequest(`/api/sync/folders/${folderId}/syncs`);
+        // ZMIANA: Nowy endpoint dla informacji o synchronizacji folderu
+        const response = await apiRequest(`/api/sync/folders/${folderId}/info`);
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -109,7 +110,9 @@ async function loadSyncs(folderId) {
         const data = await response.json();
         
         if (data.success) {
-            renderSyncList(data.syncs || []);
+            // ZMIANA: Struktura danych z backendu
+            const syncs = data.syncFolder ? data.syncFolder.clients : [];
+            renderSyncList(syncs);
         } else {
             throw new Error(data.error || 'Nieznany błąd serwera');
         }
@@ -191,7 +194,8 @@ export async function viewSyncDetails(syncId) {
     }
     
     try {
-        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/syncs/${syncId}`);
+        // ZMIANA: Pobieramy dane z info endpointu i szukamy konkretnego sync
+        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/info`);
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -199,8 +203,13 @@ export async function viewSyncDetails(syncId) {
         
         const data = await response.json();
         
-        if (data.success) {
-            showSyncDetailsModal(data.sync);
+        if (data.success && data.syncFolder) {
+            const sync = data.syncFolder.clients.find(c => c.id === syncId);
+            if (sync) {
+                showSyncDetailsModal(sync);
+            } else {
+                throw new Error('Synchronizacja nie znaleziona');
+            }
         } else {
             throw new Error(data.error || 'Nieznany błąd serwera');
         }
@@ -349,7 +358,8 @@ export async function saveSync(syncId) {
     const isActive = isActiveValue === 'true';
     
     try {
-        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/syncs/${syncId}`, {
+        // ZMIANA: Nowy endpoint dla aktualizacji ustawień synchronizacji
+        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/settings/${syncId}`, {
             method: 'PUT',
             body: JSON.stringify({ 
                 syncDirection, 
@@ -398,7 +408,8 @@ export async function deleteSync(syncId) {
     }
     
     try {
-        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/syncs/${syncId}`, {
+        // ZMIANA: Usuwanie konkretnego klienta z synchronizacji folderu
+        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}?clientId=${syncId}`, {
             method: 'DELETE'
         });
         

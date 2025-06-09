@@ -4,7 +4,7 @@ const GoogleDriveClientSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     
     // Identyfikator klienta w systemie synchronizacji
-    clientId: { type: String, required: true, unique: true },
+    client: { type: mongoose.Schema.Types.ObjectId, ref: 'Client', required: true },
     
     // Nazwa połączenia nadana przez użytkownika
     name: { type: String, required: true },
@@ -61,7 +61,6 @@ const GoogleDriveClientSchema = new mongoose.Schema({
 
 // Indeks unikalności - jeden użytkownik może mieć tylko jedno aktywne połączenie z Google Drive
 GoogleDriveClientSchema.index({ user: 1 }, { unique: true });
-GoogleDriveClientSchema.index({ clientId: 1 }, { unique: true });
 
 // Middleware do aktualizacji updatedAt
 GoogleDriveClientSchema.pre('save', function(next) {

@@ -3,9 +3,6 @@ const mongoose = require('mongoose');
 const ClientSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     
-    // Identyfikator klienta (generowany przez klienta lub serwer)
-    clientId: { type: String, required: true },
-    
     // Typ klienta
     type: { 
         type: String, 
@@ -30,9 +27,9 @@ const ClientSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-// POPRAWIONY indeks - unikalność kombinacji user + clientId + type
+// indeks - unikalność kombinacji user + _id + type
 // To pozwala każdemu użytkownikowi mieć własnego klienta Google Drive
-ClientSchema.index({ user: 1, clientId: 1, type: 1 }, { unique: true });
+ClientSchema.index({ user: 1, _id: 1, type: 1 }, { unique: true });
 
 // Middleware do aktualizacji updatedAt
 ClientSchema.pre('save', function(next) {

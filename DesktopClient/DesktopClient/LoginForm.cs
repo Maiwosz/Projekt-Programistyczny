@@ -7,6 +7,7 @@ using System.Windows.Forms;
 namespace DesktopClient {
     public partial class LoginForm : Form {
         private ApiClient _apiClient;
+        private ClientManager _clientManager;
         private TextBox txtUsername;
         private TextBox txtPassword;
         private Button btnLogin;
@@ -17,6 +18,7 @@ namespace DesktopClient {
         public LoginForm() {
             InitializeComponent();
             _apiClient = new ApiClient();
+            _clientManager = new ClientManager();
         }
 
         private void InitializeComponent() {
@@ -133,15 +135,21 @@ namespace DesktopClient {
             ShowMessage("Logowanie...", Color.Blue);
 
             try {
-                var loginResponse = await _apiClient.LoginAsync(txtUsername.Text.Trim(), txtPassword.Text);
+                var username = txtUsername.Text.Trim();
+                var loginResponse = await _apiClient.LoginAsync(username, txtPassword.Text);
 
                 if (!string.IsNullOrEmpty(loginResponse.token)) {
                     _apiClient.SetAuthToken(loginResponse.token);
 
+                    ShowMessage("Rejestrowanie klienta...", Color.Blue);
+
+                    // Pobierz lub utwórz ID klienta dla tego użytkownika
+                    var clientId = await _clientManager.GetOrCreateClientIdAsync(username, _apiClient);
+
                     ShowMessage("Logowanie zakończone sukcesem!", Color.Green);
 
-                    // Otwórz główne okno aplikacji
-                    var mainForm = new MainForm(_apiClient, txtUsername.Text.Trim());
+                    // Otwórz główne okno aplikacji z clientId
+                    var mainForm = new MainForm(_apiClient, username, clientId);
                     this.Hide();
                     mainForm.ShowDialog();
                     this.Close();
