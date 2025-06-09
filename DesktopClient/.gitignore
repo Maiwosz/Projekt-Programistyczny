@@ -134,3 +134,4 @@ _NCrunch*
 
 # GitHub Copilot indices
 .vs/DesktopClient/CopilotIndices/
+.vs/*

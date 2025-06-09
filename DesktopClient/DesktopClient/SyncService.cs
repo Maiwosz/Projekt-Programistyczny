@@ -144,8 +144,19 @@ namespace DesktopClient.Services {
             OnSyncStatusChanged?.Invoke($"Przetwarzanie pliku z serwera: {fileName} (operacja: {syncItem.operation})");
 
             try {
+                // DODANE: Sprawdź czy plik nie jest oznaczony jako usunięty na serwerze
+                if (syncItem.file?.isDeleted == true && syncItem.operation.ToLower() != "deleted") {
+                    OnSyncStatusChanged?.Invoke($"Pomijanie usuniętego pliku z serwera: {fileName}");
+                    return;
+                }
+
                 switch (syncItem.operation.ToLower()) {
                     case "added":
+                        // DODANE: Dodatkowe sprawdzenie dla operacji "added"
+                        if (syncItem.file?.isDeleted == true) {
+                            OnSyncStatusChanged?.Invoke($"Pomijanie dodania usuniętego pliku: {fileName}");
+                            return;
+                        }
                         await HandleServerFileAdded(syncItem, localPath, syncFolder.SyncDirection);
                         break;
 
@@ -154,6 +165,7 @@ namespace DesktopClient.Services {
                         break;
 
                     case "deleted":
+                    case "deleted_from_server":  // DODANE: Obsługa dodatkowego typu operacji
                         await HandleServerFileDeleted(syncItem, localPath, syncFolder.SyncDirection);
                         break;
 

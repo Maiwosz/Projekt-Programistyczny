@@ -173,10 +173,18 @@ namespace DesktopClient.Services {
 
         private async Task<T> PostAsync<T>(string endpoint, object data) {
             try {
-                var json = JsonConvert.SerializeObject(data);
-                Console.WriteLine($"[HTTP POST] {_baseUrl}{endpoint}");
-                Console.WriteLine($"Payload: {json}");
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+                if (data != null) {
+                    var json = JsonConvert.SerializeObject(data);
+                    Console.WriteLine($"[HTTP POST] {_baseUrl}{endpoint}");
+                    Console.WriteLine($"Payload: {json}");
+                    content = new StringContent(json, Encoding.UTF8, "application/json");
+                } else {
+                    Console.WriteLine($"[HTTP POST] {_baseUrl}{endpoint}");
+                    Console.WriteLine($"Payload: {{}}");
+                }
+
                 var response = await _httpClient.PostAsync($"{_baseUrl}{endpoint}", content);
                 return await ProcessResponse<T>(response);
             } catch (Exception ex) {
@@ -187,10 +195,18 @@ namespace DesktopClient.Services {
 
         private async Task<T> PutAsync<T>(string endpoint, object data) {
             try {
-                var json = data != null ? JsonConvert.SerializeObject(data) : "{}";
-                Console.WriteLine($"[HTTP PUT] {_baseUrl}{endpoint}");
-                Console.WriteLine($"Payload: {json}");
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+                if (data != null) {
+                    var json = JsonConvert.SerializeObject(data);
+                    Console.WriteLine($"[HTTP PUT] {_baseUrl}{endpoint}");
+                    Console.WriteLine($"Payload: {json}");
+                    content = new StringContent(json, Encoding.UTF8, "application/json");
+                } else {
+                    Console.WriteLine($"[HTTP PUT] {_baseUrl}{endpoint}");
+                    Console.WriteLine($"Payload: {{}}");
+                }
+
                 var response = await _httpClient.PutAsync($"{_baseUrl}{endpoint}", content);
                 return await ProcessResponse<T>(response);
             } catch (Exception ex) {
