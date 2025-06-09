@@ -403,7 +403,6 @@ namespace DesktopClient {
             }
         }
 
-        // POPRAWIONA WERSJA - usuwa pętlę nieskończoności
         protected override void SetVisibleCore(bool value) {
             // Jeśli chcemy ukryć okno i nie jest to minimalizacja, ukryj do tray
             if (!value && _allowVisible && WindowState != FormWindowState.Minimized) {

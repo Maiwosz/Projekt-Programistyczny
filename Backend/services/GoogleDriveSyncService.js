@@ -221,6 +221,38 @@ class GoogleDriveSyncService {
 		
 		switch (fileData.operation) {
 			case 'added':
+				// POPRAWKA: Sprawdź czy plik już istnieje w Google Drive przed przesłaniem
+				if (fileData.file?.originalName) {
+					const drive = await GoogleDriveConnectionService.getDriveInstance(driveClient.user);
+					const existingFiles = await this._findFilesByNameInFolder(
+						drive, 
+						fileData.file.originalName, 
+						driveFolderId
+					);
+					
+					if (existingFiles.length > 0) {
+						console.log(`[GDRIVE] Plik ${fileData.file.originalName} już istnieje w Google Drive - linkuję zamiast przesyłać`);
+						
+						await SyncService.confirmFileDownloaded(
+							driveClient.user,
+							driveClient.client,
+							fileData.fileId,
+							{
+								clientFileId: existingFiles[0].id,
+								clientFileName: existingFiles[0].name,
+								clientPath: driveFolderId,
+								clientLastModified: existingFiles[0].modifiedTime || new Date().toISOString()
+							}
+						);
+						
+						return {
+							fileId: fileData.fileId,
+							operation: 'linked_existing',
+							clientFileId: existingFiles[0].id,
+							fileName: fileData.file.originalName
+						};
+					}
+				}
 				return await this._uploadToDrive(driveClient, fileData, driveFolderId);
 				
 			case 'modified':
@@ -230,9 +262,43 @@ class GoogleDriveSyncService {
 				return await this._deleteFromDrive(driveClient, fileData);
 				
 			case 'unchanged':
-				// POPRAWKA: Sprawdź czy plik rzeczywiście istnieje w Google Drive
 				if (!fileData.clientFileId) {
-					console.log(`[GDRIVE] Plik ${fileData.file?.originalName} oznaczony jako unchanged ale brak clientFileId - przesyłam`);
+					console.log(`[GDRIVE] Plik ${fileData.file?.originalName} oznaczony jako unchanged ale brak clientFileId - sprawdzam czy istnieje`);
+					
+					// Sprawdź czy plik istnieje w Google Drive po nazwie
+					if (fileData.file?.originalName) {
+						const drive = await GoogleDriveConnectionService.getDriveInstance(driveClient.user);
+						const existingFiles = await this._findFilesByNameInFolder(
+							drive, 
+							fileData.file.originalName, 
+							driveFolderId
+						);
+						
+						if (existingFiles.length > 0) {
+							console.log(`[GDRIVE] Znaleziono plik ${fileData.file.originalName} w Google Drive - linkuję`);
+							
+							await SyncService.confirmFileDownloaded(
+								driveClient.user,
+								driveClient.client,
+								fileData.fileId,
+								{
+									clientFileId: existingFiles[0].id,
+									clientFileName: existingFiles[0].name,
+									clientPath: driveFolderId,
+									clientLastModified: existingFiles[0].modifiedTime || new Date().toISOString()
+								}
+							);
+							
+							return {
+								fileId: fileData.fileId,
+								operation: 'linked_existing',
+								clientFileId: existingFiles[0].id,
+								fileName: fileData.file.originalName
+							};
+						}
+					}
+					
+					console.log(`[GDRIVE] Plik ${fileData.file?.originalName} nie istnieje w Google Drive - przesyłam`);
 					return await this._uploadToDrive(driveClient, fileData, driveFolderId);
 				}
 				
@@ -255,19 +321,29 @@ class GoogleDriveSyncService {
     async _uploadToDrive(driveClient, fileData, driveFolderId) {
 		const drive = await GoogleDriveConnectionService.getDriveInstance(driveClient.user);
 		
-		// POPRAWKA: Zmiana getFileForDownload na downloadFileFromServer
 		const downloadResult = await SyncService.downloadFileFromServer(
 			driveClient.user,
 			driveClient.client,
 			fileData.fileId
 		);
 		
-		// Użyj downloadResult.file.originalName zamiast fileData.file.originalName
 		const tempPath = await this._saveToTempFile(downloadResult.file.originalName, downloadResult.content);
 		
 		try {
 			let driveFileId = fileData.clientFileId;
 			let response;
+			
+			// POPRAWKA: Sprawdź czy plik już istnieje w folderze Google Drive po nazwie
+			const existingFiles = await this._findFilesByNameInFolder(drive, downloadResult.file.originalName, driveFolderId);
+			
+			if (driveFileId && fileData.operation === 'modified') {
+				// Sprawdź czy plik nadal istnieje
+				const fileExists = await this._verifyFileExistsInDrive(driveClient, driveFileId);
+				if (!fileExists) {
+					console.log(`[GDRIVE] Plik ${driveFileId} nie istnieje - utworzę nowy`);
+					driveFileId = null;
+				}
+			}
 			
 			if (driveFileId && fileData.operation === 'modified') {
 				console.log(`[GDRIVE] Aktualizuję istniejący plik: ${downloadResult.file.originalName} (${driveFileId})`);
@@ -283,30 +359,47 @@ class GoogleDriveSyncService {
 				console.log(`[GDRIVE] Zaktualizowano plik: ${downloadResult.file.originalName}`);
 				
 			} else {
-				console.log(`[GDRIVE] Tworzę nowy plik: ${downloadResult.file.originalName} w folderze ${driveFolderId}`);
-				
-				try {
-					await drive.files.get({
-						fileId: driveFolderId,
-						fields: 'id, name, mimeType'
+				// POPRAWKA: Jeśli plik o tej nazwie już istnieje w folderze, użyj go zamiast tworzyć nowy
+				if (existingFiles.length > 0) {
+					const existingFile = existingFiles[0]; // Weź pierwszy znaleziony
+					console.log(`[GDRIVE] Znaleziono istniejący plik ${downloadResult.file.originalName} (${existingFile.id}) - aktualizuję zamiast tworzyć nowy`);
+					
+					response = await drive.files.update({
+						fileId: existingFile.id,
+						media: {
+							body: fs.createReadStream(tempPath)
+						},
+						fields: 'id, name, size, modifiedTime'
 					});
-				} catch (error) {
-					throw new Error(`Folder Google Drive ${driveFolderId} nie istnieje: ${error.message}`);
+					
+					driveFileId = existingFile.id;
+					
+				} else {
+					console.log(`[GDRIVE] Tworzę nowy plik: ${downloadResult.file.originalName} w folderze ${driveFolderId}`);
+					
+					try {
+						await drive.files.get({
+							fileId: driveFolderId,
+							fields: 'id, name, mimeType'
+						});
+					} catch (error) {
+						throw new Error(`Folder Google Drive ${driveFolderId} nie istnieje: ${error.message}`);
+					}
+					
+					response = await drive.files.create({
+						resource: {
+							name: downloadResult.file.originalName,
+							parents: [driveFolderId]
+						},
+						media: {
+							body: fs.createReadStream(tempPath)
+						},
+						fields: 'id, name, size, modifiedTime'
+					});
+					
+					driveFileId = response.data.id;
+					console.log(`[GDRIVE] Przesłano nowy plik: ${downloadResult.file.originalName} z ID: ${driveFileId}`);
 				}
-				
-				response = await drive.files.create({
-					resource: {
-						name: downloadResult.file.originalName,
-						parents: [driveFolderId]
-					},
-					media: {
-						body: fs.createReadStream(tempPath)
-					},
-					fields: 'id, name, size, modifiedTime'
-				});
-				
-				driveFileId = response.data.id;
-				console.log(`[GDRIVE] Przesłano nowy plik: ${downloadResult.file.originalName} z ID: ${driveFileId}`);
 			}
 			
 			await SyncService.confirmFileDownloaded(
@@ -333,6 +426,21 @@ class GoogleDriveSyncService {
 			throw error;
 		} finally {
 			this._cleanupTempFile(tempPath);
+		}
+	}
+	
+	async _findFilesByNameInFolder(drive, fileName, folderId) {
+		try {
+			const response = await drive.files.list({
+				q: `'${folderId}' in parents and name='${fileName.replace(/'/g, "\\'")}' and trashed=false`,
+				fields: 'files(id, name, modifiedTime)',
+				pageSize: 10
+			});
+			
+			return response.data.files || [];
+		} catch (error) {
+			console.warn(`[GDRIVE] Błąd wyszukiwania plików po nazwie: ${error.message}`);
+			return [];
 		}
 	}
     
@@ -446,13 +554,64 @@ class GoogleDriveSyncService {
 			return null;
 		}
 		
+		// POPRAWKA: Sprawdź czy plik o tej nazwie i podobnym rozmiarze już istnieje na serwerze
+		const existingFiles = await SyncService.findFileByNameAndHash(
+			driveClient.user, 
+			folderId, 
+			driveFile.name, 
+			null // Nie mamy jeszcze hash, więc sprawdzamy tylko nazwę
+		);
+		
+		if (existingFiles.length > 0) {
+			console.log(`[GDRIVE] Plik ${driveFile.name} już istnieje na serwerze - sprawdzam czy wymaga aktualizacji`);
+			
+			// Jeśli istnieje, sprawdź czy potrzebuje aktualizacji
+			const existingFile = existingFiles[0];
+			return await this._updateExistingFile(driveClient, driveFile, {
+				fileId: existingFile.fileId,
+				file: existingFile,
+				clientFileId: driveFile.id,
+				clientLastModified: driveFile.modifiedTime,
+				hash: existingFile.hash
+			});
+		}
+		
 		const tempPath = await this._downloadDriveFile(driveClient, driveFile);
 		
 		try {
 			const fileBuffer = fs.readFileSync(tempPath);
 			const hash = await generateFileHash(tempPath);
 			
-			// POPRAWKA: Zmiana uploadFileFromClient na uploadNewFileToServer
+			// POPRAWKA: Sprawdź ponownie po wygenerowaniu hash
+			const existingByHash = await SyncService.findFileByNameAndHash(
+				driveClient.user, 
+				folderId, 
+				driveFile.name, 
+				hash
+			);
+			
+			if (existingByHash.length > 0) {
+				console.log(`[GDRIVE] Plik ${driveFile.name} z identycznym hash już istnieje - aktualizuję tylko metadane`);
+				
+				await SyncService.confirmFileDownloaded(
+					driveClient.user,
+					driveClient.client,
+					existingByHash[0].fileId,
+					{
+						clientFileId: driveFile.id,
+						clientFileName: driveFile.name,
+						clientPath: null,
+						clientLastModified: driveFile.modifiedTime
+					}
+				);
+				
+				return {
+					fileId: existingByHash[0].fileId,
+					operation: 'linked_existing',
+					clientFileId: driveFile.id
+				};
+			}
+			
 			const uploadResult = await SyncService.uploadNewFileToServer(
 				driveClient.user,
 				driveClient.client,
