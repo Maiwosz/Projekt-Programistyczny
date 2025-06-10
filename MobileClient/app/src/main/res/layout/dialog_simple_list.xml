@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:background="@color/background_surface"
     android:minHeight="300dp">
 
     <TextView
@@ -13,8 +14,8 @@
         android:textSize="18sp"
         android:textStyle="bold"
         android:padding="16dp"
-        android:background="@color/material_grey_100"
-        android:textColor="@android:color/primary_text_light" />
+        android:background="@color/background_header"
+        android:textColor="@color/text_primary" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvItems"

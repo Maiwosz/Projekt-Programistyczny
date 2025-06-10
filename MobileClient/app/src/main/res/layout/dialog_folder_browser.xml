@@ -11,14 +11,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="16dp"
-        android:background="@color/material_grey_100">
+        android:background="@color/background_header">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Lokalizacja:"
             android:textSize="12sp"
-            android:textColor="@android:color/secondary_text_light" />
+            android:textColor="@color/text_secondary" />
 
         <TextView
             android:id="@+id/tvCurrentPath"
@@ -27,7 +27,7 @@
             android:text="/"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="@android:color/primary_text_light"
+            android:textColor="@color/text_primary"
             android:layout_marginTop="4dp" />
 
     </LinearLayout>
@@ -39,6 +39,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:padding="8dp"
+        android:background="@color/background_surface"
         android:scrollbars="vertical" />
 
     <!-- Przyciski akcji -->
@@ -47,7 +48,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:background="@color/material_grey_50"
+        android:background="@color/background_card"
         android:gravity="end">
 
         <Button

@@ -27,6 +27,7 @@ class SyncFolderManager(
 
     // Trzymamy referencje do dialogu i jego komponentów
     private var currentFolderDialog: AlertDialog? = null
+    private var currentServerDialog: AlertDialog? = null
     private var currentRecyclerView: RecyclerView? = null
     private var currentPathTextView: TextView? = null
     private var currentServerFolder: Folder? = null
@@ -93,6 +94,7 @@ class SyncFolderManager(
     // Uproszczony wybór folderu serwera
     private fun showServerFolderSelection(folders: List<Folder>) {
         val adapter = FolderBrowserAdapter(folders) { selectedFolder ->
+            currentServerDialog?.dismiss() // Zamknij dialog wyboru serwera
             showLocalFolderSelection(selectedFolder)
         }
 
@@ -104,11 +106,16 @@ class SyncFolderManager(
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = adapter
 
-        AlertDialog.Builder(context)
+        currentServerDialog = AlertDialog.Builder(context)
             .setTitle("Nowa synchronizacja")
             .setView(dialogView)
             .setNegativeButton("Anuluj", null)
-            .show()
+            .setOnDismissListener {
+                currentServerDialog = null
+            }
+            .create()
+
+        currentServerDialog?.show()
     }
 
     // Uproszczony wybór folderu lokalnego
@@ -217,6 +224,8 @@ class SyncFolderManager(
     private fun resetDialogState() {
         currentFolderDialog?.dismiss()
         currentFolderDialog = null
+        currentServerDialog?.dismiss() // Dodaj tę linię
+        currentServerDialog = null // Dodaj tę linię
         currentRecyclerView = null
         currentPathTextView = null
         currentServerFolder = null
@@ -361,7 +370,7 @@ class SyncFolderManager(
         etFolderName.setText(folder.name)
         tvLocalPath.text = localPath
 
-        AlertDialog.Builder(context)
+        val configDialog = AlertDialog.Builder(context)
             .setTitle("Konfiguracja synchronizacji")
             .setView(dialogView)
             .setPositiveButton("Dodaj") { _, _ ->
@@ -383,7 +392,9 @@ class SyncFolderManager(
             .setNegativeButton("Wstecz") { _, _ ->
                 showLocalFolderBrowser(localPath)
             }
-            .show()
+            .create()
+
+        configDialog.show()
     }
 
     private fun addSyncFolder(folderId: String, localPath: String, folderName: String, syncDirection: String) {
@@ -395,6 +406,8 @@ class SyncFolderManager(
 
                 if (response.success) {
                     showMessage("Synchronizacja dodana pomyślnie!", false)
+                    resetDialogState() // Zamknie dialog browsera folderów
+                    // Dialog konfiguracji zamknie się automatycznie po kliknięciu "Dodaj"
                     onSyncAdded()
                 } else {
                     showMessage("Błąd dodawania synchronizacji", true)

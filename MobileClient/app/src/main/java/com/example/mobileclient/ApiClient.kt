@@ -17,6 +17,11 @@ import javax.net.ssl.*
 class ApiClient {
     private val baseUrl = "https://89.200.230.226:443"
     private var authToken: String? = null
+    private var sessionManager: SessionManager? = null
+
+    fun setSessionManager(sessionManager: SessionManager) {
+        this.sessionManager = sessionManager
+    }
 
     private val gson: Gson = GsonBuilder()
         .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
@@ -66,6 +71,31 @@ class ApiClient {
 
     fun getAuthToken(): String? {
         return authToken
+    }
+
+    suspend fun refreshToken(): RefreshTokenResponse = withContext(Dispatchers.IO) {
+        // Użyj obecnego tokenu do odświeżenia
+        val request = Request.Builder()
+            .url("$baseUrl/api/auth/refresh")
+            .post("{}".toRequestBody("application/json".toMediaType()))
+            .apply {
+                authToken?.let { token ->
+                    header("Authorization", "Bearer $token")
+                }
+                header("User-Agent", "AndroidMobileClient/1.0")
+                header("Content-Type", "application/json")
+                header("Accept", "application/json")
+            }
+            .build()
+
+        val response = client.newCall(request).execute()
+        val responseBody = response.body?.string() ?: ""
+
+        if (response.isSuccessful) {
+            gson.fromJson(responseBody, RefreshTokenResponse::class.java)
+        } else {
+            throw Exception("Nie udało się odświeżyć tokenu")
+        }
     }
 
     // === AUTORYZACJA ===
@@ -223,7 +253,11 @@ class ApiClient {
             .build()
 
         println("[HTTP GET] $baseUrl$endpoint")
-        return executeRequest(request)
+        return if (sessionManager != null) {
+            executeRequestWithTokenRefresh(request, sessionManager)
+        } else {
+            executeRequest(request)
+        }
     }
 
     private suspend inline fun <reified T> postAsync(endpoint: String, data: Any?): T {
@@ -246,7 +280,11 @@ class ApiClient {
             }
             .build()
 
-        return executeRequest(request)
+        return if (sessionManager != null) {
+            executeRequestWithTokenRefresh(request, sessionManager)
+        } else {
+            executeRequest(request)
+        }
     }
 
     private suspend inline fun <reified T> putAsync(endpoint: String, data: Any?): T {
@@ -269,7 +307,11 @@ class ApiClient {
             }
             .build()
 
-        return executeRequest(request)
+        return if (sessionManager != null) {
+            executeRequestWithTokenRefresh(request, sessionManager)
+        } else {
+            executeRequest(request)
+        }
     }
 
     private suspend inline fun <reified T> deleteAsync(endpoint: String): T {
@@ -286,7 +328,11 @@ class ApiClient {
             .build()
 
         println("[HTTP DELETE] $baseUrl$endpoint")
-        return executeRequest(request)
+        return if (sessionManager != null) {
+            executeRequestWithTokenRefresh(request, sessionManager)
+        } else {
+            executeRequest(request)
+        }
     }
 
     private suspend inline fun <reified T> executeRequest(request: Request): T {
@@ -321,6 +367,51 @@ class ApiClient {
                 } else {
                     throw Exception("Nieoczekiwany błąd: ${e.message}")
                 }
+            }
+        }
+    }
+
+    private suspend inline fun <reified T> executeRequestWithTokenRefresh(
+        request: Request,
+        sessionManager: SessionManager? = null
+    ): T {
+        return withContext(Dispatchers.IO) {
+            try {
+                var response = client.newCall(request).execute()
+
+                // Jeśli 401 i mamy sessionManager, spróbuj odświeżyć token
+                if (response.code == 401 && sessionManager != null) {
+                    response.close()
+
+                    try {
+                        val refreshResponse = refreshToken()
+                        authToken = refreshResponse.token
+                        sessionManager.updateToken(refreshResponse.token)
+
+                        // Ponów żądanie z nowym tokenem
+                        val newRequest = request.newBuilder()
+                            .header("Authorization", "Bearer $authToken")
+                            .build()
+
+                        response = client.newCall(newRequest).execute()
+                    } catch (e: Exception) {
+                        throw Exception("Sesja wygasła. Zaloguj się ponownie.")
+                    }
+                }
+
+                val responseBody = response.body?.string() ?: ""
+
+                if (response.isSuccessful) {
+                    if (responseBody.trim().startsWith("{") || responseBody.trim().startsWith("[")) {
+                        gson.fromJson(responseBody, T::class.java)
+                    } else {
+                        throw Exception("Nieprawidłowa odpowiedź serwera")
+                    }
+                } else {
+                    handleErrorResponse(response.code, responseBody)
+                }
+            } catch (e: IOException) {
+                throw Exception("Błąd połączenia: ${e.message}")
             }
         }
     }

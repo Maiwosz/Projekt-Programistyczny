@@ -3,8 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="32dp"
-    android:gravity="center">
+    android:padding="@dimen/margin_extra_large"
+    android:gravity="center"
+    android:background="@color/background_surface">
 
     <TextView
         android:layout_width="wrap_content"
@@ -12,13 +13,14 @@
         android:text="File Manager"
         android:textSize="24sp"
         android:textStyle="bold"
+        android:textColor="@color/text_primary"
         android:layout_marginBottom="48dp"
         android:gravity="center" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="@dimen/margin_medium">
 
         <EditText
             android:id="@+id/etUsername"
@@ -26,14 +28,15 @@
             android:layout_height="wrap_content"
             android:hint="Nazwa użytkownika"
             android:inputType="text"
-            android:singleLine="true" />
+            android:singleLine="true"
+            android:textSize="@dimen/text_size_medium" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="@dimen/margin_medium">
 
         <EditText
             android:id="@+id/etPassword"
@@ -41,7 +44,8 @@
             android:layout_height="wrap_content"
             android:hint="Hasło"
             android:inputType="textPassword"
-            android:singleLine="true" />
+            android:singleLine="true"
+            android:textSize="@dimen/text_size_medium" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -50,30 +54,34 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Zapamiętaj logowanie"
-        android:layout_marginBottom="24dp" />
+        android:textSize="@dimen/text_size_normal"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="@dimen/margin_large" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="@dimen/margin_medium">
 
         <Button
             android:id="@+id/btnLogin"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/button_height"
             android:layout_weight="1"
             android:text="Zaloguj"
-            android:layout_marginEnd="8dp" />
+            android:layout_marginEnd="@dimen/margin_small"
+            android:textSize="@dimen/text_size_medium" />
 
         <Button
             android:id="@+id/btnRegister"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/button_height"
             android:layout_weight="1"
             android:text="Zarejestruj się"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="@dimen/margin_small"
+            android:textSize="@dimen/text_size_medium"
             style="@style/Widget.Material3.Button.OutlinedButton" />
 
     </LinearLayout>
@@ -83,8 +91,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:layout_marginBottom="16dp"
-        android:textColor="@android:color/holo_red_dark" />
+        android:layout_marginBottom="@dimen/margin_medium"
+        android:textColor="@color/status_error"
+        android:textSize="@dimen/text_size_normal" />
 
     <ProgressBar
         android:id="@+id/progressBar"

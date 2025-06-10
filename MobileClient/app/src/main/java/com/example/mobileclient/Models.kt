@@ -35,6 +35,10 @@ data class Folder(
     val createdAt: Date
 )
 
+data class RefreshTokenResponse(
+    val token: String
+)
+
 // === ZARZĄDZANIE KLIENTAMI ===
 
 data class RegisterClientRequest(

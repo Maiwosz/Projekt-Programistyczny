@@ -13,8 +13,8 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
         <!-- Explicitly disable the action bar -->
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+        <!-- <item name="windowActionBar">false</item> -->
+        <!-- <item name="windowNoTitle">true</item> -->
     </style>
     <!-- Base application theme. -->
     <style name="Base.Theme.MobileClient" parent="Theme.Material3.DayNight.NoActionBar">

@@ -11,14 +11,19 @@ namespace DesktopClient.Services {
         private readonly HttpClient _httpClient;
         private readonly string _baseUrl;
         private string _authToken;
+        private readonly SessionManager _sessionManager;
 
-        public ApiClient() {
+        // Event do powiadamiania o odświeżeniu tokenu
+        public event Action<string> TokenRefreshed;
+
+        public ApiClient(SessionManager sessionManager = null) {
             _httpClient = new HttpClient();
             _baseUrl = "https://localhost:3443";
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
             _httpClient.DefaultRequestHeaders.Accept.Clear();
             _httpClient.DefaultRequestHeaders.Accept.Add(
                 new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            _sessionManager = sessionManager;
         }
 
         public void SetAuthToken(string token) {
@@ -31,6 +36,28 @@ namespace DesktopClient.Services {
             }
         }
 
+        // Nowa metoda do odświeżania tokenu
+        public async Task<bool> RefreshTokenAsync() {
+            try {
+                if (string.IsNullOrEmpty(_authToken)) {
+                    return false;
+                }
+
+                var response = await PostAsync<LoginResponse>("/api/auth/refresh", null, skipTokenRefresh: true);
+
+                if (response?.token != null) {
+                    SetAuthToken(response.token);
+                    TokenRefreshed?.Invoke(response.token);
+                    Console.WriteLine("[TOKEN] Token został odświeżony");
+                    return true;
+                }
+                return false;
+            } catch (Exception ex) {
+                Console.WriteLine($"[TOKEN] Błąd odświeżania tokenu: {ex.Message}");
+                return false;
+            }
+        }
+
         // === AUTORYZACJA ===
 
         public async Task<LoginResponse> LoginAsync(string username, string password) {
@@ -39,7 +66,7 @@ namespace DesktopClient.Services {
                 password = password
             };
 
-            return await PostAsync<LoginResponse>("/api/auth/login", request);
+            return await PostAsync<LoginResponse>("/api/auth/login", request, skipTokenRefresh: true);
         }
 
         public async Task<List<Folder>> GetFoldersAsync() {
@@ -48,7 +75,6 @@ namespace DesktopClient.Services {
 
         // === ZARZĄDZANIE KLIENTAMI ===
 
-        // Rejestruje nowego klienta synchronizacji w systemie
         public async Task<RegisterClientResponse> RegisterClientAsync(string type, string name, object metadata = null) {
             var request = new RegisterClientRequest {
                 type = type,
@@ -59,19 +85,16 @@ namespace DesktopClient.Services {
             return await PostAsync<RegisterClientResponse>("/api/sync/clients", request);
         }
 
-        // Pobiera informacje o zarejestrowanym kliencie
         public async Task<GetClientResponse> GetClientAsync(string clientId) {
             return await GetAsync<GetClientResponse>($"/api/sync/clients/{clientId}");
         }
 
-        // Aktualizuje timestamp ostatniej aktywności klienta (heartbeat)
         public async Task<ApiResponse> UpdateClientActivityAsync(string clientId) {
             return await PutAsync<ApiResponse>($"/api/sync/clients/{clientId}/activity", null);
         }
 
         // === KONFIGURACJA FOLDERÓW SYNCHRONIZACJI ===
 
-        // Dodaje folder serwera do synchronizacji z lokalnym folderem klienta
         public async Task<AddFolderToSyncResponse> AddFolderToSyncAsync(string clientId, string clientFolderPath, string serverFolderId, string clientFolderName = null) {
             var request = new AddFolderToSyncRequest {
                 clientId = clientId,
@@ -83,62 +106,51 @@ namespace DesktopClient.Services {
             return await PostAsync<AddFolderToSyncResponse>("/api/sync/folders", request);
         }
 
-        // Usuwa folder z synchronizacji (całkowicie lub tylko dla określonego klienta)
         public async Task<ApiResponse> RemoveFolderFromSyncAsync(string folderId, string syncId) {
             var url = $"/api/sync/folders/{folderId}?syncId={syncId}";
             return await DeleteAsync<ApiResponse>(url);
         }
 
-        // Pobiera informacje o synchronizacji folderu (klienci, ustawienia)
         public async Task<SyncFolderInfoResponse> GetSyncFolderInfoAsync(string folderId) {
             return await GetAsync<SyncFolderInfoResponse>($"/api/sync/folders/{folderId}/info");
         }
 
         // === GŁÓWNY PROCES SYNCHRONIZACJI ===
 
-        // Pobiera dane synchronizacji - listę wszystkich operacji do wykonania
         public async Task<SyncDataResponse> GetSyncDataAsync(string folderId, string clientId) {
             return await GetAsync<SyncDataResponse>($"/api/sync/folders/{folderId}/sync-data/{clientId}");
         }
 
-        // Pobiera plik z serwera (do pobrania przez klienta)
         public async Task<FileDownloadResponse> DownloadFileFromServerAsync(string fileId, string clientId) {
             return await GetAsync<FileDownloadResponse>($"/api/sync/files/{fileId}/download/{clientId}");
         }
 
-        // Wysyła nowy plik z klienta na serwer
         public async Task<UploadFileResponse> UploadNewFileToServerAsync(string folderId, string clientId, UploadFileRequest fileData) {
             return await PostAsync<UploadFileResponse>($"/api/sync/folders/{folderId}/files/{clientId}", fileData);
         }
 
-        // Aktualizuje istniejący plik na serwerze
         public async Task<UpdateFileResponse> UpdateExistingFileOnServerAsync(string fileId, string clientId, UpdateFileRequest fileData) {
             return await PutAsync<UpdateFileResponse>($"/api/sync/files/{fileId}/update/{clientId}", fileData);
         }
 
-        // Potwierdza pobranie pliku przez klienta (po downlodzie z serwera)
         public async Task<ApiResponse> ConfirmFileDownloadedAsync(string fileId, string clientId, ClientFileInfo clientFileInfo) {
             return await PostAsync<ApiResponse>($"/api/sync/files/{fileId}/confirm-download/{clientId}", clientFileInfo);
         }
 
-        // Potwierdza usunięcie pliku przez klienta (usuwa stan synchronizacji)
         public async Task<ApiResponse> ConfirmFileDeletedOnClientAsync(string fileId, string clientId) {
             return await PostAsync<ApiResponse>($"/api/sync/files/{fileId}/confirm-delete/{clientId}", null);
         }
 
-        // Usuwa plik z serwera na żądanie klienta
         public async Task<ApiResponse> DeleteFileFromServerAsync(string fileId, string clientId) {
             return await DeleteAsync<ApiResponse>($"/api/sync/files/{fileId}/delete-from-server/{clientId}");
         }
 
-        // Potwierdza zakończenie całej synchronizacji folderu
         public async Task<SyncCompletedResponse> ConfirmSyncCompletedAsync(string folderId, string clientId) {
             return await PostAsync<SyncCompletedResponse>($"/api/sync/folders/{folderId}/confirm/{clientId}", null);
         }
 
         // === FUNKCJE POMOCNICZE ===
 
-        // Wyszukuje plik po ID klienta (clientFileId)
         public async Task<FindFileResponse> FindFileByClientIdAsync(string clientId, string clientFileId, string folderId = null) {
             var url = $"/api/sync/clients/{clientId}/files/{clientFileId}";
             if (!string.IsNullOrEmpty(folderId)) {
@@ -147,32 +159,27 @@ namespace DesktopClient.Services {
             return await GetAsync<FindFileResponse>(url);
         }
 
-        // Wyszukuje plik po nazwie i hashu
         public async Task<FindFileResponse> FindFileByNameAndHashAsync(string folderId, string fileName, string fileHash) {
             return await GetAsync<FindFileResponse>($"/api/sync/folders/{folderId}/find/{fileName}/{fileHash}");
         }
 
-        // Aktualizuje ustawienia synchronizacji (kierunek, ścieżka, aktywność)
         public async Task<ApiResponse> UpdateSyncSettingsAsync(string folderId, string syncId, UpdateSyncSettingsRequest settings) {
             return await PutAsync<ApiResponse>($"/api/sync/folders/{folderId}/settings/{syncId}", settings);
         }
 
-        // === METODY POMOCNICZE HTTP ===
+        // === METODY POMOCNICZE HTTP Z AUTOMATYCZNYM ODŚWIEŻANIEM TOKENU ===
 
         private async Task<T> GetAsync<T>(string endpoint) {
-            try {
+            return await ExecuteWithTokenRefresh(async () => {
                 var url = $"{_baseUrl}{endpoint}";
                 Console.WriteLine($"[HTTP GET] {url}");
                 var response = await _httpClient.GetAsync(url);
                 return await ProcessResponse<T>(response);
-            } catch (Exception ex) {
-                throw new Exception($"Błąd podczas GET {endpoint}: {ex.Message}");
-            }
+            });
         }
 
-
-        private async Task<T> PostAsync<T>(string endpoint, object data) {
-            try {
+        private async Task<T> PostAsync<T>(string endpoint, object data, bool skipTokenRefresh = false) {
+            return await ExecuteWithTokenRefresh(async () => {
                 var content = new StringContent("{}", Encoding.UTF8, "application/json");
 
                 if (data != null) {
@@ -187,14 +194,11 @@ namespace DesktopClient.Services {
 
                 var response = await _httpClient.PostAsync($"{_baseUrl}{endpoint}", content);
                 return await ProcessResponse<T>(response);
-            } catch (Exception ex) {
-                throw new Exception($"Błąd podczas POST {endpoint}: {ex.Message}");
-            }
+            }, skipTokenRefresh);
         }
 
-
         private async Task<T> PutAsync<T>(string endpoint, object data) {
-            try {
+            return await ExecuteWithTokenRefresh(async () => {
                 var content = new StringContent("{}", Encoding.UTF8, "application/json");
 
                 if (data != null) {
@@ -209,23 +213,39 @@ namespace DesktopClient.Services {
 
                 var response = await _httpClient.PutAsync($"{_baseUrl}{endpoint}", content);
                 return await ProcessResponse<T>(response);
-            } catch (Exception ex) {
-                throw new Exception($"Błąd podczas PUT {endpoint}: {ex.Message}");
-            }
+            });
         }
 
-
         private async Task<T> DeleteAsync<T>(string endpoint) {
-            try {
+            return await ExecuteWithTokenRefresh(async () => {
                 var url = $"{_baseUrl}{endpoint}";
                 Console.WriteLine($"[HTTP DELETE] {url}");
                 var response = await _httpClient.DeleteAsync(url);
                 return await ProcessResponse<T>(response);
-            } catch (Exception ex) {
-                throw new Exception($"Błąd podczas DELETE {endpoint}: {ex.Message}");
-            }
+            });
         }
 
+        // Nowa metoda - wrapper z automatycznym odświeżaniem tokenu
+        private async Task<T> ExecuteWithTokenRefresh<T>(Func<Task<T>> operation, bool skipTokenRefresh = false) {
+            try {
+                return await operation();
+            } catch (Exception ex) {
+                // Sprawdź czy błąd to 401 (Unauthorized)
+                if (!skipTokenRefresh && ex.Message.Contains("401") && !string.IsNullOrEmpty(_authToken)) {
+                    Console.WriteLine("[TOKEN] Wykryto błąd 401, próba odświeżenia tokenu...");
+
+                    var refreshed = await RefreshTokenAsync();
+                    if (refreshed) {
+                        Console.WriteLine("[TOKEN] Token odświeżony, ponawianie operacji...");
+                        return await operation(); // Ponów operację z nowym tokenem
+                    } else {
+                        Console.WriteLine("[TOKEN] Nie udało się odświeżyć tokenu");
+                        throw new UnauthorizedAccessException("Token wygasł i nie można go odświeżyć");
+                    }
+                }
+                throw;
+            }
+        }
 
         private async Task<T> ProcessResponse<T>(HttpResponseMessage response) {
             var responseContent = await response.Content.ReadAsStringAsync();
@@ -256,7 +276,6 @@ namespace DesktopClient.Services {
                 }
             }
         }
-
 
         public void Dispose() {
             _httpClient?.Dispose();

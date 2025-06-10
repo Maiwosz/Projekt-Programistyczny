@@ -37,6 +37,25 @@ namespace DesktopClient.Services {
             }
         }
 
+        // Nowa metoda do aktualizacji tylko tokenu
+        public void UpdateToken(string newToken) {
+            try {
+                var existingSession = LoadSession();
+                if (existingSession != null) {
+                    existingSession.Token = newToken;
+                    existingSession.SavedAt = DateTime.UtcNow; // Aktualizuj datę zapisu
+
+                    var json = JsonSerializer.Serialize(existingSession);
+                    var encryptedData = ProtectData(json);
+                    File.WriteAllBytes(_sessionFilePath, encryptedData);
+
+                    System.Diagnostics.Debug.WriteLine("Token został zaktualizowany w sesji");
+                }
+            } catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine($"Błąd aktualizacji tokenu: {ex.Message}");
+            }
+        }
+
         public SessionData LoadSession() {
             try {
                 if (!File.Exists(_sessionFilePath))
@@ -59,6 +78,42 @@ namespace DesktopClient.Services {
                 // Jeśli nie można odczytać sesji, usuń plik
                 ClearSession();
                 return null;
+            }
+        }
+
+        // Nowa metoda do sprawdzenia czy token może być bliski wygaśnięciu
+        public bool IsTokenNearExpiry(int hoursBeforeExpiry = 1) {
+            try {
+                var session = LoadSession();
+                if (session?.Token == null) return false;
+
+                // Parsuj token JWT aby sprawdzić datę wygaśnięcia
+                var tokenParts = session.Token.Split('.');
+                if (tokenParts.Length != 3) return false;
+
+                // Dekoduj payload (środkową część tokenu)
+                var payload = tokenParts[1];
+                // Dodaj padding jeśli potrzebny
+                while (payload.Length % 4 != 0) {
+                    payload += "=";
+                }
+
+                var payloadBytes = Convert.FromBase64String(payload);
+                var payloadJson = Encoding.UTF8.GetString(payloadBytes);
+                var payloadData = JsonSerializer.Deserialize<Dictionary<string, object>>(payloadJson);
+
+                if (payloadData.ContainsKey("exp")) {
+                    var expTimestamp = Convert.ToInt64(payloadData["exp"].ToString());
+                    var expDate = DateTimeOffset.FromUnixTimeSeconds(expTimestamp).DateTime;
+                    var timeUntilExpiry = expDate - DateTime.UtcNow;
+
+                    return timeUntilExpiry.TotalHours <= hoursBeforeExpiry;
+                }
+
+                return false;
+            } catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine($"Błąd sprawdzania wygaśnięcia tokenu: {ex.Message}");
+                return false;
             }
         }
 

@@ -19,10 +19,12 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Environment
 import android.provider.Settings
 import android.net.Uri
+import android.os.PowerManager
 
 class MainActivity : AppCompatActivity() {
 
@@ -66,10 +68,41 @@ class MainActivity : AppCompatActivity() {
 
         // Sprawdź uprawnienia do storage
         checkStoragePermissions()
+        requestBatteryOptimizationExemption()
 
         initializeServices(authToken)
         initializeViews()
         loadSyncFolders()
+        startBackgroundService()
+    }
+
+    private fun startBackgroundService() {
+        SyncForegroundService.start(this)
+    }
+
+    private fun requestBatteryOptimizationExemption() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            val packageName = packageName
+
+            if (!powerManager.isIgnoringBatteryOptimizations(packageName)) {
+                AlertDialog.Builder(this)
+                    .setTitle("Optymalizacja baterii")
+                    .setMessage("Aby zapewnić ciągłą synchronizację, wyłącz optymalizację baterii dla tej aplikacji.")
+                    .setPositiveButton("Ustawienia") { _, _ ->
+                        try {
+                            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                            intent.data = Uri.parse("package:$packageName")
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            // Fallback do ogólnych ustawień
+                            startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                        }
+                    }
+                    .setNegativeButton("Później", null)
+                    .show()
+            }
+        }
     }
 
     private fun checkStoragePermissions() {
@@ -139,10 +172,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializeServices(authToken: String) {
+        sessionManager = SessionManager(this)
+
         apiClient = ApiClient()
         apiClient.setAuthToken(authToken)
+        // Przekaż sessionManager do ApiClient
+        apiClient.setSessionManager(sessionManager)
+
         syncService = SyncService(this, apiClient, clientId)
-        sessionManager = SessionManager(this)
 
         // Obsługa błędów synchronizacji
         syncService.onSyncError = { message, exception ->
@@ -183,8 +220,14 @@ class MainActivity : AppCompatActivity() {
             loadSyncFolders()
         }
 
-        // Obsługa przycisku dodawania synchronizacji
+        // Obsługa przycisku dodawania synchronizacji w header
         btnAddSync.setOnClickListener {
+            syncFolderManager.showAddSyncDialog()
+        }
+
+        // Obsługa przycisku dodawania synchronizacji w pustym stanie
+        val btnAddSyncEmpty = findViewById<Button>(R.id.btnAddSyncEmpty)
+        btnAddSyncEmpty.setOnClickListener {
             syncFolderManager.showAddSyncDialog()
         }
 
@@ -194,6 +237,8 @@ class MainActivity : AppCompatActivity() {
                 tvStatus.text = status
             }
         }
+
+        startBackgroundService()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -363,6 +408,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 syncService.stopAutoSync()
+                SyncForegroundService.stop(this@MainActivity) // Dodaj tę linię
                 sessionManager.clearSession()
 
                 val intent = Intent(this@MainActivity, LoginActivity::class.java)

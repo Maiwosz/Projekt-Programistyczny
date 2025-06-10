@@ -30,3 +30,35 @@ C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\System.Text
 C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\System.Text.Json.xml
 C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\System.Threading.Tasks.Extensions.xml
 C:\Dev\Projekt Programistyczny\DesktopClient\DesktopClient\bin\Debug\System.ValueTuple.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\DesktopClient.exe.config
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\DesktopClient.exe
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\DesktopClient.pdb
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\Newtonsoft.Json.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Buffers.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.IO.Pipelines.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Memory.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Numerics.Vectors.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Runtime.CompilerServices.Unsafe.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Text.Encodings.Web.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Text.Json.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Threading.Tasks.Extensions.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.ValueTuple.dll
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\Microsoft.Bcl.AsyncInterfaces.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\Newtonsoft.Json.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Buffers.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.IO.Pipelines.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Memory.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Numerics.Vectors.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Runtime.CompilerServices.Unsafe.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Text.Encodings.Web.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Text.Json.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.Threading.Tasks.Extensions.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\bin\Debug\System.ValueTuple.xml
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.csproj.AssemblyReference.cache
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.Properties.Resources.resources
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.csproj.GenerateResource.cache
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.csproj.CoreCompileInputs.cache
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopC.3DF0E902.Up2Date
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.exe
+C:\Dev\ProjektProgramistyczny\DesktopClient\DesktopClient\obj\Debug\DesktopClient.pdb

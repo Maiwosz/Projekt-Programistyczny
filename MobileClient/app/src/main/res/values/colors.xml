@@ -7,4 +7,24 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Primary colors - Dark theme friendly -->
+    <color name="primary_blue">#64B5F6</color>
+    <color name="primary_blue_dark">#42A5F5</color>
+    <color name="accent_color">#80CBC4</color>
+
+    <!-- Text colors - Light text for dark theme -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#CCCCCC</color>
+    <color name="text_hint">#999999</color>
+
+    <!-- Background colors - Dark theme -->
+    <color name="background_card">#2C2C2C</color>
+    <color name="background_surface">#1E1E1E</color>
+    <color name="background_header">#242424</color>
+
+    <!-- Status colors - Adjusted for dark theme -->
+    <color name="status_success">#66BB6A</color>
+    <color name="status_error">#EF5350</color>
+    <color name="status_warning">#FFA726</color>
 </resources>

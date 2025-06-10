@@ -3,25 +3,27 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp"
+    android:layout_margin="@dimen/margin_small"
+    app:cardCornerRadius="@dimen/card_corner_radius"
+    app:cardElevation="@dimen/card_elevation"
+    app:cardBackgroundColor="@color/background_card"
     android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="@dimen/margin_medium">
 
         <!-- Status icon -->
         <ImageView
             android:id="@+id/ivStatus"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="@dimen/margin_small"
             android:layout_gravity="center_vertical"
-            android:src="@android:drawable/presence_online" />
+            android:src="@android:drawable/presence_online"
+            app:tint="@color/status_success" />
 
         <!-- Main content -->
         <LinearLayout
@@ -43,19 +45,19 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Nazwa folderu"
-                    android:textSize="16sp"
+                    android:textSize="@dimen/text_size_medium"
                     android:textStyle="bold"
-                    android:textColor="@android:color/primary_text_light" />
+                    android:textColor="@color/text_primary" />
 
                 <TextView
                     android:id="@+id/tvStatus"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Aktywna"
-                    android:textSize="12sp"
+                    android:textSize="@dimen/text_size_small"
                     android:textStyle="bold"
-                    android:textColor="@android:color/holo_green_dark"
-                    android:layout_marginStart="8dp" />
+                    android:textColor="@color/status_success"
+                    android:layout_marginStart="@dimen/margin_small" />
 
             </LinearLayout>
 
@@ -65,8 +67,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Ścieżka lokalna"
-                android:textSize="12sp"
-                android:textColor="@android:color/secondary_text_light"
+                android:textSize="@dimen/text_size_small"
+                android:textColor="@color/text_secondary"
                 android:layout_marginBottom="4dp"
                 android:maxLines="1"
                 android:ellipsize="end" />
@@ -83,17 +85,17 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Dwukierunkowa"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/secondary_text_light" />
+                    android:textSize="@dimen/text_size_small"
+                    android:textColor="@color/text_secondary" />
 
                 <TextView
                     android:id="@+id/tvLastSync"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Ostatnia sync: 01.01.2024 12:00"
-                    android:textSize="10sp"
-                    android:textColor="@android:color/tertiary_text_light"
-                    android:layout_marginStart="8dp" />
+                    android:textSize="@dimen/text_size_tiny"
+                    android:textColor="@color/text_hint"
+                    android:layout_marginStart="@dimen/margin_small" />
 
             </LinearLayout>
 

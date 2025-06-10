@@ -9,9 +9,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:background="@android:color/background_light"
-        android:elevation="4dp">
+        android:padding="@dimen/margin_medium"
+        android:background="@color/background_header"
+        android:elevation="@dimen/card_elevation">
 
         <TextView
             android:id="@+id/tvStatus"
@@ -19,18 +19,18 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Gotowy"
-            android:textSize="14sp"
-            android:textColor="@android:color/holo_blue_dark"
+            android:textSize="@dimen/text_size_normal"
+            android:textColor="@color/primary_blue"
             android:gravity="start|center_vertical" />
 
         <Button
             android:id="@+id/btnAddSync"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
+            android:layout_height="@dimen/button_height_small"
             android:text="Dodaj synchronizację"
-            android:textSize="12sp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
+            android:textSize="@dimen/text_size_small"
+            android:paddingStart="@dimen/margin_small"
+            android:paddingEnd="@dimen/margin_small"
             style="@style/Widget.Material3.Button.OutlinedButton" />
 
     </LinearLayout>
@@ -52,14 +52,15 @@
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:background="@color/background_surface">
 
             <!-- RecyclerView for sync folders -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:padding="8dp"
+                android:padding="@dimen/margin_small"
                 android:clipToPadding="false" />
 
             <!-- Empty state -->
@@ -69,32 +70,34 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="32dp"
+                android:padding="@dimen/margin_extra_large"
                 android:visibility="gone">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Brak synchronizacji"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
-                    android:layout_marginBottom="8dp"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="@dimen/margin_small"
                     android:gravity="center" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Naciśnij przycisk 'Dodaj synchronizację'\naby rozpocząć"
-                    android:textSize="14sp"
-                    android:textColor="@android:color/secondary_text_light"
+                    android:textSize="@dimen/text_size_normal"
+                    android:textColor="@color/text_secondary"
                     android:gravity="center"
-                    android:layout_marginBottom="24dp" />
+                    android:layout_marginBottom="@dimen/margin_large" />
 
                 <Button
                     android:id="@+id/btnAddSyncEmpty"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_height="@dimen/button_height"
                     android:text="Dodaj pierwszą synchronizację"
+                    android:textSize="@dimen/text_size_medium"
                     style="@style/Widget.Material3.Button" />
 
             </LinearLayout>

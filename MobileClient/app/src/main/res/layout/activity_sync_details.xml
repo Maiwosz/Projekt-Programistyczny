@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="@dimen/margin_medium"
+    android:background="@color/background_surface">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -17,45 +18,50 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:indeterminate="true"
-            android:visibility="gone" />
+            android:visibility="gone"
+            android:layout_marginBottom="@dimen/margin_medium" />
 
         <!-- Folder Information Card -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+            android:layout_marginBottom="@dimen/margin_medium"
+            app:cardCornerRadius="@dimen/card_corner_radius"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardBackgroundColor="@color/background_card">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="@dimen/margin_medium">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Informacje o folderze"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="@dimen/margin_small" />
 
                 <TextView
                     android:id="@+id/tvFolderName"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Nazwa folderu"
-                    android:textSize="16sp"
+                    android:textSize="@dimen/text_size_medium"
                     android:textStyle="bold"
-                    android:layout_marginBottom="8dp" />
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="@dimen/margin_small" />
 
                 <TextView
                     android:id="@+id/tvServerPath"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Serwer: /ścieżka/serwera"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_size_normal"
+                    android:textColor="@color/text_secondary"
                     android:layout_marginBottom="4dp" />
 
                 <TextView
@@ -63,7 +69,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Ścieżka lokalna: /ścieżka/lokalna"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_size_normal"
+                    android:textColor="@color/text_secondary"
                     android:layout_marginBottom="4dp" />
 
                 <TextView
@@ -71,7 +78,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Kierunek: Dwukierunkowa"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_size_normal"
+                    android:textColor="@color/text_secondary"
                     android:layout_marginBottom="4dp" />
 
                 <TextView
@@ -79,7 +87,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Ostatnia synchronizacja: Nigdy"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_size_normal"
+                    android:textColor="@color/text_secondary"
                     android:layout_marginBottom="4dp" />
 
                 <TextView
@@ -87,7 +96,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Status: Aktywna"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_size_normal"
+                    android:textColor="@color/status_success"
                     android:layout_marginBottom="4dp" />
 
                 <TextView
@@ -95,7 +105,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Pliki: Ładowanie..."
-                    android:textSize="14sp" />
+                    android:textSize="@dimen/text_size_normal"
+                    android:textColor="@color/text_secondary" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -104,37 +115,40 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+            android:layout_marginBottom="@dimen/margin_medium"
+            app:cardCornerRadius="@dimen/card_corner_radius"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardBackgroundColor="@color/background_card">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="@dimen/margin_medium">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Konfiguracja synchronizacji"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
-                    android:layout_marginBottom="16dp" />
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="@dimen/margin_medium" />
 
                 <!-- Active Switch -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginBottom="16dp">
+                    android:layout_marginBottom="@dimen/margin_medium">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:text="Synchronizacja aktywna"
-                        android:textSize="16sp"
+                        android:textSize="@dimen/text_size_medium"
+                        android:textColor="@color/text_primary"
                         android:layout_gravity="center_vertical" />
 
                     <Switch
@@ -150,40 +164,46 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Kierunek synchronizacji"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="8dp" />
+                    android:textSize="@dimen/text_size_medium"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="@dimen/margin_small" />
 
                 <Spinner
                     android:id="@+id/spinnerDirection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp" />
+                    android:layout_marginBottom="@dimen/margin_medium" />
 
                 <!-- Local Path -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Ścieżka lokalna"
-                    android:textSize="16sp"
-                    android:layout_marginBottom="8dp" />
+                    android:textSize="@dimen/text_size_medium"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="@dimen/margin_small" />
 
                 <EditText
                     android:id="@+id/etLocalPath"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Wprowadź ścieżkę do lokalnego folderu"
+                    android:background="@color/background_surface"
                     android:inputType="textUri"
                     android:maxLines="1"
-                    android:layout_marginBottom="16dp" />
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_size_normal"
+                    android:layout_marginBottom="@dimen/margin_medium" />
 
                 <!-- Save Button -->
                 <Button
                     android:id="@+id/btnSave"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="@dimen/button_height"
                     android:text="Zapisz zmiany"
+                    android:textSize="@dimen/text_size_medium"
                     android:enabled="false"
-                    style="@style/Widget.AppCompat.Button.Colored" />
+                    style="@style/Widget.Material3.Button" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -192,32 +212,35 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="4dp">
+            android:layout_marginBottom="@dimen/margin_medium"
+            app:cardCornerRadius="@dimen/card_corner_radius"
+            app:cardElevation="@dimen/card_elevation"
+            app:cardBackgroundColor="@color/background_card">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="@dimen/margin_medium">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Akcje synchronizacji"
-                    android:textSize="18sp"
+                    android:textSize="@dimen/text_size_large"
                     android:textStyle="bold"
-                    android:layout_marginBottom="16dp" />
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="@dimen/margin_medium" />
 
                 <!-- Sync Now Button -->
                 <Button
                     android:id="@+id/btnSyncNow"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="@dimen/button_height"
                     android:text="Synchronizuj teraz"
-                    android:layout_marginBottom="12dp"
-                    style="@style/Widget.AppCompat.Button.Colored" />
+                    android:textSize="@dimen/text_size_medium"
+                    android:layout_marginBottom="@dimen/margin_small"
+                    style="@style/Widget.Material3.Button" />
 
                 <!-- Sync Progress Layout -->
                 <LinearLayout
@@ -226,21 +249,22 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:visibility="gone"
-                    android:layout_marginBottom="12dp">
+                    android:layout_marginBottom="@dimen/margin_small">
 
                     <ProgressBar
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         style="?android:attr/progressBarStyleHorizontal"
                         android:indeterminate="true"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_marginBottom="@dimen/margin_small" />
 
                     <TextView
                         android:id="@+id/tvSyncStatus"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Status synchronizacji..."
-                        android:textSize="14sp"
+                        android:textSize="@dimen/text_size_normal"
+                        android:textColor="@color/text_secondary"
                         android:gravity="center" />
 
                 </LinearLayout>
@@ -249,11 +273,12 @@
                 <Button
                     android:id="@+id/btnRemoveSync"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="@dimen/button_height"
                     android:text="Usuń synchronizację"
-                    android:backgroundTint="@android:color/holo_red_dark"
+                    android:textSize="@dimen/text_size_medium"
+                    android:backgroundTint="@color/status_error"
                     android:textColor="@android:color/white"
-                    style="@style/Widget.AppCompat.Button.Colored" />
+                    style="@style/Widget.Material3.Button" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -262,29 +287,31 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="8dp"
+            app:cardCornerRadius="@dimen/card_corner_radius"
             app:cardElevation="2dp"
-            app:cardBackgroundColor="@color/cardview_light_background">
+            app:cardBackgroundColor="@color/background_header">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="@dimen/margin_medium">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Informacje o kierunkach synchronizacji"
-                    android:textSize="16sp"
+                    android:textSize="@dimen/text_size_medium"
                     android:textStyle="bold"
-                    android:layout_marginBottom="8dp" />
+                    android:textColor="@color/text_primary"
+                    android:layout_marginBottom="@dimen/margin_small" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="• Dwukierunkowa - pliki synchronizowane w obu kierunkach\n• Do klienta - tylko pobieranie z serwera\n• Z klienta - tylko wysyłanie na serwer"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_size_normal"
+                    android:textColor="@color/text_secondary"
                     android:lineSpacingExtra="2dp" />
 
             </LinearLayout>

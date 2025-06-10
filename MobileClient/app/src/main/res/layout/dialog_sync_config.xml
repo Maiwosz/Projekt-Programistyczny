@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:background="@color/background_surface"
     android:padding="20dp">
 
     <!-- Nazwa folderu -->
@@ -17,6 +18,9 @@
             android:layout_height="wrap_content"
             android:hint="Nazwa folderu"
             android:inputType="text"
+            android:background="@color/background_surface"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
             android:singleLine="true" />
 
     </com.google.android.material.textfield.TextInputLayout>
@@ -34,6 +38,7 @@
             android:text="Folder lokalny:"
             android:textSize="14sp"
             android:textStyle="bold"
+            android:textColor="@color/text_primary"
             android:layout_marginBottom="4dp" />
 
         <TextView
@@ -42,8 +47,8 @@
             android:layout_height="wrap_content"
             android:text="/path/to/folder"
             android:textSize="12sp"
-            android:textColor="@android:color/secondary_text_light"
-            android:background="@drawable/background_path"
+            android:textColor="@color/text_secondary"
+            android:background="@color/background_card"
             android:padding="8dp" />
 
     </LinearLayout>
@@ -55,6 +60,7 @@
         android:text="Kierunek synchronizacji:"
         android:textSize="14sp"
         android:textStyle="bold"
+        android:textColor="@color/text_primary"
         android:layout_marginBottom="12dp" />
 
     <RadioGroup
@@ -68,6 +74,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Dwukierunkowa"
+            android:textColor="@color/text_primary"
             android:checked="true"
             android:padding="8dp" />
 
@@ -76,6 +83,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Tylko pobieranie z serwera"
+            android:textColor="@color/text_primary"
             android:padding="8dp" />
 
         <RadioButton
@@ -83,6 +91,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Tylko wysyłanie na serwer"
+            android:textColor="@color/text_primary"
             android:padding="8dp" />
 
     </RadioGroup>
@@ -93,7 +102,7 @@
         android:layout_height="wrap_content"
         android:text="Dwukierunkowa: pliki synchronizowane w obu kierunkach\nPobieranie: tylko pobieranie z serwera\nWysyłanie: tylko wysyłanie na serwer"
         android:textSize="11sp"
-        android:textColor="@android:color/secondary_text_light"
+        android:textColor="@color/text_secondary"
         android:lineSpacingMultiplier="1.3" />
 
 </LinearLayout>

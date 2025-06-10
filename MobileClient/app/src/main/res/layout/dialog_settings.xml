@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:background="@color/background_surface"
     android:padding="16dp">
 
     <com.google.android.material.textfield.TextInputLayout
@@ -16,6 +17,9 @@
             android:layout_height="wrap_content"
             android:hint="Interwał synchronizacji (minuty)"
             android:inputType="number"
+            android:background="@color/background_surface"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
             android:singleLine="true" />
 
     </com.google.android.material.textfield.TextInputLayout>
@@ -25,7 +29,7 @@
         android:layout_height="wrap_content"
         android:text="Określa jak często aplikacja będzie automatycznie synchronizować pliki (minimum 1 minuta)."
         android:textSize="12sp"
-        android:textColor="@android:color/secondary_text_light"
+        android:textColor="@color/text_secondary"
         android:lineSpacingMultiplier="1.2" />
 
 </LinearLayout>

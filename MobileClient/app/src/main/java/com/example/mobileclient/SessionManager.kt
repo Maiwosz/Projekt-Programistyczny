@@ -84,6 +84,10 @@ class SessionManager(private val context: Context) {
         }
     }
 
+    fun hasActiveSession(): Boolean {
+        return loadSession() != null
+    }
+
     // === USTAWIENIA UŻYTKOWNIKA ===
 
     fun saveUserSettings(username: String, settings: UserSettings) {
@@ -108,6 +112,26 @@ class SessionManager(private val context: Context) {
         } catch (e: Exception) {
             println("Błąd odczytu ustawień: ${e.message}")
             UserSettings()
+        }
+    }
+
+    // === Token ===
+
+    fun isTokenExpired(): Boolean {
+        val session = loadSession() ?: return true
+
+        // Sprawdź czy token wygasa w ciągu najbliższych 10 minut
+        val expirationBuffer = 10 * 60 * 1000 // 10 minut w ms
+        val tokenAge = Date().time - session.savedAt.time
+        val maxAge = 4 * 60 * 60 * 1000 - expirationBuffer // 4h minus bufor
+
+        return tokenAge > maxAge
+    }
+
+    fun updateToken(newToken: String) {
+        val currentSession = loadSession()
+        if (currentSession != null) {
+            saveSession(currentSession.username, newToken, currentSession.clientId)
         }
     }
 }
