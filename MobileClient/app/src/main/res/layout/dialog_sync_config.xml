@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <!-- Nazwa folderu -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <EditText
+            android:id="@+id/etFolderName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nazwa folderu"
+            android:inputType="text"
+            android:singleLine="true" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Ścieżka lokalna -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginBottom="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Folder lokalny:"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvLocalPath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="/path/to/folder"
+            android:textSize="12sp"
+            android:textColor="@android:color/secondary_text_light"
+            android:background="@drawable/background_path"
+            android:padding="8dp" />
+
+    </LinearLayout>
+
+    <!-- Kierunek synchronizacji -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Kierunek synchronizacji:"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp" />
+
+    <RadioGroup
+        android:id="@+id/rgSyncDirection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp">
+
+        <RadioButton
+            android:id="@+id/rbBidirectional"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dwukierunkowa"
+            android:checked="true"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/rbToClient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tylko pobieranie z serwera"
+            android:padding="8dp" />
+
+        <RadioButton
+            android:id="@+id/rbFromClient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Tylko wysyłanie na serwer"
+            android:padding="8dp" />
+
+    </RadioGroup>
+
+    <!-- Opis opcji -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Dwukierunkowa: pliki synchronizowane w obu kierunkach\nPobieranie: tylko pobieranie z serwera\nWysyłanie: tylko wysyłanie na serwer"
+        android:textSize="11sp"
+        android:textColor="@android:color/secondary_text_light"
+        android:lineSpacingMultiplier="1.3" />
+
+</LinearLayout>
