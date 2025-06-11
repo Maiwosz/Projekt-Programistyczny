@@ -117,13 +117,16 @@ class SyncService {
      * Usuwa folder z synchronizacji
      */
     async removeFolderFromSync(userId, folderId, clientId = null) {
-        if (clientId) {
-            const client = await this._getClientOrThrow(userId, clientId);
-            await this._removeSyncClient(userId, folderId, client._id);
-        } else {
-            await this._removeEntireSyncFolder(userId, folderId);
-        }
-    }
+		if (clientId) {
+			console.log(`Usuwanie folderu ${folderId} z synchronizacji dla klienta ${clientId} (użytkownik: ${userId})`);
+			const client = await this._getClientOrThrow(userId, clientId);
+			// POPRAWKA: Używamy _removeSyncClient zamiast _removeSyncClientBySyncId
+			await this._removeSyncClient(userId, folderId, client._id);
+		} else {
+			console.log(`Usuwanie całego folderu ${folderId} z synchronizacji dla użytkownika ${userId}`);
+			await this._removeEntireSyncFolder(userId, folderId);
+		}
+	}
 	
 	/**
      * Pobiera informacje o synchronizacji folderu
@@ -836,6 +839,25 @@ class SyncService {
     }
 	
 	async _removeSyncClientBySyncId(userId, folderId, syncId) {
+		// Najpierw znajdź konfigurację klienta by pobrać clientId
+		const syncFolder = await SyncFolder.findOne({ 
+			user: userId, 
+			folder: folderId,
+			'clients._id': syncId 
+		});
+		
+		if (!syncFolder) {
+			return false;
+		}
+		
+		const clientConfig = syncFolder.clients.find(c => c._id.toString() === syncId);
+		if (!clientConfig) {
+			return false;
+		}
+		
+		const clientIdToCleanup = clientConfig.client;
+		
+		// Usuń konfigurację synchronizacji
 		const result = await SyncFolder.updateOne(
 			{ user: userId, folder: folderId },
 			{
@@ -845,37 +867,11 @@ class SyncService {
 		);
 		
 		if (result.matchedCount > 0) {
-			// Pobierz informacje o usuwanym kliencie przed usunięciem
-			const syncFolder = await SyncFolder.findOne({ 
-				user: userId, 
-				folder: folderId,
-				'clients._id': syncId 
-			});
-			
-			let clientIdToCleanup = null;
-			if (syncFolder) {
-				const clientConfig = syncFolder.clients.find(c => c._id.toString() === syncId);
-				if (clientConfig) {
-					clientIdToCleanup = clientConfig.client;
-				}
-			}
-			
-			// Usuń konfigurację synchronizacji
-			await SyncFolder.updateOne(
-				{ user: userId, folder: folderId },
-				{
-					$pull: { clients: { _id: syncId } },
-					$set: { updatedAt: new Date() }
-				}
-			);
-			
 			// Wyczyść puste foldery synchronizacji
 			await this._cleanupEmptySyncFolder(userId, folderId);
 			
-			// Wyczyść stany synchronizacji dla tego klienta (jeśli znamy clientId)
-			if (clientIdToCleanup) {
-				await this._cleanupClientFileSyncStates(userId, folderId, clientIdToCleanup);
-			}
+			// Wyczyść stany synchronizacji dla tego klienta
+			await this._cleanupClientFileSyncStates(userId, folderId, clientIdToCleanup);
 			
 			return true;
 		}
@@ -884,22 +880,23 @@ class SyncService {
 	}
     
     async _removeSyncClient(userId, folderId, clientId) {
-        const result = await SyncFolder.updateOne(
-            { user: userId, folder: folderId },
-            {
-                $pull: { clients: { _id: clientId } },
-                $set: { updatedAt: new Date() }
-            }
-        );
-        
-        if (result.matchedCount > 0) {
-            await this._cleanupEmptySyncFolder(userId, folderId);
-            await this._cleanupClientFileSyncStates(userId, folderId, clientId);
-            return true;
-        }
-        
-        return false;
-    }
+		// POPRAWKA: Szukamy po client field, nie po _id
+		const result = await SyncFolder.updateOne(
+			{ user: userId, folder: folderId },
+			{
+				$pull: { clients: { client: clientId } }, // ← TUTAJ BYŁA GŁÓWNA BŁĄD
+				$set: { updatedAt: new Date() }
+			}
+		);
+		
+		if (result.matchedCount > 0) {
+			await this._cleanupEmptySyncFolder(userId, folderId);
+			await this._cleanupClientFileSyncStates(userId, folderId, clientId);
+			return true;
+		}
+		
+		return false;
+	}
     
     async _removeEntireSyncFolder(userId, folderId) {
         await SyncFolder.deleteOne({ user: userId, folder: folderId });

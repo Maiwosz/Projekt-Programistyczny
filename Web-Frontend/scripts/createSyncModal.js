@@ -5,7 +5,6 @@ let currentGoogleDriveFolderId = null;
 let googleDriveFolders = [];
 
 export async function showCreateSyncModal(folderId, folderName) {
-    console.log('showCreateSyncModal wywołane z:', { folderId, folderName });
     
     // Walidacja parametrów wejściowych
     if (!folderId || !folderName) {
@@ -19,8 +18,6 @@ export async function showCreateSyncModal(folderId, folderName) {
     currentGoogleDrivePath = [];
     currentGoogleDriveFolderId = null;
     googleDriveFolders = [];
-    
-    console.log('currentSyncFolderData ustawione na:', currentSyncFolderData);
     
     // Sprawdź czy użytkownik jest połączony z Google Drive
     const isConnected = await checkGoogleDriveConnection();
@@ -381,16 +378,7 @@ async function refreshGoogleDriveFolders() {
 
 // === TWORZENIE SYNCHRONIZACJI ===
 
-// === TWORZENIE SYNCHRONIZACJI ===
-
 async function createSynchronization() {
-    // Dodaj debugowanie
-    console.log('Dane synchronizacji:', {
-        currentSyncFolderData,
-        currentGoogleDriveFolderId,
-        syncDirection: document.getElementById('syncDirection')?.value
-    });
-    
     // Sprawdź czy wszystkie wymagane dane są dostępne
     if (!currentSyncFolderData || !currentSyncFolderData.id) {
         console.error('Brak danych folderu serwera:', currentSyncFolderData);
@@ -417,12 +405,11 @@ async function createSynchronization() {
         return;
     }
     
-    console.log('Wysyłanie żądania synchronizacji:', {
-        folderId: currentSyncFolderData.id,
-        driveFolderId: currentGoogleDriveFolderId,
-        driveFolderName: selectedFolderName,
-        syncDirection: syncDirection
-    });
+    // POPRAWKA: Zapisz dane przed zamknięciem modalu
+    const folderDataForRefresh = {
+        id: currentSyncFolderData.id,
+        name: currentSyncFolderData.name
+    };
     
     try {
         const response = await apiRequest('/api/google-drive/sync/folder', {
@@ -441,12 +428,16 @@ async function createSynchronization() {
             showSuccess('Synchronizacja utworzona pomyślnie');
             closeCreateSyncModal();
             
-            // Odśwież listę synchronizacji w głównym modalu jeśli jest otwarty
+            // POPRAWKA: Użyj zapisanych danych zamiast currentSyncFolderData
             const syncModal = document.getElementById('syncModal');
             if (syncModal && syncModal.style.display === 'block') {
-                // Wywołaj funkcję odświeżania z syncModal.js
-                if (window.loadSyncs) {
-                    window.loadSyncs(currentSyncFolderData.id);
+                if (window.refreshSyncList) {
+                    await window.refreshSyncList(folderDataForRefresh.id);
+                } else {
+                    console.warn('Funkcja refreshSyncList nie jest dostępna, próbuję alternatywny sposób');
+                    window.dispatchEvent(new CustomEvent('syncCreated', { 
+                        detail: { folderId: folderDataForRefresh.id } 
+                    }));
                 }
             }
         } else {

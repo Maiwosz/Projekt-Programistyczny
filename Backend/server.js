@@ -36,12 +36,41 @@ const connectDB = require('./config/db');
 const https = require('https');
 const http = require('http');
 
+// Import HTTPLogger
+const HTTPLogger = require('./middleware/Logger');
+
 // Import Google Drive Service
 const GoogleDriveSyncService = require('./services/GoogleDriveSyncService');
 const GoogleDriveSchedulerService = require('./services/GoogleDriveSchedulerService');
 
+// Czyszczenie pliku http.log na początku
+function clearHttpLog() {
+    const httpLogPath = './http.log';
+    try {
+        if (fs.existsSync(httpLogPath)) {
+            fs.writeFileSync(httpLogPath, '');
+            console.log('✓ Plik http.log został wyczyszczony');
+        }
+    } catch (error) {
+        console.warn('⚠ Nie można wyczyścić pliku http.log:', error.message);
+    }
+}
+
+// Czyszczenie logu na początku
+clearHttpLog();
+
 // Inicjalizacja aplikacji Express
 const app = express();
+
+// Konfiguracja loggera HTTP
+const httpLogger = new HTTPLogger({
+    enabled: true, // Wyłącz w testach
+    logToFile: true, // Kontrola przez zmienną środowiskową
+    logFilePath: './http.log',
+    maxBodySize: parseInt(process.env.HTTP_LOG_MAX_BODY_SIZE) || 1000,
+    excludePaths: [],
+    sensitiveHeaders: []
+});
 
 // Połączenie z bazą z obsługą błędów
 async function initializeDatabase() {
@@ -61,15 +90,12 @@ async function initializeGoogleDriveService() {
     try {
         console.log('[STARTUP] Inicjalizacja Google Drive Service...');
         
-        // POPRAWKA: Przekaż instancję GoogleDriveSyncService, nie klasę
         googleDriveScheduler = new GoogleDriveSchedulerService(GoogleDriveSyncService);
         
-        // Sprawdź czy scheduler został utworzony
         if (!googleDriveScheduler) {
             throw new Error('Nie można utworzyć GoogleDriveSchedulerService');
         }
         
-        // Inicjalizuj automatyczną synchronizację
         const initResult = await googleDriveScheduler.initializeAutoSync();
         
         console.log(`✓ Google Drive Service zainicjalizowany - aktywnych synchronizacji: ${initResult.initialized}`);
@@ -78,7 +104,6 @@ async function initializeGoogleDriveService() {
             console.warn(`⚠ Błędy inicjalizacji: ${initResult.errors} z ${initResult.total}`);
         }
         
-        // POPRAWKA: Dodaj endpoint do monitorowania zdrowia
         app.get('/api/sync/health', async (req, res) => {
             try {
                 const health = await googleDriveScheduler.healthCheck();
@@ -94,18 +119,20 @@ async function initializeGoogleDriveService() {
         console.error('✗ Błąd inicjalizacji Google Drive Service:', error);
         console.error('Stack trace:', error.stack);
         
-        // POPRAWKA: Nie przerywaj działania aplikacji, ale zaloguj błąd
-        // Aplikacja może działać bez Google Drive
         return { initialized: 0, errors: 1, error: error.message };
     }
 }
 
-
 // Middleware
 app.use(express.json({ 
-    limit: '10mb' // Zwiększ z domyślnego 1mb do 10mb
+    limit: '10mb'
 }));
 app.use(cors());
+
+// DODANIE MIDDLEWARE LOGGERA - WAŻNE: Przed innymi middleware
+app.use(httpLogger.middleware());
+
+// Podstawowe logowanie (może zostać usunięte po wdrożeniu HTTPLogger)
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path}`);
     next();
@@ -113,9 +140,28 @@ app.use((req, res, next) => {
 
 // Middleware do ustawiania JSON dla API endpoints
 app.use('/api', (req, res, next) => {
-    // Ustaw domyślny Content-Type na JSON dla wszystkich odpowiedzi API
     res.setHeader('Content-Type', 'application/json');
     next();
+});
+
+// Endpoint do kontroli loggera
+app.get('/api/logger/status', (req, res) => {
+    res.json({
+        enabled: httpLogger.enabled,
+        logToFile: httpLogger.logToFile,
+        logFilePath: httpLogger.logFilePath,
+        maxBodySize: httpLogger.maxBodySize,
+        excludePaths: httpLogger.excludePaths
+    });
+});
+
+// Endpoint do przełączania loggera
+app.post('/api/logger/toggle', (req, res) => {
+    httpLogger.enabled = !httpLogger.enabled;
+    res.json({
+        message: `Logger ${httpLogger.enabled ? 'włączony' : 'wyłączony'}`,
+        enabled: httpLogger.enabled
+    });
 });
 
 // Sprawdzanie istnienia plików routów przed ich załadowaniem
@@ -185,30 +231,23 @@ if (fs.existsSync(frontendPath)) {
     console.warn(`⚠ Frontend path nie istnieje: ${frontendPath}`);
 }
 
-// Konfiguracja portów
-const HTTP_PORT = process.env.HTTP_PORT || 3000;
-const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
-
 async function startServer() {
     try {
-        // Inicjalizacja bazy danych
         await initializeDatabase();
         
-        // POPRAWKA: Inicjalizacja Google Drive Service z lepszą obsługą błędów
         const driveServiceResult = await initializeGoogleDriveService();
         
         if (driveServiceResult.error) {
             console.warn('⚠ Aplikacja uruchomiona bez Google Drive Service');
         }
 
-        // POPRAWKA: Graceful shutdown z timeout
         const gracefulShutdown = async (signal) => {
             console.log(`\n[SHUTDOWN] Otrzymano ${signal}, graceful shutdown...`);
             
             const shutdownTimeout = setTimeout(() => {
                 console.error('[SHUTDOWN] Timeout - wymuszam zamknięcie');
                 process.exit(1);
-            }, 10000); // 10 sekund timeout
+            }, 10000);
             
             try {
                 if (googleDriveScheduler) {
@@ -216,6 +255,12 @@ async function startServer() {
                     await googleDriveScheduler.shutdown();
                     console.log('✓ Google Drive Service zatrzymany');
                 }
+                
+                // Logowanie informacji o graceful shutdown
+                httpLogger.log('🔴 APPLICATION SHUTDOWN', { 
+                    signal, 
+                    timestamp: new Date().toISOString() 
+                });
                 
                 clearTimeout(shutdownTimeout);
                 console.log('✓ Graceful shutdown zakończony');
@@ -230,9 +275,6 @@ async function startServer() {
 
         process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
         process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-        // Uruchomienie serwerów HTTP/HTTPS...
-        // (reszta kodu uruchamiania serwerów pozostaje bez zmian)
         
         const HTTP_PORT = process.env.HTTP_PORT || 3000;
         const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
@@ -266,16 +308,36 @@ async function startServer() {
             console.log(`✓ Serwer HTTPS działa na porcie ${HTTPS_PORT}`);
             console.log(`✓ Aplikacja dostępna pod: https://localhost:${HTTPS_PORT}`);
             
-            // POPRAWKA: Wyświetl status Google Drive Service
+            // Logowanie uruchomienia aplikacji
+            httpLogger.log('🟢 APPLICATION STARTED', {
+                port: HTTPS_PORT,
+                environment: process.env.NODE_ENV || 'development',
+                loggerEnabled: httpLogger.enabled,
+                logToFile: httpLogger.logToFile,
+                timestamp: new Date().toISOString()
+            });
+            
             if (googleDriveScheduler) {
                 const activeCount = googleDriveScheduler.getActiveSyncCount();
                 console.log(`✓ Google Drive - aktywnych synchronizacji: ${activeCount}`);
                 console.log(`✓ Health check: https://localhost:${HTTPS_PORT}/api/sync/health`);
             }
+            
+            console.log(`✓ Logger status: https://localhost:${HTTPS_PORT}/api/logger/status`);
         });
 
     } catch (error) {
         console.error('✗ Błąd uruchamiania serwera:', error);
+        
+        // Logowanie błędu uruchomienia
+        if (httpLogger) {
+            httpLogger.log('🔴 SERVER STARTUP ERROR', {
+                error: error.message,
+                stack: error.stack,
+                timestamp: new Date().toISOString()
+            });
+        }
+        
         process.exit(1);
     }
 }

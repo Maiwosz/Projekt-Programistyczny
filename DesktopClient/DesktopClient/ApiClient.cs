@@ -106,8 +106,8 @@ namespace DesktopClient.Services {
             return await PostAsync<AddFolderToSyncResponse>("/api/sync/folders", request);
         }
 
-        public async Task<ApiResponse> RemoveFolderFromSyncAsync(string folderId, string syncId) {
-            var url = $"/api/sync/folders/{folderId}?syncId={syncId}";
+        public async Task<ApiResponse> RemoveFolderFromSyncAsync(string folderId, string clientId) {
+            var url = $"/api/sync/folders/{folderId}?clientId={clientId}";
             return await DeleteAsync<ApiResponse>(url);
         }
 

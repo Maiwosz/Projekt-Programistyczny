@@ -1,6 +1,12 @@
 // syncModal.js - Główny interfejs synchronizacji
 let currentFolderData = null;
 
+export async function refreshSyncList(folderId) {
+    if (folderId && currentFolderData && currentFolderData.id === folderId) {
+        await loadSyncs(folderId);
+    }
+}
+
 export async function showSyncModal(folderId, folderName) {
     // Walidacja parametrów wejściowych
     if (!folderId || !folderName) {
@@ -73,7 +79,6 @@ function createSyncModal() {
 
 export function addGoogleDriveSync() {
     if (currentFolderData && currentFolderData.id && currentFolderData.name) {
-        console.log('Wywołuję showCreateGoogleDriveSync z:', currentFolderData);
         if (window.showCreateGoogleDriveSync) {
             window.showCreateGoogleDriveSync(currentFolderData.id, currentFolderData.name);
         } else {
@@ -95,12 +100,14 @@ function updateModalHeader(folderName) {
 
 async function loadSyncs(folderId) {
     const syncList = document.getElementById('syncList');
-    if (!syncList) return;
+    if (!syncList) {
+        console.error('Element syncList nie został znaleziony');
+        return;
+    }
     
     syncList.innerHTML = '<div class="loading">Ładowanie synchronizacji...</div>';
     
     try {
-        // ZMIANA: Nowy endpoint dla informacji o synchronizacji folderu
         const response = await apiRequest(`/api/sync/folders/${folderId}/info`);
         
         if (!response.ok) {
@@ -110,7 +117,6 @@ async function loadSyncs(folderId) {
         const data = await response.json();
         
         if (data.success) {
-            // ZMIANA: Struktura danych z backendu
             const syncs = data.syncFolder ? data.syncFolder.clients : [];
             renderSyncList(syncs);
         } else {
@@ -146,12 +152,15 @@ function createSyncCard(sync) {
     const statusClass = sync.isActive ? 'status-active' : 'status-inactive';
     const statusText = sync.isActive ? 'Aktywna' : 'Nieaktywna';
     
+    // POPRAWKA: Użyj sync._id lub sync.id w zależności od struktury danych
+    const syncId = sync._id || sync.id || sync.clientId;
+    
     return `
-        <div class="sync-card" data-sync-id="${sync.id}">
+        <div class="sync-card" data-sync-id="${syncId}">
             <div class="sync-header">
                 <div class="sync-title">
-                    <h4 class="sync-name">${escapeHtml(sync.clientName || 'Nienazwana synchronizacja')}</h4>
-                    <span class="sync-type">${getClientTypeLabel(sync.clientType)}</span>
+                    <h4 class="sync-name">${escapeHtml(sync.clientName || sync.name || 'Nienazwana synchronizacja')}</h4>
+                    <span class="sync-type">${getClientTypeLabel(sync.clientType || sync.type)}</span>
                 </div>
                 <span class="sync-status ${statusClass}">${statusText}</span>
             </div>
@@ -174,10 +183,10 @@ function createSyncCard(sync) {
             </div>
             
             <div class="sync-actions">
-                <button onclick="window.viewSyncDetails('${sync.id}')" class="btn-details" title="Szczegóły">
+                <button onclick="window.viewSyncDetails('${syncId}')" class="btn-details" title="Szczegóły">
                     <span>📋</span> Szczegóły
                 </button>
-                <button onclick="window.deleteSync('${sync.id}')" class="btn-delete" title="Usuń">
+                <button onclick="window.deleteSync('${syncId}')" class="btn-delete" title="Usuń">
                     <span>🗑️</span> Usuń
                 </button>
             </div>
@@ -194,7 +203,6 @@ export async function viewSyncDetails(syncId) {
     }
     
     try {
-        // ZMIANA: Pobieramy dane z info endpointu i szukamy konkretnego sync
         const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/info`);
         
         if (!response.ok) {
@@ -204,10 +212,27 @@ export async function viewSyncDetails(syncId) {
         const data = await response.json();
         
         if (data.success && data.syncFolder) {
-            const sync = data.syncFolder.clients.find(c => c.id === syncId);
+            
+            // POPRAWKA: Szukaj po różnych możliwych polach ID
+            const sync = data.syncFolder.clients.find(c => {
+                const clientId = c._id || c.id || c.clientId;
+                return clientId === syncId || 
+                       c._id?.toString() === syncId || 
+                       c.id?.toString() === syncId ||
+                       c.clientId?.toString() === syncId;
+            });
+            
             if (sync) {
                 showSyncDetailsModal(sync);
             } else {
+                console.error('Synchronizacja nie znaleziona. Dostępne ID:', 
+                    data.syncFolder.clients.map(c => ({
+                        _id: c._id,
+                        id: c.id,
+                        clientId: c.clientId,
+                        name: c.clientName || c.name
+                    }))
+                );
                 throw new Error('Synchronizacja nie znaleziona');
             }
         } else {
@@ -265,17 +290,20 @@ function populateSyncDetails(sync) {
     const content = document.getElementById('syncDetailsContent');
     if (!content) return;
     
+    // POPRAWKA: Użyj prawidłowego ID
+    const syncId = sync._id || sync.id || sync.clientId;
+    
     content.innerHTML = `
         <div class="details-section">
             <h4>Podstawowe informacje</h4>
             <div class="details-grid">
                 <div class="detail-item">
                     <label>Nazwa:</label>
-                    <span>${escapeHtml(sync.clientName || 'Nienazwana synchronizacja')}</span>
+                    <span>${escapeHtml(sync.clientName || sync.name || 'Nienazwana synchronizacja')}</span>
                 </div>
                 <div class="detail-item">
                     <label>Typ klienta:</label>
-                    <span>${getClientTypeLabel(sync.clientType)}</span>
+                    <span>${getClientTypeLabel(sync.clientType || sync.type)}</span>
                 </div>
                 <div class="detail-item">
                     <label>Ścieżka klienta:</label>
@@ -283,7 +311,7 @@ function populateSyncDetails(sync) {
                 </div>
                 <div class="detail-item">
                     <label>ID synchronizacji:</label>
-                    <span class="sync-id">${sync.id}</span>
+                    <span class="sync-id">${syncId}</span>
                 </div>
             </div>
         </div>
@@ -292,8 +320,8 @@ function populateSyncDetails(sync) {
             <h4>Ustawienia edytowalne</h4>
             <div class="edit-form">
                 <div class="form-group">
-                    <label for="edit-direction-${sync.id}">Kierunek synchronizacji:</label>
-                    <select id="edit-direction-${sync.id}" class="form-select">
+                    <label for="edit-direction-${syncId}">Kierunek synchronizacji:</label>
+                    <select id="edit-direction-${syncId}" class="form-select">
                         <option value="bidirectional" ${sync.syncDirection === 'bidirectional' ? 'selected' : ''}>
                             Dwukierunkowa (serwer ↔ klient)
                         </option>
@@ -307,8 +335,8 @@ function populateSyncDetails(sync) {
                 </div>
                 
                 <div class="form-group">
-                    <label for="edit-status-${sync.id}">Status:</label>
-                    <select id="edit-status-${sync.id}" class="form-select">
+                    <label for="edit-status-${syncId}">Status:</label>
+                    <select id="edit-status-${syncId}" class="form-select">
                         <option value="true" ${sync.isActive ? 'selected' : ''}>Aktywna</option>
                         <option value="false" ${!sync.isActive ? 'selected' : ''}>Nieaktywna</option>
                     </select>
@@ -327,7 +355,7 @@ function populateSyncDetails(sync) {
         </div>
         
         <div class="details-actions">
-            <button onclick="window.saveSync('${sync.id}')" class="btn-primary">
+            <button onclick="window.saveSync('${syncId}')" class="btn-primary">
                 <span>💾</span> Zapisz zmiany
             </button>
         </div>
@@ -408,10 +436,8 @@ export async function deleteSync(syncId) {
     }
     
     try {
-        // POPRAWKA: Używamy syncId jako parametru w URL, nie clientId
-        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}?syncId=${syncId}`, {
-            method: 'DELETE'
-        });
+        // Najpierw pobierz dane synchronizacji aby znaleźć prawdziwy clientId
+        const response = await apiRequest(`/api/sync/folders/${currentFolderData.id}/info`);
         
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -419,11 +445,46 @@ export async function deleteSync(syncId) {
         
         const data = await response.json();
         
-        if (data.success) {
+        if (!data.success || !data.syncFolder) {
+            throw new Error(data.error || 'Nie można pobrać danych synchronizacji');
+        }
+        
+        // Znajdź synchronizację po syncId
+        const sync = data.syncFolder.clients.find(c => {
+            const clientSyncId = c._id || c.id || c.clientId;
+            return clientSyncId === syncId || 
+                   c._id?.toString() === syncId || 
+                   c.id?.toString() === syncId ||
+                   c.clientId?.toString() === syncId;
+        });
+        
+        if (!sync) {
+            throw new Error('Synchronizacja nie znaleziona');
+        }
+        
+        // POPRAWKA: Użyj prawdziwego clientId - backend oczekuje clientId, nie syncId
+        const clientId = sync.client?._id || sync.client || sync.clientId;
+        
+        // POPRAWKA: Backend oczekuje parametru clientId, nie syncId
+        const deleteUrl = `/api/sync/folders/${currentFolderData.id}?clientId=${encodeURIComponent(clientId)}`;
+        
+        const deleteResponse = await apiRequest(deleteUrl, {
+            method: 'DELETE'
+        });
+        
+        if (!deleteResponse.ok) {
+            const errorText = await deleteResponse.text();
+            console.error('Błąd odpowiedzi:', errorText);
+            throw new Error(`HTTP ${deleteResponse.status}: ${deleteResponse.statusText}`);
+        }
+        
+        const deleteData = await deleteResponse.json();
+        
+        if (deleteData.success) {
             await loadSyncs(currentFolderData.id);
             showSuccess('Synchronizacja została usunięta');
         } else {
-            throw new Error(data.error || 'Nieznany błąd serwera');
+            throw new Error(deleteData.error || 'Nieznany błąd serwera');
         }
         
     } catch (error) {
@@ -545,7 +606,15 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+window.addEventListener('syncCreated', async (event) => {
+    const { folderId } = event.detail;
+    if (folderId && currentFolderData && currentFolderData.id === folderId) {
+        await loadSyncs(folderId);
+    }
+});
+
 // Eksportuj funkcje do globalnego dostępu
 window.closeSyncDetailsModal = closeSyncDetailsModal;
 window.viewSyncDetails = viewSyncDetails;
 window.saveSync = saveSync;
+window.refreshSyncList = refreshSyncList;

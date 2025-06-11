@@ -3,15 +3,23 @@
   "WorkspaceRootPath": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\sessonmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\sessonmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\syncdetailsform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\syncdetailsform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\syncdetailsform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\syncdetailsform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\apiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\apiclient.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|c:\\dev\\projektprogramistyczny\\desktopclient\\desktopclient\\mainform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|c:\\dev\\projektprogramistyczny\\desktopclient\\desktopclient\\sessonmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\sessonmanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\mainform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\mainform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
@@ -57,14 +65,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\newsyncform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\newsyncform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\syncdetailsform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\syncdetailsform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\syncdetailsform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
-      "RelativeMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|solutionrelative:desktopclient\\syncdetailsform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
       "AbsoluteMoniker": "D:0:0:{B4B291AB-D8C2-4D2B-99AF-56705BB5BA6E}|DesktopClient\\DesktopClient.csproj|C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\desktopclient\\mainform.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -125,31 +125,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ApiClient.cs",
-              "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\ApiClient.cs",
-              "RelativeDocumentMoniker": "DesktopClient\\ApiClient.cs",
-              "ToolTip": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\ApiClient.cs",
-              "RelativeToolTip": "DesktopClient\\ApiClient.cs",
-              "ViewState": "AgIAAPMAAAAAAAAAAAAwwAkBAAAUAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T10:33:10.414Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "MainForm.cs [Design]",
-              "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\MainForm.cs",
-              "RelativeDocumentMoniker": "DesktopClient\\MainForm.cs",
-              "ToolTip": "C:\\Dev\\Projekt Programistyczny\\DesktopClient\\DesktopClient\\MainForm.cs [Design]",
-              "RelativeToolTip": "..\\..\\Projekt Programistyczny\\DesktopClient\\DesktopClient\\MainForm.cs [Design]",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-08T15:02:51.114Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
               "Title": "SessonManager.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SessonManager.cs",
               "RelativeDocumentMoniker": "DesktopClient\\SessonManager.cs",
@@ -162,7 +138,45 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "SyncDetailsForm.cs [Design]",
+              "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs",
+              "RelativeDocumentMoniker": "DesktopClient\\SyncDetailsForm.cs",
+              "ToolTip": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs [Design]",
+              "RelativeToolTip": "DesktopClient\\SyncDetailsForm.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-08T15:27:26.136Z",
+              "EditorCaption": " [Design]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SyncDetailsForm.cs",
+              "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs",
+              "RelativeDocumentMoniker": "DesktopClient\\SyncDetailsForm.cs",
+              "ToolTip": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs",
+              "RelativeToolTip": "DesktopClient\\SyncDetailsForm.cs",
+              "ViewState": "AgIAAOQAAAAAAAAAAAAgwOsAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-05T12:02:30.934Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "ApiClient.cs",
+              "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\ApiClient.cs",
+              "RelativeDocumentMoniker": "DesktopClient\\ApiClient.cs",
+              "ToolTip": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\ApiClient.cs",
+              "RelativeToolTip": "DesktopClient\\ApiClient.cs",
+              "ViewState": "AgIAAGAAAAAAAAAAAAAwwG8AAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-05T10:33:10.414Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "MainForm.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\MainForm.cs",
               "RelativeDocumentMoniker": "DesktopClient\\MainForm.cs",
@@ -170,12 +184,22 @@
               "RelativeToolTip": "DesktopClient\\MainForm.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABMAAAAoAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-08T15:02:53.1Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-06-08T15:02:53.1Z"
             },
             {
               "$type": "Document",
               "DocumentIndex": 5,
+              "Title": "MainForm.cs [Design]",
+              "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\MainForm.cs",
+              "RelativeDocumentMoniker": "DesktopClient\\MainForm.cs",
+              "ToolTip": "C:\\Dev\\Projekt Programistyczny\\DesktopClient\\DesktopClient\\MainForm.cs [Design]",
+              "RelativeToolTip": "..\\..\\Projekt Programistyczny\\DesktopClient\\DesktopClient\\MainForm.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-06-08T15:02:51.114Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "Models.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\Models.cs",
               "RelativeDocumentMoniker": "DesktopClient\\Models.cs",
@@ -187,7 +211,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "SyncService.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncService.cs",
               "RelativeDocumentMoniker": "DesktopClient\\SyncService.cs",
@@ -199,7 +223,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "SettingsForm.Designer.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SettingsForm.Designer.cs",
               "RelativeDocumentMoniker": "DesktopClient\\SettingsForm.Designer.cs",
@@ -211,7 +235,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 11,
               "Title": "SettingsForm.cs [Design]",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SettingsForm.cs",
               "RelativeDocumentMoniker": "DesktopClient\\SettingsForm.cs",
@@ -222,7 +246,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 10,
               "Title": "SettingsForm.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SettingsForm.cs",
               "RelativeDocumentMoniker": "DesktopClient\\SettingsForm.cs",
@@ -234,7 +258,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "SyncDetailsForm.Designer.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.Designer.cs",
               "RelativeDocumentMoniker": "DesktopClient\\SyncDetailsForm.Designer.cs",
@@ -242,11 +266,12 @@
               "RelativeToolTip": "DesktopClient\\SyncDetailsForm.Designer.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T12:02:42.882Z"
+              "WhenOpened": "2025-06-05T12:02:42.882Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 12,
               "Title": "LoginForm.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\LoginForm.cs",
               "RelativeDocumentMoniker": "DesktopClient\\LoginForm.cs",
@@ -258,7 +283,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
+              "DocumentIndex": 13,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\Program.cs",
               "RelativeDocumentMoniker": "DesktopClient\\Program.cs",
@@ -270,7 +295,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 14,
               "Title": "NewSyncForm.cs",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\NewSyncForm.cs",
               "RelativeDocumentMoniker": "DesktopClient\\NewSyncForm.cs",
@@ -282,7 +307,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 15,
               "Title": "NewSyncForm.cs [Design]",
               "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\NewSyncForm.cs",
               "RelativeDocumentMoniker": "DesktopClient\\NewSyncForm.cs",
@@ -290,29 +315,6 @@
               "RelativeToolTip": "..\\..\\Projekt Programistyczny\\DesktopClient\\DesktopClient\\NewSyncForm.cs [Design]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-06-08T15:07:44.841Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "SyncDetailsForm.cs",
-              "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs",
-              "RelativeDocumentMoniker": "DesktopClient\\SyncDetailsForm.cs",
-              "ToolTip": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs",
-              "RelativeToolTip": "DesktopClient\\SyncDetailsForm.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-05T12:02:30.934Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 15,
-              "Title": "SyncDetailsForm.cs [Design]",
-              "DocumentMoniker": "C:\\Dev\\ProjektProgramistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs",
-              "RelativeDocumentMoniker": "DesktopClient\\SyncDetailsForm.cs",
-              "ToolTip": "C:\\Dev\\Projekt Programistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs [Design]",
-              "RelativeToolTip": "..\\..\\Projekt Programistyczny\\DesktopClient\\DesktopClient\\SyncDetailsForm.cs [Design]",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-06-08T15:27:26.136Z"
             },
             {
               "$type": "Document",

@@ -239,8 +239,8 @@ namespace DesktopClient.Forms {
             ShowStatus("Usuwanie...", Color.Blue);
 
             try {
-                // Używamy RemoveFolderFromSyncAsync z syncId
-                var response = await _apiClient.RemoveFolderFromSyncAsync(_folderId, _syncId);
+                // Przekazujemy clientId zamiast syncId
+                var response = await _apiClient.RemoveFolderFromSyncAsync(_folderId, _clientId);
                 if (response.success) {
                     ShowStatus("Usunięto pomyślnie", Color.Green);
                     this.DialogResult = DialogResult.OK;

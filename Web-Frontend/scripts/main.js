@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // NOWE - Sprawdź czy to callback po autoryzacji Google Drive
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('code') && urlParams.has('state')) {
-        console.log('Detected Google Drive callback');
 
         try {
             const result = await handleAuthCallback();
@@ -66,7 +65,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentFolder = current;
             folderStack = stack;
             innerFolders = new Map(folderChildren);
-            console.log("Folder state restored:", folderChildren);
         } catch (error) {
             console.error("Error restoring folder state:", error);
             localStorage.removeItem('folderState'); // Usuń niepoprawny stan
@@ -245,7 +243,6 @@ window.saveSync = saveSync;
 window.deleteSync = deleteSync;
 
 window.showCreateGoogleDriveSync = function(folderId, folderName) {
-    console.log('showCreateGoogleDriveSync wywołane z:', { folderId, folderName });
     showCreateSyncModal(folderId, folderName);
 };
 
@@ -284,7 +281,6 @@ window.logout = function() {
         FB.getLoginStatus(function (response) {
             if (response && response.status === 'connected') {
                 FB.logout(function () {
-                    console.log('Wylogowano z Facebook');
                     window.location.href = '/index.html';
                 });
             } else {

@@ -335,7 +335,7 @@ class SyncDetailsActivity : AppCompatActivity() {
             try {
                 progressBar.visibility = android.view.View.VISIBLE
 
-                val response = apiClient.removeFolderFromSync(syncFolder.folderId, syncFolder.syncId)
+                val response = apiClient.removeFolderFromSync(syncFolder.folderId, clientId)
 
                 if (response.success) {
                     Toast.makeText(this@SyncDetailsActivity, "Synchronizacja została usunięta", Toast.LENGTH_SHORT).show()

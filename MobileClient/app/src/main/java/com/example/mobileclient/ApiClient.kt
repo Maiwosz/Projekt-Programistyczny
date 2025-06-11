@@ -161,8 +161,8 @@ class ApiClient {
     }
 
     // Usuwa folder z synchronizacji (całkowicie lub tylko dla określonego klienta)
-    suspend fun removeFolderFromSync(folderId: String, syncId: String): ApiResponse = withContext(Dispatchers.IO) {
-        val url = "/api/sync/folders/$folderId?syncId=$syncId"
+    suspend fun removeFolderFromSync(folderId: String, clientId: String): ApiResponse = withContext(Dispatchers.IO) {
+        val url = "/api/sync/folders/$folderId?clientId=$clientId"
         deleteAsync(url)
     }
 
