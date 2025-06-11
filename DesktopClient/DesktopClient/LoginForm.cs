@@ -216,7 +216,7 @@ namespace DesktopClient {
             try {
                 // Otwórz stronę rejestracji w przeglądarce
                 Process.Start(new ProcessStartInfo {
-                    FileName = "http://127.0.0.1/register.html",
+                    FileName = "https://localhost:3443/register.html",
                     UseShellExecute = true
                 });
             } catch (Exception ex) {
