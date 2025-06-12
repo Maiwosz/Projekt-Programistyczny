@@ -454,10 +454,14 @@ class SyncService(
                 localFile.setLastModified(syncItem.file.lastModified.time)
             }
 
-            // Potwierdź pobranie
+            // POPRAWKA: Oblicz poprawny clientFileId
+            val clientFileId = getValidClientFileId(syncItem)
+                ?: getSyncFolderLocalPath(syncItem.file.id)?.let { getRelativePath(it, localPath) }
+                ?: localFile.name
+
+            // Potwierdź pobranie z poprawnym clientFileId
             val clientFileInfo = ClientFileInfo(
-                clientFileId = getValidClientFileId(syncItem)
-                    ?: getRelativePath(File(localPath).parent ?: "", localPath),
+                clientFileId = clientFileId,
                 clientFileName = localFile.name,
                 clientPath = localPath,
                 clientLastModified = Date(localFile.lastModified())
@@ -470,6 +474,7 @@ class SyncService(
             _syncStatus.value = "Błąd pobierania ${getFileName(syncItem)}: ${e.message}"
         }
     }
+
 
     private suspend fun uploadNewFile(filePath: String, folderId: String, relativePath: String) {
         try {
@@ -528,8 +533,11 @@ class SyncService(
 
     private suspend fun confirmLocalFileExists(fileId: String, localFile: File, relativePath: String) {
         try {
+            // POPRAWKA: Upewnij się, że relativePath nie jest pusty
+            val clientFileId = if (relativePath.isNotEmpty()) relativePath else localFile.name
+
             val clientFileInfo = ClientFileInfo(
-                clientFileId = relativePath,
+                clientFileId = clientFileId,
                 clientFileName = localFile.name,
                 clientPath = localFile.absolutePath,
                 clientLastModified = Date(localFile.lastModified())
@@ -543,11 +551,21 @@ class SyncService(
         }
     }
 
+
     private suspend fun confirmFileSync(fileId: String, filePath: String, clientFileId: String) {
         try {
             val localFile = File(filePath)
+
+            // POPRAWKA: Upewnij się, że clientFileId nie jest pusty
+            val validClientFileId = if (clientFileId.isNotEmpty()) {
+                clientFileId
+            } else {
+                // Spróbuj obliczyć relativePath lub użyj nazwy pliku
+                getRelativePathForFile(filePath) ?: localFile.name
+            }
+
             val clientFileInfo = ClientFileInfo(
-                clientFileId = clientFileId,
+                clientFileId = validClientFileId,
                 clientFileName = localFile.name,
                 clientPath = filePath,
                 clientLastModified = Date(localFile.lastModified())
@@ -557,6 +575,30 @@ class SyncService(
 
         } catch (e: Exception) {
             _syncStatus.value = "Błąd potwierdzania synchronizacji ${File(filePath).name}: ${e.message}"
+        }
+    }
+
+    private suspend fun getSyncFolderLocalPath(fileId: String): String? {
+        return try {
+            val activeFolders = getActiveSyncFolders()
+            // Znajdź folder, który może zawierać ten plik
+            activeFolders.firstOrNull()?.localPath
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getRelativePathForFile(filePath: String): String? {
+        return try {
+            // Spróbuj znaleźć aktywny folder synchronizacji i obliczyć względną ścieżkę
+            val localFile = File(filePath)
+
+            // Sprawdź czy ścieżka zawiera znaną ścieżkę synchronizacji
+            // To wymaga dostępu do informacji o folderach, więc może być trudne
+            // W ostateczności zwróć samą nazwę pliku
+            localFile.name
+        } catch (e: Exception) {
+            File(filePath).name
         }
     }
 
@@ -646,7 +688,20 @@ class SyncService(
 
     // Nowa pomocnicza metoda do bezpiecznego pobierania clientFileId
     private fun getValidClientFileId(syncItem: SyncDataItem): String? {
-        return syncItem.clientFileId?.takeIf { it.isNotEmpty() }
+        return when {
+            !syncItem.clientFileId.isNullOrEmpty() -> syncItem.clientFileId
+            !syncItem.clientPath.isNullOrEmpty() -> {
+                // Jeśli mamy clientPath, użyj go jako clientFileId
+                val clientPath = syncItem.clientPath
+                if (File(clientPath).isAbsolute) {
+                    // Jeśli to bezwzględna ścieżka, weź tylko nazwę pliku
+                    File(clientPath).name
+                } else {
+                    clientPath
+                }
+            }
+            else -> null
+        }
     }
 
     private fun getLocalFilePath(syncItem: SyncDataItem, basePath: String): String {

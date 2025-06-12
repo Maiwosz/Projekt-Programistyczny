@@ -6,7 +6,19 @@
     android:background="@color/background_surface"
     android:padding="16dp">
 
+    <!-- Auto-sync checkbox -->
+    <CheckBox
+        android:id="@+id/cbAutoSync"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Automatyczna synchronizacja"
+        android:textSize="16sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Sync interval input -->
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilSyncInterval"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp">

@@ -260,10 +260,6 @@ class MainActivity : AppCompatActivity() {
                 showSettingsDialog()
                 true
             }
-            R.id.action_auto_sync -> {
-                toggleAutoSync()
-                true
-            }
             R.id.action_logout -> {
                 logout()
                 true
@@ -352,23 +348,52 @@ class MainActivity : AppCompatActivity() {
         val currentSettings = sessionManager.loadUserSettings(username)
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_settings, null)
+        val cbAutoSync = dialogView.findViewById<CheckBox>(R.id.cbAutoSync)
         val etSyncInterval = dialogView.findViewById<EditText>(R.id.etSyncInterval)
+        val tilSyncInterval = dialogView.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.tilSyncInterval)
 
+        // Ustaw aktualne wartości
+        cbAutoSync.isChecked = syncService.isAutoSyncRunning.value
         etSyncInterval.setText(currentSettings.syncIntervalMinutes.toString())
+
+        // Włącz/wyłącz pole interwału w zależności od checkboxa
+        tilSyncInterval.isEnabled = cbAutoSync.isChecked
+        etSyncInterval.isEnabled = cbAutoSync.isChecked
+
+        cbAutoSync.setOnCheckedChangeListener { _, isChecked ->
+            tilSyncInterval.isEnabled = isChecked
+            etSyncInterval.isEnabled = isChecked
+        }
 
         AlertDialog.Builder(this)
             .setTitle("Ustawienia")
             .setView(dialogView)
             .setPositiveButton("Zapisz") { _, _ ->
                 val interval = etSyncInterval.text.toString().toIntOrNull()
-                if (interval != null && interval >= 1) {
+                val autoSyncEnabled = cbAutoSync.isChecked
+
+                if (!autoSyncEnabled || (interval != null && interval >= 1)) {
+                    // Zapisz ustawienia
                     val newSettings = currentSettings.copy(
-                        syncIntervalMinutes = interval,
+                        syncIntervalMinutes = interval ?: currentSettings.syncIntervalMinutes,
                         lastModified = Date()
                     )
                     sessionManager.saveUserSettings(username, newSettings)
 
-                    syncService.updateSyncInterval(interval)
+                    // Aktualizuj auto-sync
+                    lifecycleScope.launch {
+                        if (autoSyncEnabled) {
+                            syncService.updateSyncInterval(interval!!)
+                            if (!syncService.isAutoSyncRunning.value) {
+                                syncService.startAutoSync(interval)
+                            }
+                            showMessage("Automatyczna synchronizacja włączona", false)
+                        } else {
+                            syncService.stopAutoSync()
+                            showMessage("Automatyczna synchronizacja wyłączona", false)
+                        }
+                    }
+
                     showMessage("Ustawienia zapisane", false)
                 } else {
                     showMessage("Nieprawidłowy interwał synchronizacji", true)
@@ -376,21 +401,6 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton("Anuluj", null)
             .show()
-    }
-
-    private fun toggleAutoSync() {
-        lifecycleScope.launch {
-            val isRunning = syncService.isAutoSyncRunning.value
-
-            if (isRunning) {
-                syncService.stopAutoSync()
-                showMessage("Automatyczna synchronizacja zatrzymana", false)
-            } else {
-                val settings = sessionManager.loadUserSettings(username)
-                syncService.startAutoSync(settings.syncIntervalMinutes)
-                showMessage("Automatyczna synchronizacja uruchomiona", false)
-            }
-        }
     }
 
     private fun logout() {

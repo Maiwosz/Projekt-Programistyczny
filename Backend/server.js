@@ -91,6 +91,7 @@ async function initializeGoogleDriveService() {
         console.log('[STARTUP] Inicjalizacja Google Drive Service...');
         
         googleDriveScheduler = new GoogleDriveSchedulerService(GoogleDriveSyncService);
+		global.googleDriveScheduler = googleDriveScheduler;
         
         if (!googleDriveScheduler) {
             throw new Error('Nie można utworzyć GoogleDriveSchedulerService');

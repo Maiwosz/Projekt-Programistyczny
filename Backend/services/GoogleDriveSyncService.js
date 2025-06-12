@@ -47,6 +47,31 @@ class GoogleDriveSyncService {
 		
 		await SyncService.markFolderForSync(userId, serverFolderId);
 		
+		// NOWE: Automatycznie uruchom scheduler jeśli autoSync jest włączone
+		try {
+			const GoogleDriveClient = require('../models/GoogleDriveClient');
+			const clientDoc = await GoogleDriveClient.findOne({ 
+				user: userId,
+				'status.isConnected': true 
+			});
+			
+			if (clientDoc && clientDoc.syncSettings.autoSync) {
+				console.log(`[GDRIVE] AutoSync włączone - dodaję nową synchronizację do schedulera`);
+				
+				// Importuj scheduler (może być przekazany jako dependency lub singleton)
+				const GoogleDriveSchedulerService = require('./GoogleDriveSchedulerService');
+				const scheduler = new GoogleDriveSchedulerService(this);
+				
+				// Restart schedulera z nowymi folderami
+				await scheduler.restartAutoSync(userId);
+				
+				console.log(`[GDRIVE] ✓ Scheduler zaktualizowany dla userId: ${userId}`);
+			}
+		} catch (schedulerError) {
+			console.warn(`[GDRIVE] Błąd aktualizacji schedulera:`, schedulerError.message);
+			// Nie przerywaj procesu - synchronizacja została utworzona pomyślnie
+		}
+		
 		return {
 			syncFolderId: syncFolder._id,
 			serverFolderId: serverFolderId,
