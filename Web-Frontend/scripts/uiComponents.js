@@ -114,7 +114,9 @@ export function updateBreadcrumbs() {
     const breadcrumbs = folderStack
         .map((folder, index) =>
             // Dla każdego folderu w historii utwórz klikalny element
-            `<span class="breadcrumb-item" onclick="navigateToIndex(${index})">${folder.name}</span>`
+            `
+            <span class="breadcrumb-item" onclick="navigateToIndex(${index})">${folder.name}</span>
+            `
         )
         .join(' / '); // Łącz elementy separatorem
 
@@ -122,6 +124,9 @@ export function updateBreadcrumbs() {
     document.getElementById('breadcrumbs').innerHTML = `
         ${breadcrumbs ? breadcrumbs + ' / ' : ''}
         <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
+        <button class="item-button" onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
+            🔄 Synchronizuj wskazany folder: ${currentFolder.name} 🔄
+        </button>
     `;
 }
 
