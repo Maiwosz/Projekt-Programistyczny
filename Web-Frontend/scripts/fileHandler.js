@@ -226,16 +226,18 @@ function showCustomDialog(message, actions, callback) {
     
     const dialog = document.createElement('div');
     dialog.style.cssText = `
-        background: white;
+        background: #f0f2f5;
         padding: 20px;
         border-radius: 8px;
-        max-width: 400px;
-        width: 90%;
+        max-width: 450px;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     `;
     
     const messageEl = document.createElement('div');
     messageEl.style.cssText = `
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
         margin-bottom: 20px;
         white-space: pre-line;
         line-height: 1.4;
@@ -246,19 +248,21 @@ function showCustomDialog(message, actions, callback) {
     buttonsContainer.style.cssText = `
         display: flex;
         gap: 10px;
-        justify-content: flex-end;
+        justify-content: center;
     `;
     
     actions.forEach(action => {
         const button = document.createElement('button');
         button.textContent = action.text;
         button.style.cssText = `
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: ${action.value === 'cancel' ? '#f5f5f5' : '#007bff'};
+            background: ${action.value === 'cancel' ? '#aaa' : '#007bff'};
             color: ${action.value === 'cancel' ? '#333' : 'white'};
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
             cursor: pointer;
+            transition: background 0.3s;
+            white-space: nowrap;
         `;
         
         button.onclick = () => {
