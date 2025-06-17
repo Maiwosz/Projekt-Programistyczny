@@ -64,31 +64,37 @@
                     </div>
                     <!-- Sekcja tagów -->
                     <div class="search">
-                        <h3>Wyszukaj</h3>
-                        <p> Tag: </p>
-                        <div class="dropdown" id="tagFilterSelector">
-                            <div class="dropdown-button" tabindex="0">
-                                <span class="label">Wybierz tagi</span>
-                                <span class="arrow">▼</span>
-                            </div>
-                            <div class="dropdown-content" id="tagDropdown-content">
-                                <!-- Tu będą checkboxy -->
-                            </div>
-                        </div>
-                        <p> Typ: </p>
-                        <div class="dropdown" id="typeFilterSelector">
-                            <div class="dropdown-button" tabindex="0">
-                                <span class="label">Wybierz typy</span>
-                                <span class="arrow">▼</span>
-                            </div>
-                            <div class="dropdown-content" id="typeDropdown-content">
-                                <!-- Tu będą checkboxy -->
+                        <h2>Wyszukaj</h2>
+                        <div class="search-wrap">
+                            <p> Tag: </p>
+                            <div class="dropdown" id="tagFilterSelector">
+                                <div class="dropdown-button" tabindex="0">
+                                    <span class="label">Wybierz tagi</span>
+                                    <span class="arrow">▼</span>
+                                </div>
+                                <div class="dropdown-content" id="tagDropdown-content">
+                                    <!-- Tu będą checkboxy -->
+                                </div>
                             </div>
                         </div>
-                        <p> Nazwa: </p>
-                        <input type="search" id="nameFilterSelector" placeholder="Wpisz nazwę pliku lub folderu">
+                        <div class="search-wrap">
+                            <p> Typ: </p>
+                            <div class="dropdown" id="typeFilterSelector">
+                                <div class="dropdown-button" tabindex="0">
+                                    <span class="label">Wybierz typy</span>
+                                    <span class="arrow">▼</span>
+                                </div>
+                                <div class="dropdown-content" id="typeDropdown-content">
+                                    <!-- Tu będą checkboxy -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="search-wrap">
+                            <p> Nazwa: </p>
+                            <input type="search" id="nameFilterSelector" placeholder="Wpisz nazwę pliku lub folderu">
 
-                        <button onclick="filterFiles()">Pokaż pliki</button>
+                            <button onclick="filterFiles()">Pokaż pliki</button>
+                        </div>
                     </div>
                     <div style="display: grid; grid-template-columns: 80px 1fr; gap: 15px;">
                         <div class="breadcrumbs"> Ścieżka: </div>

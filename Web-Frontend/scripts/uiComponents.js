@@ -105,7 +105,7 @@ export function renderItems(data) {
 
     // Aktualizuj zawartość strony lub pokaż komunikat o pustym folderze
     document.getElementById('itemsList').innerHTML = html || '<p class="empty-info">Brak zawartości w tym folderze</p>';
-    document.getElementById('dirsList').innerHTML = html_dirs || '<p class="empty-info">Brak folderów w tym folderze</p>';
+    document.getElementById('dirsList').innerHTML = html_dirs || '<p class="empty-info">Brak folderów</p>';
     updateTree();
 }
 
