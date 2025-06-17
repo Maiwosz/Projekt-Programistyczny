@@ -17,6 +17,10 @@ body {
     height: 80dvh;
 }
 
+h3 {
+    color: #2c3e50;
+}
+
 /* ========== SEKCJE STRONY ========== */
 .section {
     display: grid;
@@ -30,6 +34,7 @@ body {
 }
 
 .main-content {
+    display: block;
     flex: 1;
     padding: 1rem;
     overflow-y: scroll;
@@ -182,8 +187,8 @@ button:hover {
 
 .search h2 {
     margin-right: 20px;
-    color: #2c3e50;
     text-align: left;
+    padding-bottom: 8px;
 }
 
 .search-wrap {
@@ -233,6 +238,14 @@ button:hover {
     text-align: left;
     font-size: 20px;
     width: 100%;
+}
+
+.sidebar-button {
+    display: block;
+    width: 48px;
+    writing-mode: sideways-lr;
+    margin-right: 10px;
+    padding-left: 12px;
 }
 
 .folder {
@@ -607,12 +620,9 @@ hr.simple {
 /* ============= Image view ============= */
 .image-view {
     display: none;
-    /* Hidden by default */
     background-color: rgba(0, 0, 0, 0.8);
-    /* Black backround with opacity */
     position: fixed;
     z-index: 1100;
-    /* Put image on top */
     padding-top: 1rem;
     left: 0;
     top: 0;
@@ -697,10 +707,6 @@ hr.simple {
 
 /* Adjust elements when screen width < 800px */
 @media only screen and (max-width: 800px) {
-
-    #sidebar {
-        display: none;
-    }
 
     .header {
         flex-direction: column;

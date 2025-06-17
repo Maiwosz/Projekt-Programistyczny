@@ -268,6 +268,18 @@ window.toggleImgCloseup = function (img, zoomClass = 'closeup'){
    img.classList.toggle(zoomClass);
 }
 
+window.toggleSidebar = function () {
+
+    var sidebar = document.getElementById('sidebar');
+
+    if (sidebar.style.display == "none") {
+        sidebar.style.display = "flex";
+    } else {
+        sidebar.style.display = "none";
+    }
+
+}
+
 // Dodatkowe funkcje
 window.open_profile_edit = function () {
     window.location.pathname = '/EditProfilePage.html';
