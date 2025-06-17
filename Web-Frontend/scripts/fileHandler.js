@@ -254,16 +254,18 @@ function showCustomDialog(message, actions, callback) {
     actions.forEach(action => {
         const button = document.createElement('button');
         button.textContent = action.text;
-        button.style.cssText = `
-            background: ${action.value === 'cancel' ? '#aaa' : '#007bff'};
-            color: ${action.value === 'cancel' ? '#333' : 'white'};
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
-            white-space: nowrap;
-        `;
+        // button.style.cssText = `
+        //     background: ${action.value === 'cancel' ? '#aaa' : '#007bff'};
+        //     color: ${action.value === 'cancel' ? '#333' : 'white'};
+        //     border: none;
+        //     padding: 8px 16px;
+        //     border-radius: 4px;
+        //     cursor: pointer;
+        //     transition: background 0.3s;
+        //     white-space: nowrap;
+        // `;
+
+        button.className = "dialog-modal-button";
         
         button.onclick = () => {
             document.body.removeChild(overlay);

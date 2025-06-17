@@ -246,7 +246,7 @@ window.showCreateGoogleDriveSync = function(folderId, folderName) {
     showCreateSyncModal(folderId, folderName);
 };
 
-// Funkcje UI
+// ========== FUNKCJE UI ==========
 window.view_image = function (image_preview_src) {
     // Get modal for image view
     var imgView = document.getElementById("image-view-id");
@@ -268,19 +268,7 @@ window.toggleImgCloseup = function (img, zoomClass = 'closeup'){
    img.classList.toggle(zoomClass);
 }
 
-window.toggleSidebar = function () {
-
-    var sidebar = document.getElementById('sidebar');
-
-    if (sidebar.style.display == "none") {
-        sidebar.style.display = "flex";
-    } else {
-        sidebar.style.display = "none";
-    }
-
-}
-
-// Dodatkowe funkcje
+// ========== DODATKOWE FUNKCJE ==========
 window.open_profile_edit = function () {
     window.location.pathname = '/EditProfilePage.html';
 };
@@ -303,3 +291,16 @@ window.logout = function() {
         window.location.href = '/index.html';
     }
 };
+
+window.refreshCurrentFolderContent = function () {
+    // Sprawdź czy użytkownik jest zalogowany
+    const token = localStorage.getItem('token');
+    if (!token) return; // Nie wykonuj dalszego kodu jeśli nie ma tokenu
+
+    loadFolderContents(); // Załaduj widoczną zawartośću, czyli obecnie wybrany folder
+
+    //filterFiles(); // Zastosuj użyte wcześniej filtry - jeśli konieczne
+}
+
+let intervalId = setInterval(window.refreshCurrentFolderContent, 60000); // Execute function every minute
+// clearInterval(intervalId);

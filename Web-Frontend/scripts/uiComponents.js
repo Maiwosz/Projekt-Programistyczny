@@ -121,13 +121,20 @@ export function updateBreadcrumbs() {
         .join(' / '); // Łącz elementy separatorem
 
     // Aktualizuj HTML breadcrumbs z obecnym folderem na końcu
-    document.getElementById('breadcrumbs').innerHTML = `
-        ${breadcrumbs ? breadcrumbs + ' / ' : ''}
-        <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
-        <button class="item-button" onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
-            🔄 Synchronizuj wskazany folder: ${currentFolder.name} 🔄
-        </button>
-    `;
+    if (currentFolder.name == "Główny") {
+        document.getElementById('breadcrumbs').innerHTML = `
+            ${breadcrumbs ? breadcrumbs + ' / ' : ''}
+            <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
+        `;
+    } else { // Jeżeli folder inny niż Główny to dodaj przycisk synchronizacji
+        document.getElementById('breadcrumbs').innerHTML = `
+            ${breadcrumbs ? breadcrumbs + ' / ' : ''}
+            <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
+            <button class="item-button" onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
+                🔄 Synchronizuj folder: ${currentFolder.name} 🔄
+            </button>
+        `;
+    }
 }
 
 export function formatFileSize(bytes) {

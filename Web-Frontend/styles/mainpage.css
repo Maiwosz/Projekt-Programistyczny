@@ -73,6 +73,22 @@ button:hover {
     background: #0056b3;
 }
 
+/* Przyciski do modalu dialogu */
+.dialog-modal-button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    white-space: nowrap;
+}
+
+.dialog-modal-button:hover {
+    background: #0056b3;
+}
+
 .upload-section {
     display: flex;
     align-items: center;
@@ -104,7 +120,7 @@ button:hover {
     padding: 2px 5px;
     border: 1px solid #ccc;
     background-color: white;
-    min-width: 150px;
+    min-width: 120px;
     max-width: 300px;
     cursor: pointer;
     border-radius: 5px;
@@ -132,7 +148,7 @@ button:hover {
     position: absolute;
     background: white;
     border: 1px solid #ccc;
-    width: 160px;
+    width: 130px;
     max-height: 200px;
     overflow-y: auto;
     z-index: 1000;
@@ -149,7 +165,7 @@ button:hover {
     align-items: center;
     padding: 6px 10px;
     cursor: pointer;
-    width: 140px;
+    width: 120px;
 }
 
 .dropdown-content input[type="checkbox"] {
@@ -178,17 +194,6 @@ button:hover {
     background: #f8f9fa;
     border-radius: 5px;
     margin-bottom: 10px;
-    padding: 0px 10px;
-}
-
-.search > * {
-    flex: 1 1 auto;
-}
-
-.search h2 {
-    margin-right: 20px;
-    text-align: left;
-    padding-bottom: 8px;
 }
 
 .search-wrap {
@@ -201,15 +206,39 @@ button:hover {
 .search input[type="search"] {
     max-height: 35px;
     max-width: 300px;
-    min-width: 150px;
+    min-width: 120px;
     align-self: center;
     margin-top: 15px;
+}
+
+#nameFilterSelector {
+    width: 250px;
+    margin-right: 10px;
 }
 
 .search button {
     max-height: 35px;
     max-width: 108px;
     align-self: center;
+    /* margin-left: 10px; */
+    width: auto;
+}
+
+.divide-search {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 0px 10px;
+}
+
+.divide-search h2 {
+    margin-right: 20px;
+    text-align: left;
+    padding-bottom: 15px;
 }
 
 /*=========== SIDEBAR ============ */
@@ -238,14 +267,6 @@ button:hover {
     text-align: left;
     font-size: 20px;
     width: 100%;
-}
-
-.sidebar-button {
-    display: block;
-    width: 48px;
-    writing-mode: sideways-lr;
-    margin-right: 10px;
-    padding-left: 12px;
 }
 
 .folder {
@@ -707,6 +728,10 @@ hr.simple {
 
 /* Adjust elements when screen width < 800px */
 @media only screen and (max-width: 800px) {
+
+    #sidebar {
+        display: none;
+    }
 
     .header {
         flex-direction: column;

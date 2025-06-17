@@ -31,7 +31,6 @@
             </div>
             <!-- Główna sekcja strony -->
             <div id="layout">
-                <button class="sidebar-button" onclick="toggleSidebar()"> ⬇️ Pasek boczny ⬇️ </button>
                 <!-- Sidebar z drzewem folderów -->
                 <div id="sidebar">
                     <h2 class="sidebar-header">Foldery</h2>
@@ -60,40 +59,42 @@
                         <div class="upload-section">
                             <button onclick="triggerFileInput(true)">Dodaj</button>
                             <button onclick="showCreateFolderModal()">Nowy folder</button>
+                            <button onclick="refreshCurrentFolderContent()">Odśwież folder</button>
                             <button onclick="showTrashModal()">Kosz</button>
                         </div>
                     </div>
                     <!-- Sekcja tagów -->
-                    <div class="search">
+                    <div class="divide-search">
                         <h2>Wyszukaj</h2>
-                        <div class="search-wrap">
-                            <p> Tag: </p>
-                            <div class="dropdown" id="tagFilterSelector">
-                                <div class="dropdown-button" tabindex="0">
-                                    <span class="label">Wybierz tagi</span>
-                                    <span class="arrow">▼</span>
-                                </div>
-                                <div class="dropdown-content" id="tagDropdown-content">
-                                    <!-- Tu będą checkboxy -->
-                                </div>
-                            </div>
-                        </div>
-                        <div class="search-wrap">
-                            <p> Typ: </p>
-                            <div class="dropdown" id="typeFilterSelector">
-                                <div class="dropdown-button" tabindex="0">
-                                    <span class="label">Wybierz typy</span>
-                                    <span class="arrow">▼</span>
-                                </div>
-                                <div class="dropdown-content" id="typeDropdown-content">
-                                    <!-- Tu będą checkboxy -->
+                        <div class="search">
+                            <div class="search-wrap">
+                                <p> Tag: </p>
+                                <div class="dropdown" id="tagFilterSelector">
+                                    <div class="dropdown-button" tabindex="0">
+                                        <span class="label">Wybierz tagi</span>
+                                        <span class="arrow">▼</span>
+                                    </div>
+                                    <div class="dropdown-content" id="tagDropdown-content">
+                                        <!-- Tu będą checkboxy -->
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="search-wrap">
-                            <p> Nazwa: </p>
-                            <input type="search" id="nameFilterSelector" placeholder="Wpisz nazwę pliku lub folderu">
-
+                            <div class="search-wrap">
+                                <p> Typ: </p>
+                                <div class="dropdown" id="typeFilterSelector">
+                                    <div class="dropdown-button" tabindex="0">
+                                        <span class="label">Wybierz typy</span>
+                                        <span class="arrow">▼</span>
+                                    </div>
+                                    <div class="dropdown-content" id="typeDropdown-content">
+                                        <!-- Tu będą checkboxy -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="search-wrap">
+                                <p> Nazwa: </p>
+                                <input type="search" id="nameFilterSelector" placeholder="Wpisz nazwę pliku lub folderu">
+                            </div>
                             <button onclick="filterFiles()">Pokaż pliki</button>
                         </div>
                     </div>
