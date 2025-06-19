@@ -111,6 +111,12 @@
                         </div>
                     </div>
 
+                    <div class="share-control">
+                        <button onclick="shareCurrentFolder()">Udostępnij folder</button>
+                        <button onclick="revokeCurrentFolder()">Wyłącz udostępnianie</button>
+                        <div id="share-link">Link: </div>
+                    </div>
+
                     <!-- Główna sekcja z zawartością -->
                      <!-- Drag & Drop -->
                     <div class="section" id="drop-area">
@@ -153,17 +159,18 @@
                         </div>
                         <hr class="simple">
                         <!-- Sekcja tagów pliku -->
-                    <div class="file-tags-section">
-                        <h3>Tagi pliku:</h3>
-                        <div class="file-tags-list" id="fileTagsList" style="margin-bottom: 10px;">
-                            <!-- Tutaj będą wyświetlane tagi pliku -->
-                        </div>
-                        <div class="add-tag-to-file">
-                            <select id="tagSelector">
-                                <option value="">Wybierz tag</option>
-                                <!-- Opcje będą dodawane dynamicznie -->
-                            </select>
-                            <button type="button" onclick="addTagToFile()">Dodaj tag</button>
+                        <div class="file-tags-section">
+                            <h3>Tagi pliku:</h3>
+                            <div class="file-tags-list" id="fileTagsList" style="margin-bottom: 10px;">
+                                <!-- Tutaj będą wyświetlane tagi pliku -->
+                            </div>
+                            <div class="add-tag-to-file">
+                                <select id="tagSelector">
+                                    <option value="">Wybierz tag</option>
+                                    <!-- Opcje będą dodawane dynamicznie -->
+                                </select>
+                                <button type="button" onclick="addTagToFile()">Dodaj tag</button>
+                            </div>
                         </div>
                     </div>
                     <hr class="simple">
@@ -186,28 +193,28 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Modal kosza -->
-		<div id="trashModal" class="modal" style="max-width: 900px;">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h3>Kosz</h3>
-					<button onclick="closeTrashModal()" class="close-button">&times;</button>
-				</div>
-				
-				<div class="trash-actions" style="margin-bottom: 20px;">
-					<button onclick="emptyTrash()" class="btn-danger">Opróżnij kosz</button>
-				</div>
-				
-				<div id="trashItems" class="items-list">
-					<!-- Tutaj będą wyświetlane usunięte pliki -->
-				</div>
-				
-				<div style="margin-top: 20px; text-align: right;">
-					<button onclick="closeTrashModal()" class="btn-secondary">Zamknij</button>
-				</div>
-			</div>
-		</div>
+        <div id="trashModal" class="modal" style="max-width: 900px;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Kosz</h3>
+                    <button onclick="closeTrashModal()" class="close-button">&times;</button>
+                </div>
+
+                <div class="trash-actions" style="margin-bottom: 20px;">
+                    <button onclick="emptyTrash()" class="btn-danger">Opróżnij kosz</button>
+                </div>
+
+                <div id="trashItems" class="items-list">
+                    <!-- Tutaj będą wyświetlane usunięte pliki -->
+                </div>
+
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeTrashModal()" class="btn-secondary">Zamknij</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Podgląd obrazka -->
         <div id="image-view-id" class="image-view">

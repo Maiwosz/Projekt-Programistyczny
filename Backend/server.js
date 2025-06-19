@@ -177,7 +177,8 @@ const routes = [
     { path: '/api/sync', file: './routes/syncRoutes' },
     { path: '/api/google-drive', file: './routes/googleDriveRoutes' },
     { path: '/api/tags', file: './routes/tagRoutes' },
-    { path: '/api/filter', file: './routes/fileFilterRoutes' }
+    { path: '/api/filter', file: './routes/fileFilterRoutes' },
+
 ];
 
 routes.forEach(route => {
@@ -205,12 +206,23 @@ if (!fs.existsSync(uploadsPath)) {
 }
 app.use('/uploads', express.static(uploadsPath));
 
+
 // Sprawdzanie katalogu frontend
 const frontendPath = path.join(__dirname, '../Web-Frontend');
 if (fs.existsSync(frontendPath)) {
     app.use(express.static(frontendPath));
     console.log(`✓ Frontend path: ${frontendPath}`);
-    
+
+    // 🔧 Add this block for shared links:
+    app.get('/shared/*', (req, res) => {
+        const indexPath = path.join(frontendPath, 'index.html');
+        if (fs.existsSync(indexPath)) {
+            res.sendFile(indexPath);
+        } else {
+            res.status(404).send('Shared view not available');
+        }
+    });
+
     app.get('/prototype', (req, res) => {
         const prototypePath = path.join(frontendPath, 'prototype/fileManagementPrototype.html');
         if (fs.existsSync(prototypePath)) {
@@ -228,9 +240,10 @@ if (fs.existsSync(frontendPath)) {
             res.status(404).send('Frontend not found');
         }
     });
-} else {
-    console.warn(`⚠ Frontend path nie istnieje: ${frontendPath}`);
 }
+// Konfiguracja portów
+const HTTP_PORT = process.env.HTTP_PORT || 3000;
+const HTTPS_PORT = process.env.HTTPS_PORT || 3443;
 
 async function startServer() {
     try {
@@ -348,3 +361,4 @@ startServer().catch(error => {
     console.error('✗ Krytyczny błąd aplikacji:', error);
     process.exit(1);
 });
+

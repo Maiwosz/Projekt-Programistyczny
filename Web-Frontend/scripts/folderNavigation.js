@@ -1,6 +1,7 @@
 // Naprawione importy
 import { currentFolder, folderStack, innerFolders } from './main.js';
 import { updateBreadcrumbs, updateTree, saveState } from './uiComponents.js';
+import { displaySharedStatus } from './folderSharing.js';
 
 export async function loadFolderContents() {
     try {
@@ -14,8 +15,11 @@ export async function loadFolderContents() {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
 
+
         // Obsłuż błędy HTTP
         if (!response.ok) throw new Error(`Błąd HTTP: ${response.status}`);
+
+        displaySharedStatus();
 
         // Przetwórz odpowiedź JSON i zaktualizuj UI
         const data = await response.json();
