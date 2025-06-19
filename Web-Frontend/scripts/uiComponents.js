@@ -130,9 +130,14 @@ export function updateBreadcrumbs() {
         document.getElementById('breadcrumbs').innerHTML = `
             ${breadcrumbs ? breadcrumbs + ' / ' : ''}
             <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
+            
+            <div class="sharing">
             <button class="item-button" onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
                 🔄 Synchronizuj folder: ${currentFolder.name} 🔄
             </button>
+            <button class="item-button" onclick="toggleSharing(this)" title="Share-folder"> Udostępnij folder </button>
+            <input type="text" id="folder-share-link">
+            </div>
         `;
     }
 }
@@ -279,4 +284,25 @@ document.addEventListener('click', (event) => {
         closeAllDropdowns();
     }
 });
+
+export function toggleSharing(button){
+    const link = document.getElementById('folder-share-link');
+    if (button.textContent.trim() === "Udostępnij folder") {
+    button.textContent = "Przerwij udostępnianie";
+    link.value = "tu bedzie link";
+  } else {
+    button.textContent = "Udostępnij folder";
+    link.value = ""
+  }
+}
+export function toggleFileSharing(button){
+    const link = document.getElementById('share-link');
+    if (button.textContent.trim() === "Udostępnij") {
+    button.textContent = "Przerwij udostępnianie";
+     link.value = "tu bedzie link";
+  } else {
+    button.textContent = "Udostępnij";
+    link.value = ""
+  }
+}
 

@@ -413,6 +413,22 @@ hr.simple {
     background: #e9ecef;
 }
 
+.sharing {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+     width: 100%; 
+}
+.sharing button{
+    width: fit-content;
+    max-height: 40px;
+    padding: 0 12px;
+}
+.sharing input{
+    flex: 1;
+    max-height: 40px;
+}
+
 /* ========== PREVIEW PLIKÓW ========== */
 .thumbnail {
     width: 100%;
@@ -466,7 +482,8 @@ hr.simple {
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     min-width: 300px;
-    overflow: auto;
+    max-height: 80vh;
+    overflow: scroll;
 }
 
 .modal input[type="text"] {

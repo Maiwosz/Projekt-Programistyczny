@@ -130,6 +130,11 @@ function renderFileModal(file, fileTags = []) {
     // Wypełnij selektor tagów dostępnymi tagami
     populateTagSelector(fileTags);
 
+    //Wyswietl opcje udostepniania
+    const sharing = document.querySelector(".share-file");
+    sharing.innerHTML = `<input type="text" id="share-link" value="">
+                            <button type="button" onclick="toggleFileSharing(this)">Udostępnij</button>`;
+
     modal.style.display = 'block'; // Pokaż modal
 }
 

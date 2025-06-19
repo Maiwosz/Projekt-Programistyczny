@@ -8,7 +8,7 @@ export var userTags = [];
 
 // Importy funkcji z poszczególnych modułów
 import { loadFolderContents, enterFolder, navigateToIndex, buildPathTo } from './folderNavigation.js';
-import { updateBreadcrumbs, updateTree, saveState, getFileIcon, formatFileSize, renderItems, setupDropdown } from './uiComponents.js';
+import { updateBreadcrumbs, updateTree, saveState, getFileIcon, formatFileSize, renderItems, setupDropdown, toggleSharing, toggleFileSharing } from './uiComponents.js';
 import { triggerFileInput, renameFile, deleteFile } from './fileHandler.js';
 import { createFolder, renameFolder, deleteFolder } from './folderHandler.js';
 import { showCreateFolderModal, closeFolderModal, showFileDetails, saveMetadata, closeFileModal } from './modalHandler.js';
@@ -185,6 +185,8 @@ window.buildPathTo = buildPathTo;
 
 // Funkcje obsługi UI
 window.renderItems = renderItems;
+window.toggleSharing = toggleSharing;
+window.toggleFileSharing = toggleFileSharing;
 
 // Funkcje obsługi plików
 window.triggerFileInput = triggerFileInput;
