@@ -23,6 +23,39 @@ export async function shareCurrentFolder() {
         alert('Wystąpił błąd przy udostępnianiu folderu');
     }
 }
+//kopia funkcji dla obecnego frontendu
+export async function shareFolder() {
+    try {
+        const response = await fetch(`/api/folders/${currentFolder.id}/share`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+             const errorText = await response.text();
+            console.error("Odpowiedź serwera:", errorText);
+            throw new Error('Nie udało się udostępnić folderu');
+        }
+
+        const data = await response.json();
+        // Show success message
+        alert('Folder został pomyślnie udostępniony!');
+        return {
+            link: data.link,
+            success: true
+        };
+    } catch (error) {
+        console.error('Błąd przy udostępnianiu:', error);
+        alert('Wystąpił błąd przy udostępnianiu folderu');
+        return {
+            link: '',
+            success: false
+        };
+    }
+}
 
 export async function revokeCurrentFolder() {
     if (!currentFolder.id) {
@@ -45,6 +78,29 @@ export async function revokeCurrentFolder() {
     } catch (error) {
         console.error('Błąd przy wyłączaniu udostępniania:', error);
         alert('Wystąpił błąd przy wyłączaniu udostępniania folderu');
+    }
+}
+//kopia dp frontendu
+export async function stopSharingFolder() {
+    try {
+        const response = await fetch(`/api/folders/${currentFolder.id}/revoke-share`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Nie udało się wyłączyć udostępniania');
+            return false;
+        }
+
+        alert('Udostępnianie zostało wyłączone');
+        return true;
+    } catch (error) {
+        console.error('Błąd przy wyłączaniu udostępniania:', error);
+        alert('Wystąpił błąd przy wyłączaniu udostępniania folderu');
+        return false;
     }
 }
 
@@ -76,6 +132,34 @@ export async function displaySharedStatus() {
         console.error('Błąd przy pobieraniu informacji:', error);
         // Don't show alert for shared status check failures
         document.getElementById('share-link').textContent = 'Link: ';
+    }
+}
+
+export async function isShared() {
+    try {
+        console.log("checking shared status");
+
+        const response = await fetch(`/api/folders/${currentFolder.id}/is-shared`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Nie udało się pobrać informacji o stanie udostępnienia');
+        }
+
+        const data = await response.json();
+        return {
+            isShared: data.isShared,
+            link: data.link
+        };
+
+    } catch (error) {
+        console.error('Błąd przy pobieraniu informacji:', error);
+        return [false, ""]; // zwracamy false w przypadku błędu
     }
 }
 

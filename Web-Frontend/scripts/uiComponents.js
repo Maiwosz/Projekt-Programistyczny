@@ -1,5 +1,6 @@
 import { currentFolder, folderStack, innerFolders } from './main.js';
 import { buildPathTo } from './folderNavigation.js';
+import { isShared, shareFolder, stopSharingFolder } from './folderSharing.js';
 
 export function getFileIcon(category) {
     // Obiekt zawierający szablony SVG dla różnych typów plików
@@ -141,12 +142,9 @@ export function updateBreadcrumbs() {
             <button onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
                 🔄 Szczegóły synchronizacji</button>
         `;
-        document.getElementById('sharing').innerHTML = `
-            <button class="item-button" onclick="toggleSharing(this)" title="Share-folder"> Udostępnij folder </button>
-            <input type="text" id="folder-share-link">
-        `;
         document.querySelector('.sharing')?.style.setProperty('background', '#f8f9fa');
         document.querySelector('.sync-button-div')?.style.setProperty('background', '#f8f9fa');
+        updateFolderShareButton()
     }
 }
 
@@ -292,16 +290,52 @@ document.addEventListener('click', (event) => {
         closeAllDropdowns();
     }
 });
+//Sprawdza w bazie danych czy folder jest udostepniony zeby poprawnie wyswietlic UI
+async function updateFolderShareButton() {
+    let buttonText = "Udostępnij Folder";
+    let linkValue = "";
+    try {
+        const [isSharedValue, linkText] = await isShared();
+        if (isSharedValue) {
+            buttonText = "Przerwij udostępnianie";
+            linkValue = linkText;
+        } else {
+            buttonText = "Udostępnij folder";
+            linkValue = "";
+        }
+    } catch (error) {
+        console.error("Błąd przy sprawdzaniu stanu udostępnienia:", error);
+    }
+    document.getElementById('sharing').innerHTML = `
+            <button class="item-button" onclick="toggleSharing(this)" title="Share-folder"> ${buttonText} </button>
+            <input type="text" id="folder-share-link" value=${linkValue}>
+        `;
+}
 
-export function toggleSharing(button){
+export async function toggleSharing(button){
     const link = document.getElementById('folder-share-link');
-    if (button.textContent.trim() === "Udostępnij folder") {
-    button.textContent = "Przerwij udostępnianie";
-    link.value = "tu bedzie link";
-  } else {
-    button.textContent = "Udostępnij folder";
-    link.value = ""
-  }
+        if (button.textContent.trim() === "Udostępnij folder") {
+            try{
+            const {linkText,success} = await shareFolder();
+            if(success){
+                button.textContent = "Przerwij udostępnianie";
+                link.value = linkText;
+            }
+            }
+            catch(error){
+                 console.error("Błąd przy zmianie stanu udostępnienia:", error);
+            }
+        } else {
+            try{
+                const success = await stopSharingFolder();
+                if(success){
+                    button.textContent = "Udostępnij folder";
+                    link.value = "";
+                }
+            }catch(error){
+                console.error("Błąd przy zmianie stanu udostępnienia:", error);
+            }
+        }
 }
 export function toggleFileSharing(button){
     const link = document.getElementById('share-link');
