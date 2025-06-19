@@ -422,7 +422,6 @@ hr.simple {
     height: 150px;
     object-fit: cover;
     border-radius: 4px;
-    margin-bottom: 8px;
     background: #f8f9fa;
     cursor: pointer;
 }
@@ -652,7 +651,7 @@ hr.simple {
     background-color: rgba(0, 0, 0, 0.8);
     position: fixed;
     z-index: 1100;
-    padding-top: 1rem;
+    /* padding-top: 1rem; */
     left: 0;
     top: 0;
     width: 100%;
