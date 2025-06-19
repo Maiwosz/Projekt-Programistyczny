@@ -369,14 +369,14 @@ hr.simple {
 
 .item-download-item {
     position: relative;
-    left: 88px;
+    left: 94px;
     top: 132px;
     padding: 8px;
 }
 
 .item-download-folder {
     position: relative;
-    left: 130px;
+    left: 138px;
     top: 132px;
     padding: 8px;
 }
@@ -397,6 +397,7 @@ hr.simple {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
+    flex-grow: 1;
     padding: 10px;
     background: #f8f9fa;
     border-radius: 4px;
@@ -428,6 +429,12 @@ hr.simple {
     flex: 1;
     max-height: 40px;
 }
+.sync-button-div {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
 
 /* ========== PREVIEW PLIKÓW ========== */
 .thumbnail {
@@ -435,7 +442,6 @@ hr.simple {
     height: 150px;
     object-fit: cover;
     border-radius: 4px;
-    margin-bottom: 8px;
     background: #f8f9fa;
     cursor: pointer;
 }
@@ -666,7 +672,7 @@ hr.simple {
     background-color: rgba(0, 0, 0, 0.8);
     position: fixed;
     z-index: 1100;
-    padding-top: 1rem;
+    /* padding-top: 1rem; */
     left: 0;
     top: 0;
     width: 100%;

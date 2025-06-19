@@ -130,14 +130,14 @@ export function updateBreadcrumbs() {
         document.getElementById('breadcrumbs').innerHTML = `
             ${breadcrumbs ? breadcrumbs + ' / ' : ''}
             <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
-            
-            <div class="sharing">
-            <button class="item-button" onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
-                🔄 Synchronizuj folder: ${currentFolder.name} 🔄
-            </button>
+        `;
+        document.getElementById('sync-button').innerHTML = `
+            <button onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
+                🔄 Szczegóły synchronizacji</button>
+        `;
+        document.getElementById('sharing').innerHTML = `
             <button class="item-button" onclick="toggleSharing(this)" title="Share-folder"> Udostępnij folder </button>
             <input type="text" id="folder-share-link">
-            </div>
         `;
     }
 }
