@@ -130,8 +130,10 @@ export function updateBreadcrumbs() {
         document.getElementById('breadcrumbs').innerHTML = `
             ${breadcrumbs ? breadcrumbs + ' / ' : ''}
             <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
-            <button class="item-button" onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
-                🔄 Synchronizuj folder: ${currentFolder.name} 🔄
+        `;
+        document.getElementById('sync-button').innerHTML = `
+            <button onclick="showSyncModal('${currentFolder.id}', '${currentFolder.name}')" title="Synchronizacja">
+                🔄 Szczegóły synchronizacji
             </button>
         `;
     }

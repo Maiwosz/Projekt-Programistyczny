@@ -364,14 +364,14 @@ hr.simple {
 
 .item-download-item {
     position: relative;
-    left: 88px;
+    left: 94px;
     top: 132px;
     padding: 8px;
 }
 
 .item-download-folder {
     position: relative;
-    left: 130px;
+    left: 138px;
     top: 132px;
     padding: 8px;
 }
@@ -392,6 +392,7 @@ hr.simple {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
+    flex-grow: 1;
     padding: 10px;
     background: #f8f9fa;
     border-radius: 4px;
@@ -406,6 +407,13 @@ hr.simple {
 
 .breadcrumb-item:hover {
     background: #e9ecef;
+}
+
+.sync-button-div {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
 }
 
 /* ========== PREVIEW PLIKÓW ========== */
