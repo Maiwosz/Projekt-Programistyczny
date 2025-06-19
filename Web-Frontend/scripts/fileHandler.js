@@ -288,3 +288,26 @@ function showCustomDialog(message, actions, callback) {
         }
     };
 }
+
+const dropArea = document.getElementById('drop-area');
+const fileInput = document.getElementById('drag-and-drop-file-input');
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+dropArea.addEventListener('dragover', preventDefaults);
+dropArea.addEventListener('dragenter', preventDefaults);
+dropArea.addEventListener('dragleave', preventDefaults);
+
+dropArea.addEventListener('dragenter', () => dropArea.classList.add('highlight'));
+dropArea.addEventListener('dragleave', () => dropArea.classList.remove('highlight'));
+dropArea.addEventListener('drop', () => dropArea.classList.remove('highlight'));
+
+dropArea.addEventListener('drop', handleDrop);
+
+function handleDrop(e) {
+    e.preventDefault();
+    handleMultipleFiles(e.dataTransfer.files);
+ }
