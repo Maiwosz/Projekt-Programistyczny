@@ -126,6 +126,9 @@ export function updateBreadcrumbs() {
             ${breadcrumbs ? breadcrumbs + ' / ' : ''}
             <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
         `;
+        document.getElementById('sync-button').innerHTML = ``;
+        document.getElementById('sharing').innerHTML = ``;
+
     } else { // Jeżeli folder inny niż Główny to dodaj przycisk synchronizacji
         document.getElementById('breadcrumbs').innerHTML = `
             ${breadcrumbs ? breadcrumbs + ' / ' : ''}
