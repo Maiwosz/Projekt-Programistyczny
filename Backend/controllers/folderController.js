@@ -1,4 +1,5 @@
 const FolderService = require('../services/FolderService');
+const crypto = require('crypto');
 
 exports.createFolder = async (req, res) => {
     try {
@@ -118,5 +119,101 @@ exports.getFolderContents = async (req, res) => {
     } catch (error) {
         console.error('Błąd pobierania zawartości folderu:', error);
         res.status(500).json({ error: 'Błąd pobierania zawartości folderu' });
+    }
+};
+
+exports.shareFolder = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.userId;
+
+        const folder = await FolderService.getFolderById(userId, id);
+        if (!folder) return res.status(404).json({ error: 'Folder not found' });
+        
+        if (folder.isShared) {
+            return res.status(400).json({ message: 'Folder is already shared' });
+        }
+
+        const sharedLink = crypto.randomBytes(12).toString('hex');
+
+        folder.sharedLink = sharedLink;
+        folder.isShared = true;
+        await folder.save();
+
+        const fullLink = `${process.env.BASE_URL || 'http://localhost:3000'}/shared/${sharedLink}`;
+        res.json({ sharedLink: fullLink });
+    } catch (error) {
+        console.error('Error sharing folder:', error);
+        res.status(500).json({ error: 'Error sharing folder' });
+    }
+};
+
+exports.revokeSharedLink = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.userId;
+
+        const folder = await FolderService.getFolderById(userId, id);
+        if (!folder) return res.status(404).json({ error: 'Folder not found' });
+
+
+        if (!folder.sharedLink) {
+            return res.status(400).json({ error: 'Folder is not shared' });
+        }
+
+        folder.sharedLink = undefined;
+        folder.isShared = false;
+
+        await folder.save();
+
+        res.json({ message: 'Shared link revoked successfully' });
+
+    } catch (err) {
+        console.error('Error revoking share:', err);
+        res.status(500).json({ error: 'Error revoking shared link' });
+    }
+};
+
+exports.isFolderShared = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.userId;
+
+        const folder = await FolderService.getFolderById(userId, id);
+
+        if (!folder) return res.status(404).json({ error: 'Folder not found' });
+
+        const isShared = !!folder.sharedLink;
+        res.json({ shared: isShared, link: isShared ? `${process.env.BASE_URL || 'http://localhost:3000'}/shared/${folder.sharedLink}` : null });
+    } catch (err) {
+        console.error('Error checking shared status:', err);
+        res.status(500).json({ error: 'Error checking shared status' });
+    }
+};
+
+
+exports.getSharedFolderContents = async (req, res) => {
+    try {
+        const { sharedLink } = req.params;
+
+        const folder = await Folder.findOne({ sharedLink });
+        if (!folder) return res.status(404).json({ error: 'Shared folder not found' });
+
+        const contents = await FolderService.getFolderContents(folder.user, folder._id, {
+            includeFiles: true,
+            includeSubfolders: true
+        });
+
+        res.json({
+            folder: {
+                id: folder._id,
+                name: folder.name,
+                description: folder.description
+            },
+            contents
+        });
+    } catch (err) {
+        console.error('Shared access error:', err);
+        res.status(500).json({ error: 'Unable to load shared folder contents' });
     }
 };

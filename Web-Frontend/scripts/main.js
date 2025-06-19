@@ -17,15 +17,58 @@ import { loadUserTags, renderTagsList, createTag, deleteTag, renderFileTags, pop
 import { populateTypeFilterSelector, populateTypeFilterSelectorMultiple, getSelectedFileTypes, setSelectedFileTypes, filterFiles, filterFilesByTag, filterFilesByType, filterFilesByName } from './filterPrototype.js';
 import { showSyncModal, closeSyncModal, addGoogleDriveSync, saveSync, deleteSync } from './syncModal.js';
 import { showCreateSyncModal, closeCreateSyncModal } from './createSyncModal.js';
+import { shareCurrentFolder, revokeCurrentFolder, loadSharedFolder } from './folderSharing.js';
 
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', async () => {
-    // Sprawdź czy użytkownik jest zalogowany
-    const token = localStorage.getItem('token');
-    if (!token) return; // Nie wykonuj dalszego kodu jeśli nie ma tokenu
+        // Check for shared folder first (before token check)
+    const path = window.location.pathname;
+    const sharedMatch = path.match(/^\/shared\/([a-f0-9]{24}|[a-f0-9]{16,64})$/);
 
-    // NOWE - Sprawdź czy to callback po autoryzacji Google Drive
+    if (sharedMatch) {
+        const sharedLink = sharedMatch[1];
+        console.log("Detected shared folder link:", sharedLink);
+        
+        try {
+            // Load shared folder without requiring authentication
+            await loadSharedFolder(sharedLink);
+            
+            // Initialize basic UI components for shared view
+            updateBreadcrumbs();
+            //loadUserTags(); // You might want to limit this for shared folders
+            //populateTypeFilterSelectorMultiple();
+            
+            // Setup dropdowns
+            setupDropdown('typeFilterSelector');
+            setupDropdown('tagFilterSelector');
+            
+            console.log("Shared folder loaded successfully");
+            
+        } catch (error) {
+            console.error("Error loading shared folder:", error);
+            // You might want to show an error message to the user
+            document.body.innerHTML = `
+                <div class="error-message">
+                    <h2>Error Loading Shared Folder</h2>
+                    <p>The shared folder could not be loaded. It may have been deleted or you may not have permission to access it.</p>
+                </div>
+            `;
+        }
+        
+        // Don't continue with normal initialization
+        return;
+    }
+
+    // Normal authentication check for regular users
+    const token = localStorage.getItem('token');
+    if (!token) {
+        // Redirect to login if no token and not a shared folder
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // Handle Google Drive auth callback
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('code') && urlParams.has('state')) {
         console.log('Detected Google Drive callback');
@@ -34,19 +77,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const result = await handleAuthCallback();
 
             if (result.success) {
-                // Pokaż komunikat o sukcesie
                 showAuthSuccessMessage();
 
-                // Odśwież modalne okno synchronizacji jeśli jest otwarte
+                // Refresh sync modal if open
                 const syncModal = document.getElementById('syncModal');
                 if (syncModal && syncModal.style.display === 'block') {
-                    // Przeładuj dane synchronizacji
                     const { loadAvailableProviders } = await import('./syncCore.js');
                     await loadAvailableProviders();
-
-                    // Odśwież interfejs
-                    const syncUi = await import('./syncUi.js');
-                    // Możesz dodać funkcję odświeżania interfejsu
                 }
             } else {
                 showAuthErrorMessage(result.error);
@@ -57,32 +94,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Sprawdź czy istnieje zapisany stan w localStorage
+    // Check for saved state in localStorage
     const savedState = localStorage.getItem('folderState');
     if (savedState) {
         try {
-            // Przywróć poprzedni stan nawigacji
+            // Restore previous navigation state
             const { current, stack, folderChildren } = JSON.parse(savedState);
-            currentFolder = current;
-            folderStack = stack;
-            innerFolders = new Map(folderChildren);
+            currentFolder.id = current.id;
+            currentFolder.name = current.name;
+            folderStack.length = 0;
+            stack.forEach(item => folderStack.push(item));
+            innerFolders.clear();
+            if (folderChildren) {
+                folderChildren.forEach(([key, value]) => innerFolders.set(key, value));
+            }
             console.log("Folder state restored:", folderChildren);
         } catch (error) {
             console.error("Error restoring folder state:", error);
-            localStorage.removeItem('folderState'); // Usuń niepoprawny stan
+            localStorage.removeItem('folderState');
         }
     }
 
-    // Załaduj zawartość folderu i zaktualizuj okruszki
+    // Load folder contents and update UI
     loadFolderContents();
     loadUserTags();
     updateBreadcrumbs();
     updateTree();
     populateTypeFilterSelectorMultiple();
-    // Setup dropdownów
+    
+    // Setup dropdowns
     setupDropdown('typeFilterSelector');
     setupDropdown('tagFilterSelector');
-    
 });
 
 // ========== FUNKCJE POMOCNICZE AUTORYZACJI ==========
@@ -198,6 +240,10 @@ window.createFolder = createFolder;
 window.renameFolder = renameFolder;
 window.deleteFolder = deleteFolder;
 
+window.shareCurrentFolder = shareCurrentFolder;
+window.revokeCurrentFolder = revokeCurrentFolder;
+window.loadSharedFolder = loadSharedFolder;
+
 // Funkcje obsługi modali
 window.showCreateFolderModal = showCreateFolderModal;
 window.closeFolderModal = closeFolderModal;
@@ -222,7 +268,6 @@ window.populateTagSelector = populateTagSelector;
 window.addTagToFile = addTagToFile;
 window.removeTagFromFile = removeTagFromFile;
 window.populateTagFilterSelector = populateTagFilterSelector;
-//window.filterFilesByTag = filterFilesByTag;
 
 // FILTRY
 

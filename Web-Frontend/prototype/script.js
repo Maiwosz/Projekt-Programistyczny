@@ -85,6 +85,8 @@ async function loadFolderContents() {
         // Obsłuż błędy HTTP
         if (!response.ok) throw new Error(`Błąd HTTP: ${response.status}`);
 
+        checkSharedStatus();
+
         // Przetwórz odpowiedź JSON i zaktualizuj UI
         const data = await response.json();
         renderItems(data);
