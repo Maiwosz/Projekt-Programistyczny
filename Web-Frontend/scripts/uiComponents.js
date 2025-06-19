@@ -126,10 +126,13 @@ export function updateBreadcrumbs() {
             ${breadcrumbs ? breadcrumbs + ' / ' : ''}
             <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
         `;
+        //Usuwa przyciski jesli byly wyswietlane
         document.getElementById('sync-button').innerHTML = ``;
         document.getElementById('sharing').innerHTML = ``;
+        document.querySelector('.sharing')?.style.setProperty('background', 'transparent');
+        document.querySelector('.sync-button-div')?.style.setProperty('background', 'transparent');
 
-    } else { // Jeżeli folder inny niż Główny to dodaj przycisk synchronizacji
+    } else { // Jeżeli folder inny niż Główny to dodaj przycisk synchronizacji i udostepniania
         document.getElementById('breadcrumbs').innerHTML = `
             ${breadcrumbs ? breadcrumbs + ' / ' : ''}
             <span class="current-folder" style="color: #666; cursor: default;">${currentFolder.name}</span>
@@ -142,6 +145,8 @@ export function updateBreadcrumbs() {
             <button class="item-button" onclick="toggleSharing(this)" title="Share-folder"> Udostępnij folder </button>
             <input type="text" id="folder-share-link">
         `;
+        document.querySelector('.sharing')?.style.setProperty('background', '#f8f9fa');
+        document.querySelector('.sync-button-div')?.style.setProperty('background', '#f8f9fa');
     }
 }
 
