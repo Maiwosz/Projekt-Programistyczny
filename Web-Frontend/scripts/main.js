@@ -22,32 +22,22 @@ import { shareCurrentFolder, revokeCurrentFolder, loadSharedFolder } from './fol
 
 // ========== INICJALIZACJA ==========
 document.addEventListener('DOMContentLoaded', async () => {
-        // Check for shared folder first (before token check)
     const path = window.location.pathname;
+
+    // Case 1: Shared folder
     const sharedMatch = path.match(/^\/shared\/([a-f0-9]{24}|[a-f0-9]{16,64})$/);
+
+    console.log("shared match: " + sharedMatch);
 
     if (sharedMatch) {
         const sharedLink = sharedMatch[1];
         console.log("Detected shared folder link:", sharedLink);
-        
+
         try {
-            // Load shared folder without requiring authentication
             await loadSharedFolder(sharedLink);
-            
-            // Initialize basic UI components for shared view
-            updateBreadcrumbs();
-            //loadUserTags(); // You might want to limit this for shared folders
-            //populateTypeFilterSelectorMultiple();
-            
-            // Setup dropdowns
-            setupDropdown('typeFilterSelector');
-            setupDropdown('tagFilterSelector');
-            
             console.log("Shared folder loaded successfully");
-            
         } catch (error) {
             console.error("Error loading shared folder:", error);
-            // You might want to show an error message to the user
             document.body.innerHTML = `
                 <div class="error-message">
                     <h2>Error Loading Shared Folder</h2>
@@ -55,31 +45,35 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
         }
-        
-        // Don't continue with normal initialization
+
+        return; // ✅ prevent normal init
+    }
+
+    // ✅ Case 2: User is at landing page `/`
+    if (path === '/') {
+        console.log("At root path — show login/register chooser");
+        showLandingPage(); // implement this or load content dynamically
         return;
     }
 
-    // Normal authentication check for regular users
+    // Case 3: All other paths – require auth unless it's login/register
     const token = localStorage.getItem('token');
     if (!token) {
-        // Redirect to login if no token and not a shared folder
-        window.location.href = '/login.html';
-        return;
+        // Redirect unless user is already on login or register page
+        if (path !== '/login.html' && path !== '/register.html') {
+            window.location.href = '/login.html';
+            return;
+        }
     }
 
-    // Handle Google Drive auth callback
+    // Normal authenticated app flow...
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('code') && urlParams.has('state')) {
-        console.log('Detected Google Drive callback');
-
+        // Google Drive callback
         try {
             const result = await handleAuthCallback();
-
             if (result.success) {
                 showAuthSuccessMessage();
-
-                // Refresh sync modal if open
                 const syncModal = document.getElementById('syncModal');
                 if (syncModal && syncModal.style.display === 'block') {
                     const { loadAvailableProviders } = await import('./syncCore.js');
@@ -94,11 +88,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Check for saved state in localStorage
     const savedState = localStorage.getItem('folderState');
     if (savedState) {
         try {
-            // Restore previous navigation state
             const { current, stack, folderChildren } = JSON.parse(savedState);
             currentFolder.id = current.id;
             currentFolder.name = current.name;
@@ -115,17 +107,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Load folder contents and update UI
+    // Continue with full app init
     loadFolderContents();
     loadUserTags();
     updateBreadcrumbs();
     updateTree();
     populateTypeFilterSelectorMultiple();
-    
-    // Setup dropdowns
     setupDropdown('typeFilterSelector');
     setupDropdown('tagFilterSelector');
 });
+
 
 // ========== FUNKCJE POMOCNICZE AUTORYZACJI ==========
 

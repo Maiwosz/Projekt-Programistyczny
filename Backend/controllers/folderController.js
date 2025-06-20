@@ -194,9 +194,13 @@ exports.isFolderShared = async (req, res) => {
 
 exports.getSharedFolderContents = async (req, res) => {
     try {
+
         const { sharedLink } = req.params;
 
-        const folder = await Folder.findOne({ sharedLink });
+        console.log("shared link: " + sharedLink);
+
+        const folder = await FolderService.getFolderBySharedLink({ sharedLink });
+
         if (!folder) return res.status(404).json({ error: 'Shared folder not found' });
 
         const contents = await FolderService.getFolderContents(folder.user, folder._id, {
