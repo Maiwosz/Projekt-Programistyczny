@@ -184,7 +184,7 @@ exports.isFolderShared = async (req, res) => {
         if (!folder) return res.status(404).json({ error: 'Folder not found' });
 
         const isShared = !!folder.sharedLink;
-        res.json({ shared: isShared, link: isShared ? `${process.env.BASE_URL || 'http://localhost:3000'}/shared/${folder.sharedLink}` : null });
+        res.json({ shared: isShared, sharedLink: isShared ? `${process.env.BASE_URL || 'http://localhost:3000'}/shared/${folder.sharedLink}` : null });
     } catch (err) {
         console.error('Error checking shared status:', err);
         res.status(500).json({ error: 'Error checking shared status' });

@@ -292,15 +292,21 @@ document.addEventListener('click', (event) => {
 });
 //Sprawdza w bazie danych czy folder jest udostepniony zeby poprawnie wyswietlic UI
 async function updateFolderShareButton() {
+
+    console.log("updating sharing button");
+
     let buttonText = "Udostępnij Folder";
     let linkValue = "";
     try {
-        const [isSharedValue, linkText] = await isShared();
+        const {isSharedValue, linkText} = await isShared();
+
+        console.log("is shared value: " + isSharedValue);
+
         if (isSharedValue) {
             buttonText = "Przerwij udostępnianie";
             linkValue = linkText;
         } else {
-            buttonText = "Udostępnij folder";
+            buttonText = "Udostępnij Folder";
             linkValue = "";
         }
     } catch (error) {
@@ -308,15 +314,18 @@ async function updateFolderShareButton() {
     }
     document.getElementById('sharing').innerHTML = `
             <button class="item-button" onclick="toggleSharing(this)" title="Share-folder"> ${buttonText} </button>
-            <input type="text" id="folder-share-link" value=${linkValue}>
+            <input type="text" id="share-link" value=${linkValue}>
         `;
 }
 
 export async function toggleSharing(button){
-    const link = document.getElementById('folder-share-link');
-        if (button.textContent.trim() === "Udostępnij folder") {
+    const link = document.getElementById('share-link');
+
+        if (button.textContent.trim() === "Udostępnij Folder" || button.textContent.trim() === "Udostępnij folder") {
             try{
             const {linkText,success} = await shareFolder();
+
+            console.log("folder shared, link: " + linkText);
             if(success){
                 button.textContent = "Przerwij udostępnianie";
                 link.value = linkText;

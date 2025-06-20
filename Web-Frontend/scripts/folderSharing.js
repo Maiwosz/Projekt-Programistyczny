@@ -41,17 +41,18 @@ export async function shareFolder() {
         }
 
         const data = await response.json();
+        console.log(data);
         // Show success message
         alert('Folder został pomyślnie udostępniony!');
         return {
-            link: data.link,
+            linkText: data.sharedLink,
             success: true
         };
     } catch (error) {
         console.error('Błąd przy udostępnianiu:', error);
         alert('Wystąpił błąd przy udostępnianiu folderu');
         return {
-            link: '',
+            linkText: '',
             success: false
         };
     }
@@ -107,12 +108,11 @@ export async function stopSharingFolder() {
 export async function displaySharedStatus() {
     // Only check sharing status if we're in a specific folder (not root)
     if (!currentFolder.id) {
-        document.getElementById('share-link').textContent = 'Link: ';
+        document.getElementById('share-link').value = 'Link: !!!';
         return;
     }
 
     try {
-        console.log("checking shared status");  
 
         const response = await fetch(`/api/folders/${currentFolder.id}/is-shared`, {
             method: 'GET',
@@ -125,13 +125,16 @@ export async function displaySharedStatus() {
         if (!response.ok) throw new Error('Nie udało się pobrać informacji o stanie udostępnienia');
 
         const data = await response.json();
-        const linkText = data.link ? `Link: ${data.link}` : 'Link: ';
-        document.getElementById('share-link').textContent = linkText;
+        const linkText = data.sharedLink ? `Link: ${data.sharedLink}` : 'Link: ';
+
+        console.log(data);
+
+        document.getElementById('share-link').value = linkText;
 
     } catch (error) {
         console.error('Błąd przy pobieraniu informacji:', error);
         // Don't show alert for shared status check failures
-        document.getElementById('share-link').textContent = 'Link: ';
+        document.getElementById('share-link').value = 'Link: ???';
     }
 }
 
@@ -152,9 +155,11 @@ export async function isShared() {
         }
 
         const data = await response.json();
+        console.log("data: " + data.shared);
+
         return {
-            isShared: data.isShared,
-            link: data.link
+            isSharedValue: data.shared,
+            link: data.sharedLink
         };
 
     } catch (error) {
