@@ -172,7 +172,15 @@ export async function loadSharedFolder(sharedLink) {
     try {
         console.log("loading shared folder with link:", sharedLink);
 
-        const response = await fetch(`/api/shared/${sharedLink}`);
+        const response = await fetch(`/api/folders/shared/${sharedLink}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+
         if (!response.ok) {
             throw new Error("Shared folder not found or access denied.");
         }
