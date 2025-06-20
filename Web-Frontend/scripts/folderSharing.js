@@ -14,7 +14,7 @@ export async function shareCurrentFolder() {
         if (!response.ok) throw new Error('Nie udało się udostępnić folderu');
 
         const data = await response.json();
-        document.getElementById('share-link').textContent = `Link: ${data.sharedLink}`;
+        document.getElementById('share-link').textContent = `${data.sharedLink}`;
         
         // Show success message
         alert('Folder został pomyślnie udostępniony!');
@@ -125,7 +125,7 @@ export async function displaySharedStatus() {
         if (!response.ok) throw new Error('Nie udało się pobrać informacji o stanie udostępnienia');
 
         const data = await response.json();
-        const linkText = data.sharedLink ? `Link: ${data.sharedLink}` : 'Link: ';
+        const linkText = data.sharedLink ? `${data.sharedLink}` : '';
 
         console.log(data);
 

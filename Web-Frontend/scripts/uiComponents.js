@@ -314,7 +314,7 @@ async function updateFolderShareButton() {
     }
     document.getElementById('sharing').innerHTML = `
             <button class="item-button" onclick="toggleSharing(this)" title="Share-folder"> ${buttonText} </button>
-            <input type="text" id="share-link" value=${linkValue}>
+            <input type="text" id="share-link" placeholder="Tu wyświetli się link" value=${linkValue} >
         `;
 }
 
