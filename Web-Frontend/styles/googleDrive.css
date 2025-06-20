@@ -147,7 +147,6 @@
 .gdrive-section {
     flex: 1;
     overflow-y: auto;
-    padding-right: 5px;
     margin-bottom: 20px;
 }
 

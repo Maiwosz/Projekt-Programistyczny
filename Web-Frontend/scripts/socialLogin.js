@@ -48,21 +48,27 @@ function initGoogleSignIn() {
     const googleSignInContainer = document.getElementById('google-signin-container');
     if (!googleSignInContainer) return;
     
-    googleSignInContainer.innerHTML = `
-        <div id="g_id_onload"
-             data-client_id="${googleClientId}"
-             data-callback="handleGoogleSignIn"
-             data-auto_prompt="false">
-        </div>
-        <div class="g_id_signin"
-             data-type="standard"
-             data-size="large"
-             data-theme="outline"
-             data-text="sign_in_with"
-             data-shape="rectangular"
-             data-logo_alignment="center">
-        </div>
-    `;
+    googleSignInContainer.innerHTML = '';
+
+    const customDivOnload = document.createElement('div');
+    customDivOnload.id = 'g_id_onload';
+    customDivOnload.setAttribute('data-client_id', googleClientId);
+    customDivOnload.setAttribute('data-callback', 'handleGoogleSignIn');
+    customDivOnload.setAttribute('data-auto_prompt', 'false');
+
+    const customDivSignin = document.createElement('div');
+    customDivSignin.id = 'g_id_signin';
+    customDivSignin.setAttribute('class', 'g_id_signin');
+    customDivSignin.setAttribute('data-type', 'standard');
+    customDivSignin.setAttribute('data-size', 'large');
+    customDivSignin.setAttribute('data-theme', 'outline');
+    customDivSignin.setAttribute('data-text', 'sign_in_with');
+    customDivSignin.setAttribute('data-shape', 'rectangular');
+    customDivSignin.setAttribute('data-logo_alignment', 'center');
+
+    googleSignInContainer.appendChild(customDivOnload);
+    googleSignInContainer.appendChild(customDivSignin);
+       
     
     // Renderowanie przycisku Google
     if (window.google && window.google.accounts && window.google.accounts.id) {
@@ -83,12 +89,17 @@ function renderGoogleButton(googleClientId) {
             client_id: googleClientId,
             callback: handleGoogleSignIn
         });
-        
         const gIdSignin = document.getElementById('g_id_signin');
         if (gIdSignin) {
             window.google.accounts.id.renderButton(
                 gIdSignin, 
-                { theme: 'outline', size: 'large' }
+                {
+                    theme: 'outline',
+                    size: 'large',
+                    text: 'sign_in_with',
+                    shape: 'rectangular',
+                    logo_alignment: 'center'
+                }
             );
         }
     } else {
