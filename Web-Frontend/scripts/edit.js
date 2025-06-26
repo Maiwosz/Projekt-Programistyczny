@@ -41,26 +41,46 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    const loadPicture = async () => {
-        try {
-            const response = await fetch('/api/user/profile-picture', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const pictureRes = await response.json();
-            const picturePlacement = document.getElementById("picture");
-            //picturePlacement. = pictureRes.picture;
-            console.log(pictureRes);
-            if(pictureRes.path == null ) {
-                //picturePlacement.textContent = "Brak picture";
-                picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg"
-            } else {
-                picturePlacement.src = `/uploads/${pictureRes.path}`;
-            }
+    
+	const loadPicture = async () => {
+		try {
+			const response = await fetch('/api/user/profile-picture', {
+				headers: { 
+					'Authorization': `Bearer ${token}`,
+					'Cache-Control': 'no-cache'
+				}
+			});
+			const pictureRes = await response.json();
+			const picturePlacement = document.getElementById("picture");
+			
+			if(pictureRes.path == null) {
+				picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg";
+				picturePlacement.alt = "Domyślne zdjęcie profilowe";
+			} else {
+				// Wymuś przeładowanie obrazu
+				const timestamp = Date.now();
+				const imageUrl = `/uploads/${pictureRes.path}?v=${timestamp}&_=${Math.random()}`;
+				
+				// Utwórz nowy obiekt Image do załadowania
+				const newImage = new Image();
+				newImage.onload = function() {
+					picturePlacement.src = imageUrl;
+					picturePlacement.alt = "Zdjęcie profilowe";
+				};
+				newImage.onerror = function() {
+					picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg";
+					picturePlacement.alt = "Błąd ładowania zdjęcia";
+				};
+				newImage.src = imageUrl;
+			}
 
-        } catch (error) {
-            console.error('Błąd pobierania zdjecia profilowego:', error);
-        }
-    };
+		} catch (error) {
+			console.error('Błąd pobierania zdjecia profilowego:', error);
+			const picturePlacement = document.getElementById("picture");
+			picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg";
+			picturePlacement.alt = "Błąd ładowania zdjęcia";
+		}
+	};
 
     await loadPicture();
     await loadLogin();
@@ -71,13 +91,20 @@ function triggerFileInput() {
     // Utwórz dynamiczny input plikowy
     const input = document.createElement('input');
     input.type = 'file';
-    input.multiple = false; // Konfiguruj wielokrotny wybór
+    input.multiple = false;
+    input.accept = 'image/*'; // Ograniczenie do plików obrazów
     input.style.display = 'none';
 
     // Obsłuż zmianę wybranych plików
     input.addEventListener('change', (e) => {
+        const file = e.target.files[0];
         
-        upload_ProfilePic(e.target.files);
+        // Sprawdź czy plik to obraz
+        if (file && file.type.startsWith('image/')) {
+            upload_ProfilePic(e.target.files);
+        } else {
+            alert('Proszę wybrać plik obrazu (jpg, png, gif, etc.)');
+        }
         
         document.body.removeChild(input); // Posprzątaj po sobie
     });
@@ -88,29 +115,96 @@ function triggerFileInput() {
 }
 
 async function upload_ProfilePic(files) {
-        if (!files.length) return;
+    if (!files.length) return;
+
+    const picturePlacement = document.getElementById("picture");
     
-        // Przygotuj dane formularza
-        const formData = new FormData();
-        formData.append('file', files[0]); 
+    // Pokaż preview załadowanego pliku od razu
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        picturePlacement.src = e.target.result;
+        picturePlacement.alt = "Przesyłanie zdjęcia...";
+    };
+    reader.readAsDataURL(file);
+
+    // Przygotuj dane formularza
+    const formData = new FormData();
+    formData.append('file', file); 
+    
+    try {
+        // Wyślij plik na serwer
+        const response = await fetch('/api/user/profile-picture', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: formData
+        });
         
-        try {
-            // Wyślij plik na serwer
-            const response = await fetch('/api/user/profile-picture', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: formData
-            });
+        if (response.ok) {
             const pictureRes = await response.json();
-            const picturePlacement = document.getElementById("picture");
-            picturePlacement.src = `/uploads/${pictureRes.path}`;
-        } catch (error) {
-            console.error('Błąd przesyłania:', error);
-            alert('Nie udało się przesłać pliku');
+            
+            // Dodaj opóźnienie żeby serwer zdążył przetworzyć plik
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Wymuś przeładowanie obrazu z serwera z nowym timestampem
+            const timestamp = Date.now();
+            const newImageUrl = `/uploads/${pictureRes.path}?v=${timestamp}&_=${Math.random()}`;
+            
+            // Funkcja do wielokrotnych prób załadowania
+            const loadWithRetry = (url, maxRetries = 3) => {
+                return new Promise((resolve, reject) => {
+                    let attempts = 0;
+                    
+                    const tryLoad = () => {
+                        attempts++;
+                        const img = new Image();
+                        
+                        img.onload = () => {
+                            picturePlacement.src = url;
+                            picturePlacement.alt = "Zdjęcie profilowe";
+                            resolve();
+                        };
+                        
+                        img.onerror = () => {
+                            if (attempts < maxRetries) {
+                                // Poczekaj chwilę i spróbuj ponownie
+                                setTimeout(tryLoad, 200 * attempts);
+                            } else {
+                                reject();
+                            }
+                        };
+                        
+                        img.src = url;
+                    };
+                    
+                    tryLoad();
+                });
+            };
+            
+            try {
+                await loadWithRetry(newImageUrl);
+            } catch {
+                // Jeśli nadal nie udało się załadować, zostaw preview z FileReader
+                picturePlacement.alt = "Zdjęcie profilowe";
+            }
+            
+        } else {
+            const error = await response.json();
+            // Przywróć domyślne zdjęcie w przypadku błędu
+            picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg";
+            picturePlacement.alt = "Błąd przesyłania";
+            alert(error.error || 'Nie udało się przesłać pliku');
         }
+    } catch (error) {
+        console.error('Błąd przesyłania:', error);
+        // Przywróć domyślne zdjęcie w przypadku błędu
+        picturePlacement.src = "https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg";
+        picturePlacement.alt = "Błąd przesyłania";
+        alert('Nie udało się przesłać pliku');
     }
+}
 
 function showPanel(type) {
     const panel = document.getElementById("editPanel");
