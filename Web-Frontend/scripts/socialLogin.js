@@ -48,63 +48,73 @@ function initGoogleSignIn() {
     const googleSignInContainer = document.getElementById('google-signin-container');
     if (!googleSignInContainer) return;
     
-    googleSignInContainer.innerHTML = '';
-
-    const customDivOnload = document.createElement('div');
-    customDivOnload.id = 'g_id_onload';
-    customDivOnload.setAttribute('data-client_id', googleClientId);
-    customDivOnload.setAttribute('data-callback', 'handleGoogleSignIn');
-    customDivOnload.setAttribute('data-auto_prompt', 'false');
-
-    const customDivSignin = document.createElement('div');
-    customDivSignin.id = 'g_id_signin';
-    customDivSignin.setAttribute('class', 'g_id_signin');
-    customDivSignin.setAttribute('data-type', 'standard');
-    customDivSignin.setAttribute('data-size', 'large');
-    customDivSignin.setAttribute('data-theme', 'outline');
-    customDivSignin.setAttribute('data-text', 'sign_in_with');
-    customDivSignin.setAttribute('data-shape', 'rectangular');
-    customDivSignin.setAttribute('data-logo_alignment', 'center');
-
-    googleSignInContainer.appendChild(customDivOnload);
-    googleSignInContainer.appendChild(customDivSignin);
-       
-    
-    // Renderowanie przycisku Google
-    if (window.google && window.google.accounts && window.google.accounts.id) {
-        renderGoogleButton(googleClientId);
-    } else {
-        // Jeśli API Google nie jest jeszcze dostępne, dodaj nasłuchiwacz
-        window.addEventListener('load', function() {
-            setTimeout(() => {
-                renderGoogleButton(googleClientId);
-            }, 500); // Dodajemy małe opóźnienie dla pewności
-        });
-    }
+    // Renderowanie niestandardowego przycisku Google
+    renderGoogleButton(googleClientId);
 }
 
 function renderGoogleButton(googleClientId) {
-    if (window.google && window.google.accounts && window.google.accounts.id) {
-        window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: handleGoogleSignIn
-        });
-        const gIdSignin = document.getElementById('g_id_signin');
-        if (gIdSignin) {
-            window.google.accounts.id.renderButton(
-                gIdSignin, 
-                {
-                    theme: 'outline',
-                    size: 'large',
-                    text: 'sign_in_with',
-                    shape: 'rectangular',
-                    logo_alignment: 'center'
-                }
-            );
-        }
-    } else {
+    const googleSignInContainer = document.getElementById('google-signin-container');
+    if (!googleSignInContainer) return;
+
+    // Wyczyść kontener przed dodaniem przycisku
+    googleSignInContainer.innerHTML = '';
+
+    // Utwórz przycisk z Twoimi stylami (podobnie jak Facebook)
+    const customButton = document.createElement('button');
+    customButton.className = 'google-login-button';
+    customButton.innerHTML = 'Zaloguj się przez Google';
+    
+    customButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        loginWithGoogle();
+    });
+
+    googleSignInContainer.appendChild(customButton);
+}
+
+// Funkcja do logowania przez Google
+function loginWithGoogle() {
+    console.log("Próba logowania przez Google");
+    
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
         console.error('Google API nie zostało poprawnie załadowane');
+        alert('Problem z logowaniem przez Google: Google API nie jest dostępne');
+        return;
     }
+    
+    console.log("Wywołanie Google Sign-In");
+    
+    window.google.accounts.id.initialize({
+        client_id: socialLoginConfig.googleClientId,
+        callback: handleGoogleSignIn,
+        ux_mode: 'popup',
+        auto_select: false
+    });
+    
+    // Użyj renderButton z automatycznym kliknięciem zamiast prompt()
+    const tempDiv = document.createElement('div');
+    tempDiv.style.display = 'none';
+    document.body.appendChild(tempDiv);
+    
+    window.google.accounts.id.renderButton(tempDiv, {
+        theme: 'outline',
+        size: 'large',
+        text: 'sign_in_with',
+        shape: 'rectangular',
+        logo_alignment: 'center',
+        click_listener: () => {
+            // Automatycznie kliknij po wyrenderowaniu
+        }
+    });
+    
+    // Automatycznie kliknij ukryty przycisk
+    setTimeout(() => {
+        const hiddenButton = tempDiv.querySelector('div[role="button"]');
+        if (hiddenButton) {
+            hiddenButton.click();
+        }
+        document.body.removeChild(tempDiv);
+    }, 100);
 }
 
 // Obsługa odpowiedzi z Google Sign-In
