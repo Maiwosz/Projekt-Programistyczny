@@ -342,5 +342,50 @@ window.refreshCurrentFolderContent = function () {
     //filterFiles(); // Zastosuj użyte wcześniej filtry - jeśli konieczne
 }
 
+window.downloadFile = async function(fileId) {
+    try {
+        const response = await fetch(`/api/files/${fileId}/download`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Błąd pobierania pliku');
+        }
+
+        // Pobierz nazwę pliku z nagłówka Content-Disposition
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'downloaded_file';
+        
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+            if (filenameMatch) {
+                filename = filenameMatch[1];
+            }
+        }
+
+        // Konwertuj odpowiedź na blob
+        const blob = await response.blob();
+        
+        // Utwórz link do pobierania
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        
+        // Posprzątaj
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+    } catch (error) {
+        console.error('Błąd pobierania pliku:', error);
+        alert('Nie udało się pobrać pliku');
+    }
+};
+
 let intervalId = setInterval(window.refreshCurrentFolderContent, 60000); // Execute function every minute
 // clearInterval(intervalId);
