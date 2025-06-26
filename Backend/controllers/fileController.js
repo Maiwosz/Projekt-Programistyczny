@@ -55,9 +55,9 @@ exports.uploadFile = [
             await file.save();
             res.status(201).json(file);
         } catch (error) {
-            console.error('Szczegó³y b³êdu uploadu:', error);
+            console.error('Szczegï¿½y bï¿½ï¿½du uploadu:', error);
             res.status(500).json({
-                error: 'B³¹d przesy³ania pliku',
+                error: 'Bï¿½ï¿½d przesyï¿½ania pliku',
                 details: error.message
             });
         }
@@ -69,7 +69,7 @@ exports.uploadMultipleFiles = [
     async (req, res) => {
         try {
             if (!req.files || req.files.length === 0) {
-                return res.status(400).json({ error: 'Brak przes³anych plików' });
+                return res.status(400).json({ error: 'Brak przesï¿½anych plikï¿½w' });
             }
 
             const files = await Promise.all(
@@ -97,9 +97,9 @@ exports.uploadMultipleFiles = [
 
             res.status(201).json(files);
         } catch (error) {
-            console.error('B³¹d przesy³ania wielu plików:', error);
+            console.error('Bï¿½ï¿½d przesyï¿½ania wielu plikï¿½w:', error);
             res.status(500).json({
-                error: 'B³¹d przesy³ania plików',
+                error: 'Bï¿½ï¿½d przesyï¿½ania plikï¿½w',
                 details: error.message
             });
         }
@@ -111,7 +111,7 @@ exports.getUserFiles = async (req, res) => {
         const files = await File.find({ user: req.user.userId });
         res.json(files);
     } catch (error) {
-        res.status(500).json({ error: 'B³¹d pobierania plików' });
+        res.status(500).json({ error: 'Bï¿½ï¿½d pobierania plikï¿½w' });
     }
 };
 
@@ -135,10 +135,10 @@ exports.deleteFile = async (req, res) => {
         }
 
         await File.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Plik usuniêty' });
+        res.json({ message: 'Plik usuniï¿½ty' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'B³¹d serwera' });
+        res.status(500).json({ error: 'Bï¿½ï¿½d serwera' });
     }
 };
 
@@ -150,14 +150,14 @@ exports.getFileMetadata = async (req, res) => {
 
         if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
 
-        // Pobierz rozmiar pliku z systemu plików
+        // Pobierz rozmiar pliku z systemu plikï¿½w
         const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
         const stats = await fs.promises.stat(filePath);
         file.size = stats.size;
 
         res.json(file);
     } catch (error) {
-        res.status(500).json({ error: 'B³¹d pobierania metadanych' });
+        res.status(500).json({ error: 'Bï¿½ï¿½d pobierania metadanych' });
     }
 };
 
@@ -167,7 +167,7 @@ exports.updateFileMetadata = async (req, res) => {
         if (!file) return res.status(404).json({ error: 'Plik nie znaleziony' });
 
         if (!file.mimetype.startsWith('image/')) {
-            return res.status(400).json({ error: 'Metadane dostêpne tylko dla obrazów' });
+            return res.status(400).json({ error: 'Metadane dostï¿½pne tylko dla obrazï¿½w' });
         }
 
         const filePath = path.resolve(process.env.UPLOADS_DIR, file.path);
@@ -179,13 +179,58 @@ exports.updateFileMetadata = async (req, res) => {
 
         res.json(file);
     } catch (error) {
-        console.error('Szczegó³y b³êdu:', error);
+        console.error('Szczegï¿½y bï¿½ï¿½du:', error);
         res.status(500).json({
-            error: 'B³¹d aktualizacji metadanych',
+            error: 'Bï¿½ï¿½d aktualizacji metadanych',
             details: error.message
         });
     }
 };
+
+exports.downloadFile = async (req, res) => {
+    try {
+        const { asBase64 } = req.query;
+        const result = await FileService.downloadFile(req.user.userId, req.params.id, {
+            asBase64: asBase64 === 'true'
+        });
+
+        if (result.content) {
+            // Zwracanie jako base64
+            return res.json({
+                file: result.file,
+                content: result.content,
+                contentType: result.contentType
+            });
+        }
+
+        res.setHeader('Content-Type', result.contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${result.file.originalName}"`);
+        res.sendFile(result.filePath);
+    } catch (error) {
+        console.error('BÅ‚Ä…d pobierania pliku:', error);
+        res.status(404).json({ error: error.message || 'BÅ‚Ä…d pobierania pliku' });
+    }
+};
+
+exports.downloadMultipleFiles = async (req, res) => {
+    try {
+        const { fileIds, asBase64 } = req.body;
+
+        if (!Array.isArray(fileIds) || fileIds.length === 0) {
+            return res.status(400).json({ error: 'Brak identyfikatorÃ³w plikÃ³w' });
+        }
+
+        const results = await FileService.downloadMultipleFiles(req.user.userId, fileIds, {
+            asBase64: asBase64 === true
+        });
+
+        res.json({ results });
+    } catch (error) {
+        console.error('BÅ‚Ä…d pobierania wielu plikÃ³w:', error);
+        res.status(500).json({ error: error.message || 'BÅ‚Ä…d pobierania plikÃ³w' });
+    }
+};
+
 
 const processMetadata = async (filePath) => {
     try {
@@ -196,7 +241,7 @@ const processMetadata = async (filePath) => {
             maxBufferSize: 30 * 1024 * 1024
         });
     } catch (error) {
-        console.error('B³¹d przetwarzania metadanych:', error);
+        console.error('Bï¿½ï¿½d przetwarzania metadanych:', error);
         return {};
     }
 };

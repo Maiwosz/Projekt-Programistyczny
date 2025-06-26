@@ -75,6 +75,18 @@ exports.updateCurrentUserProfilePicture = async (req, res) => {
         const userId = req.user.userId; 
         const newFileId = req.body.fileId;
 
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+
+        const file = await File.findOne({ _id: newFileId, user: userId });
+
+        if (!file) {
+            return res.status(404).json({ error: 'Plik nie istnieje lub nie należy do użytkownika' });
+        }
+
+        if (!allowedMimeTypes.includes(file.mimeType)) {
+            return res.status(400).json({ error: 'Nieprawidłowy typ pliku. Dozwolone są tylko pliki graficzne.' });
+        }
+
         await File.findOneAndUpdate(
             { user: userId, isProfilePicture: true },
             { isProfilePicture: false }
@@ -83,13 +95,17 @@ exports.updateCurrentUserProfilePicture = async (req, res) => {
         const updatedFile = await File.findOneAndUpdate(
             { _id: newFileId, user: userId },
             { isProfilePicture: true },
+            { new: true }
         );
+
         res.status(200).json({ message: 'Zaktualizowano zdjęcie profilowe', file: updatedFile });
 
-        } catch (error) {
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Błąd serwera' });
     }
 };
+
 
 exports.updateCurrentUserPassword = async (req, res) => {
     try {
@@ -119,24 +135,41 @@ exports.updateCurrentUserPassword = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
+    const userId = req.params.id;
+
     try {
-        const user = await User.findById(req.params.id);
+        const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ error: 'Użytkownik nie istnieje' });
         }
 
+        // Usuń powiązane dane
+        await Promise.all([
+            File.deleteMany({ user: userId }),
+            Folder.deleteMany({ user: userId }),
+            Tag.deleteMany({ user: userId }),
+            FileTag.deleteMany({ user: userId }),
+            FileSyncState.deleteMany({ user: userId }),
+            SyncFolder.deleteMany({ user: userId }),
+            GoogleDriveClient.deleteMany({ user: userId }),
+            Client.deleteMany({ user: userId }),
+        ]);
+
         await user.remove();
 
-        res.json({ message: 'Użytkownik i jego pliki zostały usunięte' });
+        res.json({ message: 'Użytkownik i wszystkie powiązane dane zostały usunięte' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Błąd serwera' });
     }
 };
 
+
 exports.uploadProfilePicture = async (req, res) => {
     upload.single('file'),
     async (req, res) => {
+        if(req.file.category == 'image')
+        {
         try {
             await File.findOneAndUpdate(
             { user: userId, isProfilePicture: true },
@@ -170,4 +203,5 @@ exports.uploadProfilePicture = async (req, res) => {
             });
         }
     }
+}
 };

@@ -5,6 +5,7 @@ const UserSchema = new mongoose.Schema({
     username: { type: String, unique: true },
     password: String,
     email: String,
+    profilePicture: {type: mongoose.Schema.Types.ObjectId, ref: 'File'}
 });
 
 UserSchema.pre('save', async function (next) {
