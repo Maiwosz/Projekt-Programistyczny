@@ -154,15 +154,30 @@ exports.updateCurrentUserPassword = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
+    const userId = req.params.id;
+
     try {
         const user = await User.findById(req.user.userId);
+
         if (!user) {
             return res.status(404).json({ error: 'Użytkownik nie istnieje' });
         }
 
+        // Usuń powiązane dane
+        await Promise.all([
+            File.deleteMany({ user: userId }),
+            Folder.deleteMany({ user: userId }),
+            Tag.deleteMany({ user: userId }),
+            FileTag.deleteMany({ user: userId }),
+            FileSyncState.deleteMany({ user: userId }),
+            SyncFolder.deleteMany({ user: userId }),
+            GoogleDriveClient.deleteMany({ user: userId }),
+            Client.deleteMany({ user: userId }),
+        ]);
+
         await user.remove();
 
-        res.json({ message: 'Użytkownik i jego pliki zostały usunięte' });
+        res.json({ message: 'Użytkownik i wszystkie powiązane dane zostały usunięte' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Błąd serwera' });
@@ -187,41 +202,43 @@ const upload = multer({
     limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
 });
 
-//exports.uploadProfilePicture = async (req, res) => {
-exports.uploadProfilePicture = [ 
+
+exports.uploadProfilePicture = [
     upload.single('file'),
     async (req, res) => {
         try {
-            await File.findOneAndUpdate(
-            { user: req.user.userId, 
-              isProfilePicture: true },
-            { isProfilePicture: false }
-        );
+            const userId = req.user.userId;
 
             const category = getCategoryFromMimeType(req.file.mimetype);
             const filePath = req.file.path;
             const metadata = await processMetadata(filePath);
+
             const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder)
                 ? req.body.folder
                 : null;
 
+            // Tworzymy nowy plik, bez pola isProfilePicture
             const file = new File({
-                user: req.user.userId,
+                user: userId,
                 path: path.join(category, req.file.filename).replace(/\\/g, '/'),
                 originalName: req.file.originalname,
                 mimetype: req.file.mimetype,
                 category: category,
                 folder: folderId,
-                metadata: metadata,
-                isProfilePicture: true
+                metadata: metadata
             });
+
             await file.save();
-            res.status(201).json(file);
-            //res.status(201).json({message: "PROBLEM TUTUAJ"});
+
+            // Aktualizujemy usera - ustawiamy profilePictureId na nowo utworzony plik
+            await User.findByIdAndUpdate(userId, { profilePictureId: file._id });
+
+            res.status(201).json({ message: 'Zdjęcie profilowe zostało zaktualizowane', file });
+
         } catch (error) {
-            console.error('Szczeg�y b��du uploadu:', error);
+            console.error('Szczegóły błędu uploadu:', error);
             res.status(500).json({
-                error: 'B��d przesy�ania pliku',
+                error: 'Błąd przesyłania pliku',
                 details: error.message
             });
         }
