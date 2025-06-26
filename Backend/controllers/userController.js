@@ -30,11 +30,24 @@ exports.getCurrentUserLogin = async (req, res) => {
 
 exports.getCurrentUserProfilePicture = async (req, res) => {
     try {
-        const file = await File.findOne({ user: req.user.userId, isProfilePicture: true }).select('path');
-        res.json({ path: file.path });
+        const user = await User.findById(req.user.userId).populate('profilePictureId');
+
+        if (!user || !user.profilePictureId) {
+            return res.json({ path: null });
+        }
+
+        const file = user.profilePictureId;
+
+        res.json({
+            path: file.path,
+            originalName: file.originalName,
+            contentType: file.mimetype,
+            fileId: file._id
+        });
 
     } catch (error) {
-        res.status(500).json({ error: 'Blad serwera' });
+        console.error(error);
+        res.status(500).json({ error: 'Błąd serwera' });
     }
 };
 
@@ -80,21 +93,35 @@ exports.updateCurrentUserLogin = async (req, res) => {
 
 exports.updateCurrentUserProfilePicture = async (req, res) => {
     try {
-        const userId = req.user.userId; 
+        const userId = req.user.userId;
         const newFileId = req.body.fileId;
 
-        await File.findOneAndUpdate(
-            { user: userId, isProfilePicture: true },
-            { isProfilePicture: false }
-        );
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
-        const updatedFile = await File.findOneAndUpdate(
-            { _id: newFileId, user: userId },
-            { isProfilePicture: true },
-        );
-        res.status(200).json({ message: 'Zaktualizowano zdjęcie profilowe', file: updatedFile });
+        const file = await File.findOne({ _id: newFileId, user: userId });
 
-        } catch (error) {
+        if (!file) {
+            return res.status(404).json({ error: 'Plik nie istnieje lub nie należy do użytkownika' });
+        }
+
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+            return res.status(400).json({ error: 'Nieprawidłowy typ pliku. Dozwolone są tylko pliki graficzne.' });
+        }
+
+        // Zaktualizuj użytkownika, ustawiając nowe zdjęcie profilowe
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { profilePictureId: newFileId },
+            { new: true }
+        ).populate('profilePictureId');
+
+        res.status(200).json({
+            message: 'Zaktualizowano zdjęcie profilowe',
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Błąd serwera' });
     }
 };

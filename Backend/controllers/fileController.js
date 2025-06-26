@@ -336,3 +336,51 @@ exports.handleDuplicates = async (req, res) => {
         });
     }
 };
+
+exports.downloadFile = async (req, res) => {
+    try {
+        const { asBase64 } = req.query;
+        const userId = req.user.userId;
+        const fileId = req.params.id;
+
+        const result = await FileService.downloadFile(userId, fileId, {
+            asBase64: asBase64 === 'true'
+        });
+
+        if (result.content) {
+            return res.json({
+                file: result.file,
+                content: result.content,
+                contentType: result.contentType
+            });
+        }
+
+        res.setHeader('Content-Type', result.contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="${result.file.originalName}"`);
+        res.sendFile(result.filePath);
+    } catch (error) {
+        console.error('Błąd pobierania pliku:', error);
+        res.status(404).json({ error: error.message || 'Błąd pobierania pliku' });
+    }
+};
+
+exports.downloadMultipleFiles = async (req, res) => {
+    try {
+        const { fileIds, asBase64 } = req.body;
+
+        if (!Array.isArray(fileIds) || fileIds.length === 0) {
+            return res.status(400).json({ error: 'Brak identyfikatorów plików' });
+        }
+
+        const userId = req.user.userId;
+
+        const results = await FileService.downloadMultipleFiles(userId, fileIds, {
+            asBase64: asBase64 === true || asBase64 === 'true'
+        });
+
+        res.json({ results });
+    } catch (error) {
+        console.error('Błąd pobierania wielu plików:', error);
+        res.status(500).json({ error: error.message || 'Błąd pobierania plików' });
+    }
+};
