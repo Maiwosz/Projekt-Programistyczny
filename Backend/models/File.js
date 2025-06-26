@@ -14,7 +14,6 @@ const FileSchema = new mongoose.Schema({
     folder: { type: mongoose.Schema.Types.ObjectId, ref: 'Folder', default: null },
     createdAt: { type: Date, default: Date.now },
     metadata: { type: Object, default: {} },
-    isProfilePicture: {type: Boolean, default: false},
     
     // Podstawowy soft delete
     isDeleted: { type: Boolean, default: false },

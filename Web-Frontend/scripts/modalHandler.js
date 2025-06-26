@@ -105,7 +105,13 @@ function renderFileModal(file, fileTags = []) {
     document.getElementById('fileType').textContent = file.mimetype;
     document.getElementById('fileSize').textContent = formatFileSize(file.size);
     document.getElementById('fileDate').textContent = new Date(file.createdAt).toLocaleString();
-    document.getElementById('isProfilePic').onclick = () => setAsProfilePic(file._id);
+    const profilePicButton = document.getElementById('isProfilePic');
+	if (isImage) {
+		profilePicButton.style.display = 'block';
+		profilePicButton.onclick = () => setAsProfilePic(file._id);
+	} else {
+		profilePicButton.style.display = 'none';
+	}
 
     // Obsłuż metadane
     const metadataFields = document.getElementById('metadataFields');

@@ -32,7 +32,10 @@
 
         <div class="editContainerPackImage">
             <h1 class="h1Edit">Zdjęcie Profilowe</h1>
-            <img class="imgBorder" id="picture" alt="boo">
+			<img class="imgBorder" id="picture" alt="Ładowanie zdjęcia profilowego..." 
+				 onerror="this.src='https://as2.ftcdn.net/v2/jpg/01/67/89/19/1000_F_167891932_sEnDfidqP5OczKJpkZso3mpbTqEFsrja.jpg'; this.alt='Domyślne zdjęcie profilowe';"
+				 onload="this.alt='Zdjęcie profilowe';"
+				 style="display: block;">
             <div class="editContainerButtons">
                 <button class="buttonEditPage" onclick="triggerFileInput()">Dodaj nowe</button>
                 <button class="buttonEditPage">Potwierdź</button>

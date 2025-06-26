@@ -57,8 +57,6 @@ export function renderItems(data) {
         html_dirs += ` 
         <div class="item-card" data-folder-id="${folder._id}">
             <div class="item-actions">
-                <!-- Przyciski akcji z funkcjami obsługi zdarzeń -->
-                <button onclick="downloadFolder('${folder._id}')" title="Pobierz" class="item-download-folder">⬇️</button>
                 <button class="item-button" onclick="renameFolder('${folder._id}')" title="Zmień nazwę">✏️</button>
                 <button class="item-button" onclick="showSyncModal('${folder._id}', '${folder.name.replace(/'/g, "\\'")}')" title="Synchronizacja">🔄</button>
                 <button class="item-button" onclick="deleteFolder('${folder._id}')" title="Usuń">🗑️</button>

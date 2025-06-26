@@ -9,6 +9,7 @@ const exifr = require('exifr');
 const { exiftool } = require('exiftool-vendored');
 const mongoose = require('mongoose');
 const { generateFileHash, getFileStats, getCategoryFromMimeType } = require('../utils/fileUtils');
+const FileService = require('../services/FileService')
 
 exports.getCurrentUserEmail = async (req, res) => {
     try {
@@ -30,11 +31,29 @@ exports.getCurrentUserLogin = async (req, res) => {
 
 exports.getCurrentUserProfilePicture = async (req, res) => {
     try {
-        const file = await File.findOne({ user: req.user.userId, isProfilePicture: true }).select('path');
-        res.json({ path: file.path });
+        const user = await User.findById(req.user.userId).populate('profilePictureId');
+
+        if (!user || !user.profilePictureId) {
+            return res.json({ path: null });
+        }
+
+        const file = user.profilePictureId;
+
+        // Sprawdź czy plik nie jest usunięty
+        if (file.isDeleted) {
+            return res.json({ path: null });
+        }
+
+        res.json({
+            path: file.path,
+            originalName: file.originalName,
+            contentType: file.mimetype,
+            fileId: file._id
+        });
 
     } catch (error) {
-        res.status(500).json({ error: 'Blad serwera' });
+        console.error('Błąd pobierania zdjęcia profilowego:', error);
+        res.status(500).json({ error: 'Błąd serwera' });
     }
 };
 
@@ -80,21 +99,44 @@ exports.updateCurrentUserLogin = async (req, res) => {
 
 exports.updateCurrentUserProfilePicture = async (req, res) => {
     try {
-        const userId = req.user.userId; 
+        const userId = req.user.userId;
         const newFileId = req.body.fileId;
 
-        await File.findOneAndUpdate(
-            { user: userId, isProfilePicture: true },
-            { isProfilePicture: false }
-        );
+        if (!newFileId) {
+            return res.status(400).json({ error: 'ID pliku jest wymagane' });
+        }
 
-        const updatedFile = await File.findOneAndUpdate(
-            { _id: newFileId, user: userId },
-            { isProfilePicture: true },
-        );
-        res.status(200).json({ message: 'Zaktualizowano zdjęcie profilowe', file: updatedFile });
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
-        } catch (error) {
+        // Użyj FileService do pobrania pliku
+        const file = await FileService.getFileById(userId, newFileId);
+
+        if (!file) {
+            return res.status(404).json({ 
+                error: 'Plik nie istnieje lub nie należy do użytkownika' 
+            });
+        }
+
+        if (!allowedMimeTypes.includes(file.mimetype)) {
+            return res.status(400).json({ 
+                error: 'Nieprawidłowy typ pliku. Dozwolone są tylko pliki graficzne.' 
+            });
+        }
+
+        // Zaktualizuj użytkownika, ustawiając nowe zdjęcie profilowe
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { profilePictureId: newFileId },
+            { new: true }
+        ).populate('profilePictureId');
+
+        res.status(200).json({
+            message: 'Zaktualizowano zdjęcie profilowe',
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.error('Błąd aktualizacji zdjęcia profilowego:', error);
         res.status(500).json({ error: 'Błąd serwera' });
     }
 };
@@ -127,15 +169,30 @@ exports.updateCurrentUserPassword = async (req, res) => {
 };
 
 exports.deleteUser = async (req, res) => {
+    const userId = req.params.id;
+
     try {
         const user = await User.findById(req.user.userId);
+
         if (!user) {
             return res.status(404).json({ error: 'Użytkownik nie istnieje' });
         }
 
+        // Usuń powiązane dane
+        await Promise.all([
+            File.deleteMany({ user: userId }),
+            Folder.deleteMany({ user: userId }),
+            Tag.deleteMany({ user: userId }),
+            FileTag.deleteMany({ user: userId }),
+            FileSyncState.deleteMany({ user: userId }),
+            SyncFolder.deleteMany({ user: userId }),
+            GoogleDriveClient.deleteMany({ user: userId }),
+            Client.deleteMany({ user: userId }),
+        ]);
+
         await user.remove();
 
-        res.json({ message: 'Użytkownik i jego pliki zostały usunięte' });
+        res.json({ message: 'Użytkownik i wszystkie powiązane dane zostały usunięte' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Błąd serwera' });
@@ -160,63 +217,49 @@ const upload = multer({
     limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit
 });
 
-//exports.uploadProfilePicture = async (req, res) => {
-exports.uploadProfilePicture = [ 
+
+exports.uploadProfilePicture = [
     upload.single('file'),
     async (req, res) => {
         try {
-            await File.findOneAndUpdate(
-            { user: req.user.userId, 
-              isProfilePicture: true },
-            { isProfilePicture: false }
-        );
+            const userId = req.user.userId;
+            const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
-            const category = getCategoryFromMimeType(req.file.mimetype);
-            const filePath = req.file.path;
-            const metadata = await processMetadata(filePath);
+            if (!allowedMimeTypes.includes(req.file.mimetype)) {
+                return res.status(400).json({ 
+                    error: 'Nieprawidłowy typ pliku. Dozwolone są tylko pliki graficzne.' 
+                });
+            }
+
             const folderId = req.body.folder && mongoose.isValidObjectId(req.body.folder)
                 ? req.body.folder
                 : null;
 
-            const file = new File({
-                user: req.user.userId,
-                path: path.join(category, req.file.filename).replace(/\\/g, '/'),
+            const fileData = {
+                filePath: req.file.path,
                 originalName: req.file.originalname,
                 mimetype: req.file.mimetype,
-                category: category,
-                folder: folderId,
-                metadata: metadata,
-                isProfilePicture: true
+                folderId: folderId,
+                duplicateAction: 'rename' // Zawsze rename dla zdjęć profilowych
+            };
+
+            // Użyj FileService do utworzenia pliku
+            const file = await FileService.createFile(userId, fileData);
+
+            // Aktualizuj użytkownika - ustaw profilePictureId na nowo utworzony plik
+            await User.findByIdAndUpdate(userId, { profilePictureId: file._id });
+
+            res.status(201).json({ 
+                message: 'Zdjęcie profilowe zostało zaktualizowane', 
+                file 
             });
-            await file.save();
-            res.status(201).json(file);
-            //res.status(201).json({message: "PROBLEM TUTUAJ"});
+
         } catch (error) {
-            console.error('Szczeg�y b��du uploadu:', error);
+            console.error('Szczegóły błędu uploadu zdjęcia profilowego:', error);
             res.status(500).json({
-                error: 'B��d przesy�ania pliku',
+                error: 'Błąd przesyłania zdjęcia profilowego',
                 details: error.message
             });
         }
     }
 ];
-
-const processMetadata = async (filePath) => {
-    try {
-        // Najpierw pr�bujemy odczyta� metadane za pomoc� exifr
-        const metadata = await exifr.parse(filePath, {
-            iptc: true,
-            xmp: true,
-            icc: true,
-            maxBufferSize: 30 * 1024 * 1024
-        });
-        
-        if (metadata) return metadata;
-        
-        // Je�li exifr nie zwr�ci� metadanych, pr�bujemy z exiftool
-        return await exiftool.read(filePath);
-    } catch (error) {
-        console.error('B��d przetwarzania metadanych:', error);
-        return {};
-    }
-};

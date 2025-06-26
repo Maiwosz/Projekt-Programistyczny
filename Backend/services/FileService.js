@@ -12,49 +12,49 @@ class FileService {
     // === TWORZENIE PLIKÓW ===
     
     async createFile(userId, fileData, options = {}) {
-    const {
-        filePath,
-        originalName,
-        mimetype,
-        folderId = null,
-        content = null,
-        hash = null,
-        lastModified = null,
-        duplicateAction = null // 'overwrite', 'rename', 'cancel'
-    } = fileData;
-    
-    const category = getCategoryFromMimeType(mimetype);
-    
-    // Sprawdź duplikaty
-    const duplicateCheck = await this._checkForDuplicates(userId, originalName, folderId);
-    
-    if (duplicateCheck.hasDuplicate) {
-        if (duplicateCheck.isDeleted) {
-            // Istniejący plik jest usunięty - przywróć go i nadpisz
-            return await this._restoreAndOverwriteFile(duplicateCheck.existingFile, fileData);
-        } else {
-            // Plik istnieje i nie jest usunięty
-            if (!duplicateAction) {
-                // NAPRAWIONE - tworzymy błąd z dodatkowymi właściwościami
-                const error = new Error('DUPLICATE_FILE');
-                error.existingFile = duplicateCheck.existingFile;
-                error.suggestedName = this._generateUniqueName(originalName, duplicateCheck.existingNames);
-                throw error;
-            }
-            
-            switch (duplicateAction) {
-                case 'overwrite':
-                    return await this._overwriteExistingFile(duplicateCheck.existingFile, fileData);
-                case 'rename':
-                    fileData.originalName = this._generateUniqueName(originalName, duplicateCheck.existingNames);
-                    break;
-                case 'cancel':
-                    throw new Error('Operacja anulowana przez użytkownika');
-                default:
-                    throw new Error('Nieprawidłowa akcja dla duplikatu');
-            }
-        }
-    }
+		const {
+			filePath,
+			originalName,
+			mimetype,
+			folderId = null,
+			content = null,
+			hash = null,
+			lastModified = null,
+			duplicateAction = null // 'overwrite', 'rename', 'cancel'
+		} = fileData;
+		
+		const category = getCategoryFromMimeType(mimetype);
+		
+		// Sprawdź duplikaty
+		const duplicateCheck = await this._checkForDuplicates(userId, originalName, folderId);
+		
+		if (duplicateCheck.hasDuplicate) {
+			if (duplicateCheck.isDeleted) {
+				// Istniejący plik jest usunięty - przywróć go i nadpisz
+				return await this._restoreAndOverwriteFile(duplicateCheck.existingFile, fileData);
+			} else {
+				// Plik istnieje i nie jest usunięty
+				if (!duplicateAction) {
+					// Tworzymy błąd z dodatkowymi właściwościami
+					const error = new Error('DUPLICATE_FILE');
+					error.existingFile = duplicateCheck.existingFile;
+					error.suggestedName = this._generateUniqueName(originalName, duplicateCheck.existingNames);
+					throw error;
+				}
+				
+				switch (duplicateAction) {
+					case 'overwrite':
+						return await this._overwriteExistingFile(duplicateCheck.existingFile, fileData);
+					case 'rename':
+						fileData.originalName = this._generateUniqueName(originalName, duplicateCheck.existingNames);
+						break;
+					case 'cancel':
+						throw new Error('Operacja anulowana przez użytkownika');
+					default:
+						throw new Error('Nieprawidłowa akcja dla duplikatu');
+				}
+			}
+		}
 		
 		// Kontynuuj normalnie jeśli brak duplikatów lub została wybrana opcja rename
 		let finalFilePath = filePath;
@@ -80,7 +80,7 @@ class FileService {
 		const file = new File({
 			user: userId,
 			path: filePath_normalized,
-			originalName: fileData.originalName, // Używaj zaktualizowanej nazwy
+			originalName: fileData.originalName, // Używaj zaktualizowanej nazwy (może być zmieniona przez rename)
 			mimetype,
 			size: fileStats?.size || 0,
 			category,
