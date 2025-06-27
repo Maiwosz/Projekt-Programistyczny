@@ -47,7 +47,7 @@ class GoogleDriveSyncService {
 		
 		await SyncService.markFolderForSync(userId, serverFolderId);
 		
-		// NOWE: Automatycznie uruchom scheduler jeśli autoSync jest włączone
+		// POPRAWKA: Automatycznie uruchom scheduler jeśli autoSync jest włączone
 		try {
 			const GoogleDriveClient = require('../models/GoogleDriveClient');
 			const clientDoc = await GoogleDriveClient.findOne({ 
@@ -56,16 +56,17 @@ class GoogleDriveSyncService {
 			});
 			
 			if (clientDoc && clientDoc.syncSettings.autoSync) {
-				console.log(`[GDRIVE] AutoSync włączone - dodaję nową synchronizację do schedulera`);
+				console.log(`[GDRIVE] AutoSync włączone - restartowanie schedulera dla userId: ${userId}`);
 				
-				// Importuj scheduler (może być przekazany jako dependency lub singleton)
-				const GoogleDriveSchedulerService = require('./GoogleDriveSchedulerService');
-				const scheduler = new GoogleDriveSchedulerService(this);
-				
-				// Restart schedulera z nowymi folderami
-				await scheduler.restartAutoSync(userId);
-				
-				console.log(`[GDRIVE] ✓ Scheduler zaktualizowany dla userId: ${userId}`);
+				// POPRAWKA: Użyj globalnego schedulera i nowej metody restart
+				if (global.googleDriveScheduler && typeof global.googleDriveScheduler.restartAutoSyncForUser === 'function') {
+					await global.googleDriveScheduler.restartAutoSyncForUser(userId);
+					console.log(`[GDRIVE] ✓ Scheduler zrestartowany dla userId: ${userId}`);
+				} else {
+					console.warn(`[GDRIVE] Globalny scheduler nie jest dostępny lub nie ma metody restartAutoSyncForUser`);
+				}
+			} else {
+				console.log(`[GDRIVE] AutoSync wyłączone lub klient nieaktywny dla userId: ${userId}`);
 			}
 		} catch (schedulerError) {
 			console.warn(`[GDRIVE] Błąd aktualizacji schedulera:`, schedulerError.message);
@@ -244,9 +245,33 @@ class GoogleDriveSyncService {
     async _processSyncOperation(driveClient, fileData, driveFolderId) {
 		console.log(`[GDRIVE] Przetwarzam operację: ${fileData.operation} dla pliku: ${fileData.file?.originalName}, clientFileId: ${fileData.clientFileId || 'brak'}`);
 		
+		// POPRAWKA: Sprawdź czy plik jest soft-deleted na serwerze
+		if (fileData.file?.isDeleted === true) {
+			console.log(`[GDRIVE] Plik ${fileData.file.originalName} jest soft-deleted - ignoruję operację ${fileData.operation}`);
+			
+			// Jeśli plik istnieje w Google Drive, usuń go
+			if (fileData.clientFileId) {
+				console.log(`[GDRIVE] Usuwam plik z Google Drive bo jest soft-deleted na serwerze`);
+				return await this._deleteFromDrive(driveClient, fileData);
+			}
+			
+			return {
+				fileId: fileData.fileId,
+				operation: 'ignored_soft_deleted',
+				fileName: fileData.file.originalName,
+				reason: 'File is soft-deleted on server'
+			};
+		}
+		
 		switch (fileData.operation) {
 			case 'added':
-				// POPRAWKA: Sprawdź czy plik już istnieje w Google Drive przed przesłaniem
+				// POPRAWKA: Dodatkowe sprawdzenie przed upload
+				if (!fileData.file || fileData.file.isDeleted) {
+					console.log(`[GDRIVE] Plik ${fileData.file?.originalName || 'UNKNOWN'} nie istnieje lub jest usunięty - pomijam upload`);
+					return null;
+				}
+				
+				// Sprawdź czy plik już istnieje w Google Drive przed przesłaniem
 				if (fileData.file?.originalName) {
 					const drive = await GoogleDriveConnectionService.getDriveInstance(driveClient.user);
 					const existingFiles = await this._findFilesByNameInFolder(
@@ -281,6 +306,11 @@ class GoogleDriveSyncService {
 				return await this._uploadToDrive(driveClient, fileData, driveFolderId);
 				
 			case 'modified':
+				// POPRAWKA: Dodatkowe sprawdzenie przed update
+				if (!fileData.file || fileData.file.isDeleted) {
+					console.log(`[GDRIVE] Plik ${fileData.file?.originalName || 'UNKNOWN'} nie istnieje lub jest usunięty - pomijam update`);
+					return null;
+				}
 				return await this._uploadToDrive(driveClient, fileData, driveFolderId);
 				
 			case 'deleted':
@@ -289,6 +319,12 @@ class GoogleDriveSyncService {
 			case 'unchanged':
 				if (!fileData.clientFileId) {
 					console.log(`[GDRIVE] Plik ${fileData.file?.originalName} oznaczony jako unchanged ale brak clientFileId - sprawdzam czy istnieje`);
+					
+					// POPRAWKA: Sprawdź czy plik nie jest soft-deleted przed sprawdzaniem w Google Drive
+					if (!fileData.file || fileData.file.isDeleted) {
+						console.log(`[GDRIVE] Plik ${fileData.file?.originalName || 'UNKNOWN'} jest soft-deleted - nie sprawdzam Google Drive`);
+						return null;
+					}
 					
 					// Sprawdź czy plik istnieje w Google Drive po nazwie
 					if (fileData.file?.originalName) {
@@ -330,6 +366,12 @@ class GoogleDriveSyncService {
 				// Sprawdź czy plik nadal istnieje w Google Drive
 				const stillExists = await this._verifyFileExistsInDrive(driveClient, fileData.clientFileId);
 				if (!stillExists) {
+					// POPRAWKA: Sprawdź czy plik nie jest soft-deleted przed ponownym przesłaniem
+					if (!fileData.file || fileData.file.isDeleted) {
+						console.log(`[GDRIVE] Plik ${fileData.file?.originalName || 'UNKNOWN'} jest soft-deleted - nie przesyłam ponownie`);
+						return null;
+					}
+					
 					console.log(`[GDRIVE] Plik ${fileData.file?.originalName} nie istnieje już w Google Drive - przesyłam ponownie`);
 					return await this._uploadToDrive(driveClient, fileData, driveFolderId);
 				}

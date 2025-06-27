@@ -129,17 +129,25 @@ namespace DesktopClient.Services {
 
                 // KROK 2: Wykonanie operacji dla każdego pliku
                 var processedFiles = new HashSet<string>();
+                var processedFileIds = new HashSet<string>(); // NOWE: Śledzenie przetworzonych fileId
 
                 // 2a) Przetwórz pliki z serwera
                 if (syncData.syncData != null) {
                     foreach (var syncItem in syncData.syncData) {
+                        // SPRAWDŹ CZY PLIK JUŻ ZOSTAŁ PRZETWORZONY
+                        if (processedFileIds.Contains(syncItem.fileId)) {
+                            OnSyncStatusChanged?.Invoke($"Plik {GetFileName(syncItem)} już przetworzony (fileId: {syncItem.fileId}) - pomijanie operacji {syncItem.operation}");
+                            continue;
+                        }
+
                         await ProcessServerFileAsync(syncItem, syncFolder);
 
-                        // Oznacz plik jako przetworzony
+                        // Oznacz plik jako przetworzony (zarówno po kluczu jak i po fileId)
                         var key = !string.IsNullOrEmpty(syncItem.clientFileId) ? syncItem.clientFileId : syncItem.file?.originalName;
                         if (!string.IsNullOrEmpty(key)) {
                             processedFiles.Add(key);
                         }
+                        processedFileIds.Add(syncItem.fileId); // NOWE: Dodaj fileId do przetworzonych
                     }
                 }
 
@@ -173,53 +181,167 @@ namespace DesktopClient.Services {
 
             OnSyncStatusChanged?.Invoke($"Przetwarzanie pliku z serwera: {fileName} (operacja: {syncItem.operation})");
 
+            // DEBUG: Wypisz szczegółowe informacje o pliku
+            Console.WriteLine($"[DEBUG] ProcessServerFileAsync:");
+            Console.WriteLine($"  - Plik: {fileName}");
+            Console.WriteLine($"  - Operacja: {syncItem.operation}");
+            Console.WriteLine($"  - FileId: {syncItem.fileId}");
+            Console.WriteLine($"  - Lokalny plik istnieje: {File.Exists(localPath)}");
+            Console.WriteLine($"  - syncItem.file?.isDeleted: {syncItem.file?.isDeleted}");
+            Console.WriteLine($"  - Kierunek synchronizacji: {syncFolder.SyncDirection}");
+
             try {
-                if (syncItem.file?.isDeleted == true) {
-                    if (File.Exists(localPath) && CanUploadFromClient(syncFolder.SyncDirection)) {
-                        OnSyncStatusChanged?.Invoke($"Plik oznaczony jako usunięty na serwerze, ale istnieje lokalnie - przesyłanie jako nowy: {fileName}");
+                // Sprawdź czy to operacja usunięcia (niezależnie od isDeleted)
+                bool isDeleteOperation = syncItem.operation.ToLower() == "deleted" ||
+                                        syncItem.operation.ToLower() == "deleted_from_server";
 
-                        // Oblicz względną ścieżkę dla clientFileId
-                        var relativePath = GetRelativePath(syncFolder.LocalPath, localPath);
+                // Sprawdź czy plik jest oznaczony jako usunięty na serwerze (jeśli obiekt file istnieje)
+                bool isMarkedAsDeleted = syncItem.file?.isDeleted == true;
 
-                        // Prześlij lokalny plik jako zupełnie nowy
-                        await UploadNewFile(localPath, syncFolder.FolderId, relativePath);
-                        return;
-                    } else if (!File.Exists(localPath)) {
-                        // Plik usunięty na serwerze i nie istnieje lokalnie - potwierdź usunięcie
-                        OnSyncStatusChanged?.Invoke($"Potwierdzanie usunięcia pliku nieistniejącego lokalnie: {fileName}");
-                        await _apiClient.ConfirmFileDeletedOnClientAsync(syncItem.fileId, _clientId);
-                        return;
-                    } else {
-                        // Plik usunięty na serwerze, istnieje lokalnie, ale nie można przesyłać z klienta
-                        OnSyncStatusChanged?.Invoke($"Plik usunięty na serwerze, istnieje lokalnie, ale synchronizacja nie pozwala na przesyłanie: {fileName}");
-                        return;
-                    }
+                Console.WriteLine($"[DEBUG] Analiza usunięcia:");
+                Console.WriteLine($"  - isDeleteOperation: {isDeleteOperation}");
+                Console.WriteLine($"  - isMarkedAsDeleted: {isMarkedAsDeleted}");
+
+                if (isDeleteOperation || isMarkedAsDeleted) {
+                    Console.WriteLine($"[DEBUG] Wywołuję HandleFileDeleted dla pliku: {fileName}");
+                    await HandleFileDeleted(syncItem, localPath, syncFolder);
+                    return;
                 }
 
+                // TYLKO gdy plik NIE jest usunięty, przetwarzaj inne operacje
                 switch (syncItem.operation.ToLower()) {
                     case "added":
+                        Console.WriteLine($"[DEBUG] Obsługa operacji 'added' dla pliku: {fileName}");
                         await HandleServerFileAdded(syncItem, localPath, syncFolder.SyncDirection);
                         break;
 
                     case "modified":
+                        Console.WriteLine($"[DEBUG] Obsługa operacji 'modified' dla pliku: {fileName}");
                         await HandleServerFileModified(syncItem, localPath, syncFolder.SyncDirection);
                         break;
 
-                    case "deleted":
-                    case "deleted_from_server":
-                        await HandleServerFileDeleted(syncItem, localPath, syncFolder.SyncDirection);
-                        break;
-
                     case "unchanged":
+                        Console.WriteLine($"[DEBUG] Obsługa operacji 'unchanged' dla pliku: {fileName}");
                         await HandleServerFileUnchanged(syncItem, localPath, syncFolder.SyncDirection);
                         break;
 
                     default:
+                        Console.WriteLine($"[DEBUG] Nieznana operacja: {syncItem.operation} dla pliku {fileName}");
                         OnSyncStatusChanged?.Invoke($"Nieznana operacja: {syncItem.operation} dla pliku {fileName}");
                         break;
                 }
             } catch (Exception ex) {
+                Console.WriteLine($"[ERROR] Błąd przetwarzania pliku z serwera {fileName}: {ex.Message}");
                 OnSyncStatusChanged?.Invoke($"Błąd przetwarzania pliku z serwera {fileName}: {ex.Message}");
+            }
+        }
+
+        // Dodaj te metody pomocnicze do klasy SyncService
+        private DateTime NormalizeToUtc(DateTime dateTime) {
+            // Sprawdź czy DateTime ma informację o strefie czasowej
+            if (dateTime.Kind == DateTimeKind.Utc) {
+                return dateTime;
+            } else if (dateTime.Kind == DateTimeKind.Local) {
+                return dateTime.ToUniversalTime();
+            } else {
+                // DateTimeKind.Unspecified - załóż że to czas serwera (często UTC)
+                // W niektórych przypadkach może być potrzebne dostosowanie tej logiki
+                return DateTime.SpecifyKind(dateTime, DateTimeKind.Utc);
+            }
+        }
+
+        // Opcjonalna metoda dla konfigurowalnej tolerancji czasowej
+        private TimeSpan GetTimeTolerance() {
+            // Można to zrobić konfigurowalne, np. z ustawień aplikacji
+            return TimeSpan.FromSeconds(30); // Domyślnie 30 sekund
+        }
+
+        // Zamień metodę HandleFileDeleted na tę poprawioną wersję:
+        private async Task HandleFileDeleted(SyncDataItem syncItem, string localPath, SyncFolderInfo syncFolder) {
+            var fileName = GetFileName(syncItem);
+
+            Console.WriteLine($"[DEBUG] HandleFileDeleted:");
+            Console.WriteLine($"  - Plik: {fileName}");
+            Console.WriteLine($"  - Lokalny plik istnieje: {File.Exists(localPath)}");
+            Console.WriteLine($"  - Kierunek synchronizacji: {syncFolder.SyncDirection}");
+            Console.WriteLine($"  - lastSyncDate: {syncItem.lastSyncDate}");
+
+            if (!File.Exists(localPath)) {
+                // Plik nie istnieje lokalnie - potwierdź usunięcie
+                Console.WriteLine($"[DEBUG] Plik nie istnieje lokalnie - potwierdzam usunięcie: {fileName}");
+                OnSyncStatusChanged?.Invoke($"Potwierdzanie usunięcia pliku nieistniejącego lokalnie: {fileName}");
+                await _apiClient.ConfirmFileDeletedOnClientAsync(syncItem.fileId, _clientId);
+                return;
+            }
+
+            // Plik istnieje lokalnie - sprawdź kierunek synchronizacji
+            var localModified = File.GetLastWriteTime(localPath);
+
+            // POPRAWKA: Normalizuj czasy do UTC przed porównaniem
+            var localModifiedUtc = NormalizeToUtc(localModified);
+            var serverDeletedTimeUtc = syncItem.lastSyncDate.HasValue ?
+                NormalizeToUtc(syncItem.lastSyncDate.Value) : DateTime.MinValue;
+
+            // Dodaj tolerancję czasową (np. 30 sekund) aby uniknąć problemów z drobnymi różnicami
+            var timeTolerance = GetTimeTolerance();
+
+            Console.WriteLine($"[DEBUG] Plik istnieje lokalnie - analiza czasów:");
+            Console.WriteLine($"  - Data modyfikacji lokalnej (oryginalna): {localModified}");
+            Console.WriteLine($"  - Data modyfikacji lokalnej (UTC): {localModifiedUtc}");
+            Console.WriteLine($"  - Data ostatniej synchronizacji (oryginalna): {syncItem.lastSyncDate}");
+            Console.WriteLine($"  - Data ostatniej synchronizacji (UTC): {serverDeletedTimeUtc}");
+            Console.WriteLine($"  - Różnica czasowa: {localModifiedUtc - serverDeletedTimeUtc}");
+            Console.WriteLine($"  - Tolerancja czasowa: {timeTolerance}");
+
+            if (syncFolder.SyncDirection == "to-client") {
+                // Synchronizacja tylko z serwera - usuń lokalny plik
+                Console.WriteLine($"[DEBUG] Synchronizacja 'to-client' - usuwam lokalny plik: {fileName}");
+                DeleteLocalFile(localPath);
+                await _apiClient.ConfirmFileDeletedOnClientAsync(syncItem.fileId, _clientId);
+                OnSyncStatusChanged?.Invoke($"Usunięto lokalny plik (synchronizacja jednokierunkowa z serwera): {fileName}");
+
+            } else if (syncFolder.SyncDirection == "from-client") {
+                // Synchronizacja tylko na serwer - prześlij plik ponownie
+                Console.WriteLine($"[DEBUG] Synchronizacja 'from-client' - przesyłam plik ponownie: {fileName}");
+                OnSyncStatusChanged?.Invoke($"Plik usunięty na serwerze, przesyłanie ponownie (synchronizacja jednokierunkowa na serwer): {fileName}");
+                var relativePath = GetRelativePath(syncFolder.LocalPath, localPath);
+                await UploadNewFile(localPath, syncFolder.FolderId, relativePath);
+
+            } else if (syncFolder.SyncDirection == "bidirectional") {
+                // Synchronizacja dwukierunkowa - strategia rozwiązywania konfliktów z tolerancją czasową
+                var timeDifference = localModifiedUtc - serverDeletedTimeUtc;
+                bool localIsSignificantlyNewer = timeDifference > timeTolerance;
+                bool serverIsSignificantlyNewer = timeDifference < -timeTolerance;
+
+                Console.WriteLine($"[DEBUG] Synchronizacja dwukierunkowa - analiza konfliktów:");
+                Console.WriteLine($"  - Lokalny czas modyfikacji (UTC): {localModifiedUtc}");
+                Console.WriteLine($"  - Czas usunięcia na serwerze (UTC): {serverDeletedTimeUtc}");
+                Console.WriteLine($"  - Różnica czasowa: {timeDifference}");
+                Console.WriteLine($"  - Lokalny znacząco nowszy: {localIsSignificantlyNewer}");
+                Console.WriteLine($"  - Serwer znacząco nowszy: {serverIsSignificantlyNewer}");
+
+                if (localIsSignificantlyNewer) {
+                    // Lokalny plik był modyfikowany znacząco później niż usunięcie na serwerze - prześlij go
+                    Console.WriteLine($"[DEBUG] Lokalny plik znacząco nowszy - przesyłam na serwer: {fileName}");
+                    OnSyncStatusChanged?.Invoke($"Lokalny plik nowszy niż usunięcie na serwerze - przesyłanie: {fileName}");
+                    var relativePath = GetRelativePath(syncFolder.LocalPath, localPath);
+                    await UploadNewFile(localPath, syncFolder.FolderId, relativePath);
+                } else if (serverIsSignificantlyNewer) {
+                    // Plik został usunięty na serwerze znacząco później - usuń lokalnie
+                    Console.WriteLine($"[DEBUG] Serwer znacząco nowszy - usuwam lokalny plik: {fileName}");
+                    OnSyncStatusChanged?.Invoke($"Plik usunięty na serwerze po ostatniej modyfikacji lokalnej - usuwanie: {fileName}");
+                    DeleteLocalFile(localPath);
+                    await _apiClient.ConfirmFileDeletedOnClientAsync(syncItem.fileId, _clientId);
+                } else {
+                    // Czasy są bardzo zbliżone - preferuj operację serwera (usunięcie)
+                    Console.WriteLine($"[DEBUG] Czasy zbliżone (w tolerancji {timeTolerance}) - preferuję operację serwera (usunięcie): {fileName}");
+                    OnSyncStatusChanged?.Invoke($"Czasy modyfikacji zbliżone - preferowanie operacji serwera (usunięcie): {fileName}");
+                    DeleteLocalFile(localPath);
+                    await _apiClient.ConfirmFileDeletedOnClientAsync(syncItem.fileId, _clientId);
+                }
+            } else {
+                Console.WriteLine($"[DEBUG] Nieznany kierunek synchronizacji: {syncFolder.SyncDirection}");
+                OnSyncStatusChanged?.Invoke($"Nieznany kierunek synchronizacji: {syncFolder.SyncDirection}");
             }
         }
 
@@ -322,36 +444,39 @@ namespace DesktopClient.Services {
             }
         }
 
-        private async Task HandleServerFileDeleted(SyncDataItem syncItem, string localPath, string syncDirection) {
-            if (!File.Exists(localPath)) {
-                // Plik już nie istnieje lokalnie - potwierdź usunięcie
-                await _apiClient.ConfirmFileDeletedOnClientAsync(syncItem.fileId, _clientId);
-                OnSyncStatusChanged?.Invoke($"Potwierdzono usunięcie pliku: {GetFileName(syncItem)}");
+        private async Task HandleServerFileUnchanged(SyncDataItem syncItem, string localPath, string syncDirection) {
+            var fileName = GetFileName(syncItem);
+
+            Console.WriteLine($"[DEBUG] HandleServerFileUnchanged:");
+            Console.WriteLine($"  - Plik: {fileName}");
+            Console.WriteLine($"  - Lokalny plik istnieje: {File.Exists(localPath)}");
+            Console.WriteLine($"  - Kierunek synchronizacji: {syncDirection}");
+            Console.WriteLine($"  - syncItem.file?.isDeleted: {syncItem.file?.isDeleted}");
+
+            // WAŻNE: Sprawdź czy plik nie jest przypadkiem oznaczony jako usunięty
+            if (syncItem.file?.isDeleted == true) {
+                Console.WriteLine($"[DEBUG] Plik w operacji 'unchanged' jest oznaczony jako usunięty - przekierowuję do HandleFileDeleted");
+                await HandleFileDeleted(syncItem, localPath, new SyncFolderInfo {
+                    SyncDirection = syncDirection,
+                    LocalPath = Path.GetDirectoryName(localPath)
+                });
                 return;
             }
 
-            if (CanDownloadToClient(syncDirection)) {
-                // Usuń lokalny plik
-                DeleteLocalFile(localPath);
-                await _apiClient.ConfirmFileDeletedOnClientAsync(syncItem.fileId, _clientId);
-            } else if (CanUploadFromClient(syncDirection)) {
-                // Lokalny plik istnieje, ale serwer go usunął - prześlij ponownie
-                OnSyncStatusChanged?.Invoke($"Plik usunięty na serwerze, ale istnieje lokalnie - przesyłanie: {GetFileName(syncItem)}");
-                // Tu możemy zdecydować czy przesłać plik ponownie, czy go usunąć lokalnie
-                // Na razie przesyłamy ponownie
-                await UploadNewFile(localPath, syncItem.file?._id, syncItem.clientFileId);
-            }
-        }
-
-        private async Task HandleServerFileUnchanged(SyncDataItem syncItem, string localPath, string syncDirection) {
             if (!File.Exists(localPath)) {
+                Console.WriteLine($"[DEBUG] Lokalny plik nie istnieje:");
+                Console.WriteLine($"  - CanUploadFromClient: {CanUploadFromClient(syncDirection)}");
+                Console.WriteLine($"  - CanDownloadToClient: {CanDownloadToClient(syncDirection)}");
+
                 if (CanUploadFromClient(syncDirection)) {
                     // Plik usunięty lokalnie - usuń na serwerze
-                    OnSyncStatusChanged?.Invoke($"Plik usunięty lokalnie - usuwanie na serwerze: {GetFileName(syncItem)}");
+                    Console.WriteLine($"[DEBUG] Usuwam plik na serwerze (plik usunięty lokalnie): {fileName}");
+                    OnSyncStatusChanged?.Invoke($"Plik usunięty lokalnie - usuwanie na serwerze: {fileName}");
                     await _apiClient.DeleteFileFromServerAsync(syncItem.fileId, _clientId);
                 } else if (CanDownloadToClient(syncDirection)) {
                     // Plik nie istnieje lokalnie - pobierz z serwera
-                    OnSyncStatusChanged?.Invoke($"Plik nie istnieje lokalnie - pobieranie: {GetFileName(syncItem)}");
+                    Console.WriteLine($"[DEBUG] Pobieram plik z serwera (nie istnieje lokalnie): {fileName}");
+                    OnSyncStatusChanged?.Invoke($"Plik nie istnieje lokalnie - pobieranie: {fileName}");
                     await DownloadFileFromServer(syncItem, localPath);
                 }
                 return;
@@ -361,12 +486,20 @@ namespace DesktopClient.Services {
             if (CanUploadFromClient(syncDirection)) {
                 var localContent = File.ReadAllBytes(localPath);
                 var localHash = CalculateFileHash(localContent);
+                var serverHash = syncItem.file?.fileHash;
 
-                if (localHash != syncItem.file?.fileHash) {
-                    OnSyncStatusChanged?.Invoke($"Plik zmieniony lokalnie - aktualizowanie na serwerze: {GetFileName(syncItem)}");
+                Console.WriteLine($"[DEBUG] Porównanie hashów:");
+                Console.WriteLine($"  - Lokalny hash: {localHash}");
+                Console.WriteLine($"  - Serwer hash: {serverHash}");
+                Console.WriteLine($"  - Hashe są różne: {localHash != serverHash}");
+
+                if (localHash != serverHash) {
+                    Console.WriteLine($"[DEBUG] Plik zmieniony lokalnie - aktualizuję na serwerze: {fileName}");
+                    OnSyncStatusChanged?.Invoke($"Plik zmieniony lokalnie - aktualizowanie na serwerze: {fileName}");
                     await UpdateFileOnServer(syncItem.fileId, localPath, syncItem.clientFileId);
                 } else {
                     // Pliki są identyczne - potwierdź synchronizację
+                    Console.WriteLine($"[DEBUG] Pliki identyczne - potwierdzam synchronizację: {fileName}");
                     await ConfirmFileSync(syncItem.fileId, localPath, syncItem.clientFileId);
                 }
             }

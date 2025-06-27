@@ -62,6 +62,33 @@ class GoogleDriveSchedulerService {
         
         return driveClient.syncSettings;
     }
+	
+	async restartAutoSyncForUser(userId) {
+		console.log(`[SCHEDULER] Restart automatycznej synchronizacji dla userId: ${userId}`);
+		
+		try {
+			const driveClient = await this._validateClient(userId);
+			
+			if (!driveClient.syncSettings.autoSync) {
+				console.log(`[SCHEDULER] AutoSync wyłączone dla userId: ${userId} - nie uruchamiam`);
+				return { success: true, message: 'AutoSync wyłączone' };
+			}
+			
+			// Zatrzymaj istniejącą synchronizację
+			this._stopAutoSync(driveClient.clientId);
+			
+			// Uruchom ponownie z aktualną konfiguracją
+			await this._startAutoSync(driveClient);
+			
+			console.log(`[SCHEDULER] ✓ Restart automatycznej synchronizacji dla userId: ${userId}`);
+			
+			return { success: true, message: 'Automatyczna synchronizacja zrestartowana' };
+			
+		} catch (error) {
+			console.error(`[SCHEDULER] Błąd restartu synchronizacji dla userId ${userId}:`, error);
+			throw error;
+		}
+	}
     
     // === METODY PRYWATNE - AUTOMATYCZNA SYNCHRONIZACJA ===
     
